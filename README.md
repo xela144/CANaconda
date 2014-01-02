@@ -14,11 +14,12 @@ Lawicel CAN-USB drivers available from http://www.can232.com/?page\_id=75
 
 Installation of the pySerial package from http://pyserial.sourceforge.net/pyserial.html
 
+Installation of the matplotlib package from matplotlib.org (optional)
+
 Installation of Qt framework, version 5, available from qt-project.org (optional - for GUI only)
 
 Installation of PyQt5 package from riverbankcomputing.com (optional - for GUI only)
 
-Installation of the matplotlib package from matplotlib.org (optional - for GUI only)
 
 ##Running CAN-aconda
 Connect USB and CAN cables. The CAN network must have its own power supply for the CAN-USB. Launch the program from the command line or by double clicking the canpython.py file.
@@ -43,33 +44,50 @@ Example commandline launch:
   This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' as the serial port. The messages to be decoded are specified in the 'xmltest.xml' file. The user has chosen to filter the output of the WSO100 device so that only airspeed data is shown. Likewise, for the WSO200 device, output is generated only for 'wind\_dir' and 'velocity'. Finally, the user has asked that the data be shown in 'csv' format with a time stamp, in 'zero-hold' mode.
 
 
-##Specifying Messages to be Parsed
+##Specifying Messages to be Parsed with the Metadata File
 Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'messages' file. The current format for specifying these messages are similar to that found at keversoft.com.
 
 ```xml
 <messages>
-    <messageInfo name = "Filter airspeed wso100" id = "09Fd0284">
+  <messageInfo name = "WSO100" pgn = "130306"> 
     <desc></desc>
-    <field
-    name = "WSO100 airspeed: "
-    offset = "8"
-    length = "16"
-    signed = "no"
-    units = "m/s"
-    scaling = ".01"
+    <field 
+    name = "airspeed" 
+    offset = "8" 
+    length = "16" 
+    signed = "no" 
+    units = "m/s" 
+    scaling = ".01" 
+    endian = "little"
+    />
+    <field 
+    name = "wind_dir" 
+    offset = "24" 
+    length = "16" 
+    signed = "no" 
+    units = "rad" 
+    scaling = ".0001" 
     endian = "little"
     />
   </messageInfo>
-
-  <messageInfo name = "Filter air temp" id = "15FD0784">
+  <messageInfo name = "FilterAirTemp" id = "15FD0784">
     <desc></desc>
     <field
-    name = "wso 100 airtemp "
-    offset = "2"
-    length = "5"
+    name = "Instance"
+    offset = "8"
+    length = "6"
     signed = "no"
-    units = "mph"
-    scaling = ".01"
+    units = ""
+    scaling = "1"
+    endian = "little"
+    />
+    <field
+    name = "Humidity"
+    offset = "24"
+    length = "16"
+    signed = "yes"
+    units = "%"
+    scaling = ".004"
     endian = "little"
     />
   </messageInfo>
@@ -79,7 +97,7 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
 Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
 
 
-The example XML-style messages file specifies wind speed message from the Maretron WSO100. First the program identifies the header of the message as "09Fd0284". Next it takes the data associated with that header (bits 8 through 16) and interprets them as an unsigned little endian number scaled by .01.
+The example XML-style messages file specifies wind speed message from the Maretron WSO100. First the program identifies the PGN of the message as "130306". Next it takes the data associated with that header (bits 8 through 16) and interprets them as an unsigned little endian number scaled by .01.
 
 The output from this filter looks like this:
 
