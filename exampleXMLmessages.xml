@@ -1,4 +1,4 @@
-<filters>
+<messages>
 	<messageInfo name = "WSO100" pgn = "130306"> 
 		<desc></desc>
 		<field 
@@ -73,5 +73,5 @@
 	</messageInfo>
  
 
-</filters>
+</messages>
 

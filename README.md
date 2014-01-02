@@ -47,8 +47,8 @@ Example commandline launch:
 Filters must be of the form:
 
 ```xml
-<filters>
-    <filter name = "Filter airspeed wso100" id = "09Fd0284">
+<messages>
+    <messageInfo name = "Filter airspeed wso100" id = "09Fd0284">
     <desc></desc>
     <field
     name = "WSO100 airspeed: "
@@ -59,9 +59,9 @@ Filters must be of the form:
     scaling = ".01"
     endian = "little"
     />
-  </filter>
+  </messageInfo>
 
-  <filter name = "Filter air temp" id = "15FD0784">
+  <messageInfo name = "Filter air temp" id = "15FD0784">
     <desc></desc>
     <field
     name = "wso 100 airtemp "
@@ -72,8 +72,8 @@ Filters must be of the form:
     scaling = ".01"
     endian = "little"
     />
-  </filter>
-</filters>
+  </messageInfo>
+</messages>
 ```
 Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
 
