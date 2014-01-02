@@ -73,15 +73,6 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
   <messageInfo name = "FilterAirTemp" id = "15FD0784">
     <desc></desc>
     <field
-    name = "Instance"
-    offset = "8"
-    length = "6"
-    signed = "no"
-    units = ""
-    scaling = "1"
-    endian = "little"
-    />
-    <field
     name = "Humidity"
     offset = "24"
     length = "16"
@@ -97,20 +88,12 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
 Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
 
 
-The example XML-style messages file specifies wind speed message from the Maretron WSO100. First the program identifies the PGN of the message as "130306". Next it takes the data associated with that header (bits 8 through 16) and interprets them as an unsigned little endian number scaled by .01.
+The example XML-style metadata file specifies wind speed and direction messages from one device, and ambient humidity messages from another device.
 
-The output from this filter looks like this:
+With both these devices connected to the CAN bus, and with this metadata file loaded, the message stream looks like this:
 
-    None 09FD0284 8 EA8000EA76FAFFFFCFF6
-    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.28
-    None 09FD0284 8 EE7A00B576FAFFFFD062
-    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.22
-    None 09FD0284 8 F277004577FAFFFFD0CF
-    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.19
-    None 09FD0284 8 F679006478FAFFFFD13B
-    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.21
-    None 09FD0284 8 FA8000DB79FAFFFFD1A7
-    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.28
+    None 09FD0284 8 EA8000EA76FAFFFFCFF6            // no longer correct:
+    Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.28 // needs updating
 
 Future development of this project will focus allowing the user to specify a list of known PGNs found at keversoft.com.
 
