@@ -34,7 +34,7 @@ To display a value in the Message Stream pane, click on the checkbox associated 
 
 From the terminal, a command-line version can be run by giving argument '--nogui'
 
-* If the '--csv' argument is specified, the output can be piped to the 'pipePlotter.py' script for graphically viewing data in real-time. Currently, supported for Maretron WSO100 windspeed data only. If you don't have this device and you want to view your data in a plot, it's best to save the output to a file and view in your favorite number-crunching program, such as Matlab, or the matplotlib package in Python.
+If the '--csv' argument is specified, the output can be piped to the 'pipePlotter.py' script for graphically viewing data in real-time. Currently, supported for Maretron WSO100 windspeed data only. If you don't have this device and you want to view your data in a plot, it's best to save the output to a file and view in your favorite number-crunching program, such as Matlab, or the matplotlib package in Python.
 
 Example commandline launch:
 ```
