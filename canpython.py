@@ -17,7 +17,7 @@ import pdb
 import threading
 import xml.etree.ElementTree as ET
 import sys
-from CANacondaMessageInfoParse import *
+from messageInfoParse import *
 from backend import *
 from Nmea2000_decode_encode import *
 from setoptions import *
@@ -175,7 +175,11 @@ def main():
             serialThread = threading.Thread(target=canPort.getmessage)
             # find a way to intercept KeyBoardInterrupt exception
             # when quitting
-            serialThread.start()
+            try:
+                serialThread.start()
+            except: 
+                pass
+
 
 ######### GUI #########
     else:

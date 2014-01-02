@@ -1,4 +1,4 @@
-<messages>
+<metaData>
 	<messageInfo name = "WSO100" pgn = "130306"> 
 		<desc></desc>
 		<field 
@@ -113,7 +113,5 @@
 		endian = "little"
 		/>
 	</messageInfo>
- 
-
-</messages>
+</metaData>
 

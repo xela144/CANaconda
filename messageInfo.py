@@ -1,5 +1,5 @@
 '''
-CANacondaMessageInfo.py
+messageInfo.py
 The data structures for the CANaconda filters.
 '''
 

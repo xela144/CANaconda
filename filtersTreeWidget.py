@@ -7,7 +7,7 @@ import pdb
 
 
 class FiltersTreeWidget(QtWidgets.QDialog):
-
+    
     def setup(self, parent, dataBack, singleshot=False):
         super(FiltersTreeWidget, self).__init__()
         self.dataBack = dataBack
@@ -70,15 +70,15 @@ class FiltersTreeWidget(QtWidgets.QDialog):
 
     def insertFieldAttributes(self, field, child):
         attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Length: " + field.length)
+        attr.setText(0, "Length: " + str(field.length))
         attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Offset: " + field.offset)
+        attr.setText(0, "Offset: " + str(field.offset))
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Signed: " + field.signed)
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Units: " + field.units)
         attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Scaling: " + field.scaling)
+        attr.setText(0, "Scaling: " + str(field.scaling))
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Endian: " + field.endian)
 
@@ -92,13 +92,15 @@ def main():
     import canpython
     import argparse
     import sys
+    import messageInfoParse
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.nogui = None
     args.fast = None
     args.debug = False
     dataBack = backend.CanData(args)
-    canpython.xmlimport(dataBack, args, 'xmltest.xml')
+    pdb.set_trace()
+    messageInfoParse.xmlImport(dataBack, args, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     ui = FiltersTreeWidget()

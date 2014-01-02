@@ -3,7 +3,7 @@
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-from CANacondaMessageInfoParse import xmlImport
+from messageInfoParse import xmlImport
 import threading
 from serial.tools.list_ports_posix import comports
 import pdb

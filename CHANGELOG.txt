@@ -26,8 +26,8 @@ CHANGED:
         self.filter_field_map_units  --> messageInfo_to_fields_units
 
  * Changed name of files: 
-        CANacondaFilter.py      --> CANacondaMessageInfo.py
-        CANacondaFilterParse.py --> CANacondaMessageInfoParse.py
+        CANacondaFilter.py      --> messageInfo.py
+        CANacondaFilterParse.py --> messageInfoParse.py
 
  * Separated all GUI and command-line code. Encapsulated data structures and their methods into individual files.
 

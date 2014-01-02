@@ -106,8 +106,8 @@ def hexToVal(hexData, dataFilter):
     # Variables used in this function:
     endian = dataFilter.endian
     signed = dataFilter.signed
-    offset = int(dataFilter.offset)
-    length = int(dataFilter.length)
+    offset = dataFilter.offset
+    length = dataFilter.length
 
     # Strip the time stamp off the end of the message if it is there
     hexData = hexData[0:2 * length]
@@ -177,7 +177,7 @@ def getPayload(dataFilter, currentMessage, match):
 
     # Normal data processing is the default case:
     else:
-        value *= float(dataFilter.scaling)
+        value *= dataFilter.scaling
         if dataFilter.unitsConversion:
             try:
             # Data conversion done by adding, multiplying, then

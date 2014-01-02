@@ -4,10 +4,10 @@ CANacondaMessage object. MessageInfo is the outer layer of data
 abstraction, and Field is contained within.
 '''
 
-from CANacondaMessageInfo import *
+from messageInfo import *
 import xml.etree.ElementTree as ET
 import pdb
-
+from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
@@ -26,14 +26,14 @@ def xmlImport(dataBack, args, fileName):
         xmlFile = open(fileName, 'r')
         rawXML = xmlFile.read()
         root = ET.fromstring(rawXML)
-        for filter in root.findall('messageInfo'):
-            if 'pgn' in filter.keys() and 'id' in filter.keys():
+        for message in root.findall('messageInfo'):
+            if 'pgn' in message.keys() and 'id' in message.keys():
                 if dataBack.args.nogui:
                     print("Please specify only one of either: id, PGN.\n",
                           "Update meta data file and try again.")
                     return True
             newMessageInfo = MessageInfo()
-            messageInfoInit(newMessageInfo, filter, dataBack)
+            messageInfoInit(newMessageInfo, message, dataBack)
             messageName = newMessageInfo.name
             dataBack.messages[messageName] = newMessageInfo
     except:
@@ -68,15 +68,15 @@ def messageInfoInit(self, messageInfo, dataBack):
 # 'field' must be an xml-etree object.
 def fieldInit(self, field):
     self.name = field.get('name')
-    self.length = field.get('length')
-    self.offset = field.get('offset')
+    self.length = int(field.get('length'))
+    self.offset = int(field.get('offset'))
     self.signed = field.get('signed')
     units_ = field.get('units')
     if units_ == 'm/s':
         self.units = 'MPS'
     else:
         self.units = units_.upper()
-    self.scaling = field.get('scaling')
+    self.scaling = float(field.get('scaling'))
     self.endian = field.get('endian')
     self.unitsConversion = None
 

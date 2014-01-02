@@ -48,7 +48,7 @@ Example commandline launch:
 Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'messages' file. The current format for specifying these messages are similar to that found at keversoft.com.
 
 ```xml
-<messages>
+<metaData>
   <messageInfo name = "WSO100" pgn = "130306"> 
     <desc></desc>
     <field 
@@ -82,7 +82,7 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
     endian = "little"
     />
   </messageInfo>
-</messages>
+</metaData>
 ```
 
 Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
@@ -97,7 +97,7 @@ With both these devices connected to the CAN bus, and with this metadata file lo
 
 Future development of this project will focus allowing the user to specify a list of known PGNs found at keversoft.com.
 
-#Instalation for Linux
+#Installation for Linux
 
 
 _Note that these instructions are for Debian-based distributions. Some packages may be different if you are using another distribution._
