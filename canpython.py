@@ -127,7 +127,6 @@ def main():
             # make a copy of the messageInfo_to_fields
             # for displaying the header in CSV mode
             dataBack.messageInfo_to_fields_units = dataBack.messageInfo_to_fields.copy()
-            pdb.set_trace()
 
         # No --filter argument given, just display all the messages
         else:

@@ -43,8 +43,8 @@ Example commandline launch:
   This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' as the serial port. The messages to be decoded are specified in the 'xmltest.xml' file. The user has chosen to filter the output of the WSO100 device so that only airspeed data is shown. Likewise, for the WSO200 device, output is generated only for 'wind\_dir' and 'velocity'. Finally, the user has asked that the data be shown in 'csv' format with a time stamp, in 'zero-hold' mode.
 
 
-##Filter Formating
-Filters must be of the form:
+##Specifying Messages to be Parsed
+Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'messages' file. The current format for specifying these messages are similar to that found at keversoft.com.
 
 ```xml
 <messages>
@@ -75,11 +75,11 @@ Filters must be of the form:
   </messageInfo>
 </messages>
 ```
+
 Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
 
 
-The first filter parses the wind speed message from the Maretron WSO100. First the filter identifies the header of the message as "09Fd0284"
-then takes the data associated with that header and takes bits 8:16 and interprets them as an unsigned little endian number scaled by .01.
+The example XML-style messages file specifies wind speed message from the Maretron WSO100. First the program identifies the header of the message as "09Fd0284". Next it takes the data associated with that header (bits 8 through 16) and interprets them as an unsigned little endian number scaled by .01.
 
 The output from this filter looks like this:
 
@@ -94,7 +94,9 @@ The output from this filter looks like this:
     None 09FD0284 8 FA8000DB79FAFFFFD1A7
     Header: 09FD0284, BOD: 8 WSO100 airspeed:  1.28
 
-#Installing for Linux
+Future development of this project will focus allowing the user to specify a list of known PGNs found at keversoft.com.
+
+#Instalation for Linux
 
 
 _Note that these instructions are for Debian-based distributions. Some packages may be different if you are using another distribution._
