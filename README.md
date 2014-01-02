@@ -123,8 +123,8 @@ To install the pyserial package:
  * download from pypi.python.org/pypi/pyserial
  * In the pyserial directory, locate and run the setup.py script.
  * Unfortunately, patches must be applied to deal with the Python 2 -> 3 changes:
-   * pyserial_patch from http://sourceforge.net/tracker/?func=detail&aid=3462364&group_id=46487&atid=446304
-   * pyserial_binary_fix.patch from http://sourceforge.net/tracker/?func=detail&aid=3596060&group_id=46487&atid=446302
+   * pyserial\_patch from http://sourceforge.net/tracker/?func=detail&aid=3462364&group\_id=46487&atid=446304
+   * pyserial\_binary\_fix.patch from http://sourceforge.net/tracker/?func=detail&aid=3596060&group\_id=46487&atid=446302
      
 
 Serial data will be available at /dev/ttyUSB0. However, access to /dev/ttyUSB0 is by default limited to root. In order to give access to canpython.py, add user (self) to dialout group:
@@ -136,7 +136,7 @@ To make changes active, log out, closing session completely, and log back in.
 To install Qt: 
 There are many dependencies for Qt. From shell, start with these commands:
 
-> sudo apt-get install build-essential perl python "^libxcb.*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev flex bison gperf libicu-dev libxslt-dev ruby libcups2-dev libgstreamer-plugins-base0.10-dev libssl-dev libpulse-dev libasound2-dev libgtk2.0-dev
+> sudo apt-get install build-essential perl python "^libxcb.\*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev flex bison gperf libicu-dev libxslt-dev ruby libcups2-dev libgstreamer-plugins-base0.10-dev libssl-dev libpulse-dev libasound2-dev libgtk2.0-dev
 
 From Qt downloads page, download qt-linux-opensource-5.2.0-x86-offline.run. Then type:
 > chmod u+x qt-linux-opensource-5.2.0-x86-offline.run
