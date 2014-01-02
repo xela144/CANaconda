@@ -1,0 +1,34 @@
+CHANGED:
+
+ * Allow for reloading xml file while receving data.
+ * When starting operation, added check for either T or t to indicate a new message
+ * Now showing ID XOR PGN in metadata viewer
+ * removed the word 'comports()' from first item in comports menu
+ * Limited precision of floats to 3 decimal places in message stream window
+ * Changed the name of parsedmsg to matchedmsg, due to parsedmsg being a regex 
+   Match Object. parsedmsg is confusing because 'parse' is part of the name of 
+   a set of functions
+ * created CANacondaMessage.py, CANacondaMessageParse.py, CANacondaFilter.py, 
+   CANacondaFilterParse.py, and refactored backend.py, canport.py, and 
+   canport_QT.py
+ * Make code more modular, it should be easy to interact with your code as 
+   libraries in other people's code
+   + remove the message parsing from canpython.py
+
+ * Made changes to namespace:
+        self.filterList              --> messageInfoList
+        self.filter_field_map        --> self.messageInfo_to_fields
+        self.filter_id_map           --> self.id_to_name
+        self.filter_pgn_map          --> self.pgn_to_name
+        self.filterList              --> self.messageInfoList
+        self.filtersFlag             --> self.messageInfoFlag
+        self.filters                 --> self.messages
+        self.filter_field_map_units  --> messageInfo_to_fields_units
+
+ * Changed name of files: 
+        CANacondaFilter.py      --> CANacondaMessageInfo.py
+        CANacondaFilterParse.py --> CANacondaMessageInfoParse.py
+
+ * Separated all GUI and command-line code. Encapsulated data structures and their methods into individual files.
+
+

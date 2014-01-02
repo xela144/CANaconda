@@ -1,0 +1,34 @@
+<filters>
+
+	<filter name = "DST800"  pgn = "130310">
+		<desc></desc>
+		<field 
+		name = "DST800: " 
+		offset = "8" 
+		length = "16" 
+		signed = "no" 
+		units = "K" 
+		scaling = ".01" 
+		endian = "little"
+		/>
+		<field 
+		name = "DST800 Outside Ambient Air Temp: " 
+		offset = "24" 
+		length = "16" 
+		signed = "no" 
+		units = "K" 
+		scaling = ".01" 
+		endian = "little"
+		/>
+		<field 
+		name = "DST800 Atmospheric Pressure: " 
+		offset = "40" 
+		length = "16" 
+		signed = "no" 
+		units = "hPa" 
+		scaling = ".01" 
+		endian = "little"
+		/>
+	</filter>
+
+</filters>

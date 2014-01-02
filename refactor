@@ -1,0 +1,36 @@
+## Message/Filter namespace issue ##
+In backend.py:
+    in Class CanData:
+        self.filterList = []  --> messageInfoList
+        self.filter_field_map = {}  --> self.messageInfo_to_fields
+        self.filter_id_map = {}   --> self.id_to_name
+        self.filter_pgn_map = {}  --> self.pgn_to_name
+        self.filterList  --> self.messageInfoList
+        self.filtersFlag --> self.messageInfoFlag
+        self.filters     --> self.messages
+        self.filter_field_map_units  --> messageInfo_to_fields_units
+        
+        145     def removeFilter(self,   -->   def remove messageInfo
+        self.message_queue  -->  self.CANacondaMessage_queue
+        self.latest_messages --> self.latest_CANacondaMessages
+        self.container --> ???????
+
+In filterTable.py and ui_mainwindow.py:
+        class FilterTable:
+
+## CAN pgn to id issue ##
+In backend.py:
+    in Class CanData:
+        self.filter_pgn_map = }{
+    in Class Message:
+        183         if self.id is not None:
+        184             dataBack.filter_id_map[self.id.upper()] = self.name
+        185         # map PGN to name -- this is wrong!
+        186         dataBack.filter_pgn_map[self.pgn] = self.name
+        
+        284
+
+
+In ui_mainwindow, line 283: change "getmessage"
+        468 warnFilterImport --> warnMessagesImport
+        334 newLoadFilter    --> newLoadMessages
