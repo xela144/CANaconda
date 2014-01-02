@@ -77,7 +77,7 @@ class CANPort():
                                  # 'canport's are used for GUI and noGUI modes.
             self.dataBack.CANacondaMessage_queue.put(canacondamessage)
         elif len(self.dataBack.messages) == 0:  # No messageInfo loaded, print
-            print(canacondamessage.raw)        # raw message format
+            print(canacondamessage.raw, "\t\t",  canacondamessage.pgn)        # raw message format
         else:
             self.buildOutMessage(canacondamessage)
 

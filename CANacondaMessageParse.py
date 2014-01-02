@@ -16,10 +16,9 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     self.pgn = pgnSet(match)
     self.raw = parseRaw(rawmsg)
     if match.group(1):
-        message_id = match.group(1)
+        self.ID = match.group(1)
     elif match.group(2):
-        message_id = match.group(2)
-    self.ID = message_id
+        self.ID = match.group(2)
 
 #    # Find the metadata that matches the parsed message
 #    if message_id in dataBack.id_to_name or str(self.pgn) in\
@@ -39,18 +38,22 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     if not self.name:
         return
 
-    # If the metadata did not give an ID, add it:
+    # If the metadata did not give an ID, we need to add it for completeness:
 #    if self.ID not in dataBack.id_to_name:
 #        try:
 #            dataBack.messages[dataBack.pgn_to_name[
-#                                        str(self.pgn)]].id = message_id
+#                                        str(self.pgn)]].id = self.ID
 #        except:
 #            pass
-#        dataBack.id_to_name[message_id] = dataBack.messages[
+#        dataBack.id_to_name[self.ID] = dataBack.messages[
 #                        dataBack.pgn_to_name[str(self.pgn)]].name
 
-    # make a pointer to the filter
-    currentMessage = dataBack.messages[dataBack.id_to_name[message_id]]
+    # make a pointer to the filter. First, try with filter ID. Then PGN.
+    try:
+        currentMessage = dataBack.messages[dataBack.id_to_name[self.ID]]
+    except:
+        currentMessage = dataBack.messages[dataBack.pgn_to_name[str(self.pgn)]]
+        
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
         dataFilter = currentMessage.fields[fieldName]

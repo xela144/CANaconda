@@ -1,0 +1,14 @@
+portsTest.py
+pyserial_binary_fix.patch
+
+__pycache__/
+docs/
+qt_gui/__pycache__/
+xml1
+basicPipe.py
+data.csv
+exampleCommandLine.txt
+python3
+*.csv
+testfile
+*swp
