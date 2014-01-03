@@ -16,11 +16,16 @@ import time
 import os
 import xml.etree.ElementTree as ET
 
+FAST_FILENAME = 'newMetaData.xml'
+
+
 
 class Ui_MainWindow(QtCore.QObject):
 
     def setupUi(self, mainWindow, dataBack):
         self.dataBack = dataBack
+       # pyqtrm()
+       # pdb.set_trace()
 #############################
 ## Layout code
 #############################
@@ -247,6 +252,23 @@ class Ui_MainWindow(QtCore.QObject):
         self.retranslateUi(mainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
+
+        if self.dataBack.args.fast:
+            #xmlImport(self.dataBack, self.dataBack.args, FAST_FILENAME)
+            #self.filtersTreeWidget.populateTree()
+            # Is this still necessary?
+            self.filterTable.populateTable()
+            self.update_messageInfo_to_fields()
+            self.dataBack.comport = '/dev/ttyUSB0'
+            self.dataBack.comportsFlag = True
+            self.dataBack.displayList['pgn'] = True
+            self.dataBack.displayList['raw'] = False
+            self.dataBack.displayList['ID'] = True
+            self.dataBack.displayList['body'] = True
+            self.receiveMessage()  # <-- The serial thread is created here
+
+            self.dataBack.messageInfoFlag = True
+
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate

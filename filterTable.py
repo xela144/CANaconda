@@ -110,9 +110,9 @@ class FilterTable(QtWidgets.QDialog):
         self.tableWidget.itemChanged.connect(
                                      self.parent.update_messageInfo_to_fields)
         self.tableWidget.itemChanged.connect(self.parent.csvOutputSet)
-        pyqtrm()
-        pdb.set_trace()
-        self.tableWidget.setSortingEnabled(False)
+        #pyqtrm()
+        #pdb.set_trace()
+        #self.tableWidget.setSortingEnabled(True)
         #self.tableWidget.sortByColumn(0,0)
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.setColumnWidth(VALUE, 120)

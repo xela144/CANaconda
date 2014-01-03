@@ -17,7 +17,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 def xmlImport(dataBack, args, fileName):
     if not dataBack.nogui:
         if dataBack.args.fast:
-            fileName = 'xmltest.xml'
+            fileName = 'exampleMetaData.xml'
         #else:
         #    fileName = args.messages
     if fileName is None and dataBack.nogui:

@@ -190,7 +190,7 @@ def main():
 
         if (args.fast):
             # import the filters from xml
-            xmlimport(dataBack, args, None)
+            xmlImport(dataBack, args, 'exampleMetaData.xml')
         # create the threading object
         # Note: this canport is different from
         # the one used in the console mode.
