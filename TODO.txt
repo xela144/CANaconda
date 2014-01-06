@@ -17,21 +17,13 @@ TO IMPROVE:
  * Specifying a filter for a data field should not show that message in the window 
    at all even if other data fields in that message don't have a filter. 
    The filter should be specified by field but applied per message.
- * Change "Display opts:" to "Display"
-  * Also remove Body, PGN, and ID options. Always display everything the user 
-    has selected. Change the Hex,CSV checkboxes into a dropdown with the 3 
-    primary options: "Decoded", "Raw hex", and "CSV". 
  * Change "Begin Logging" button into "Start logging as CSV" so it's more clear 
    what it does since we have the space for that extra text.
- * Move the Display Options up to below the message stream window.
- * Move the logging stuff into it's own groupbox spanning the bottom of the 
-   window with the button on the left, followed by the desired file name, 
-   followed by a status ("RECORDING" or "STOPPED"), followed by the number 
-   messages that have been recorded into this log.
+ * Add a status ("RECORDING" or "STOPPED"), followed by the number 
+   messages that have been recorded into each log session.
  * Unknown units in the units column shouldn't result in it being a textfield, 
    just make it an uneditable QLabel instead.
  * Change "Name" column to "Message" in the "Units and filtering by value" tab.
- * Don't allow sorting the "Units and filtering by value" table by latest value.
  * Put a messages/second column in Hz in the table. If Hz<1, use T in seconds. 
    Otherwise use Hz as units.
 

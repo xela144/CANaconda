@@ -176,9 +176,10 @@ class FilterTable(QtWidgets.QDialog):
         pdb.set_trace()
 
 
+# For debug purposes -- delete later
 def main():
     import backend
-    import canpython
+    import CANaconda
     import argparse
     import sys
     import filtersTreeWidget
@@ -187,7 +188,7 @@ def main():
     args.nogui = None
     args.fast = None
     dataBack = backend.CanData(args)
-    canpython.xmlimport(dataBack, args, 'xmltest.txt')
+    CANaconda.xmlImport(dataBack, args, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     singleshot = True

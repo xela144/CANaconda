@@ -17,7 +17,7 @@ import os
 import xml.etree.ElementTree as ET
 
 FAST_FILENAME = 'newMetaData.xml'
-
+DECODED, RAW_HEX, CSV = range(3)
 
 
 class Ui_MainWindow(QtCore.QObject):
@@ -34,8 +34,10 @@ class Ui_MainWindow(QtCore.QObject):
         #mainWindow.setWindowTitle("CAN Message Viewer")
         self.centralWidget = QtWidgets.QWidget(mainWindow)
         self.centralWidget.setObjectName("centralWidget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralWidget)
+        self.verticalLayout_top = QtWidgets.QVBoxLayout(self.centralWidget)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout_top.addLayout(self.horizontalLayout)
 
         self.messagesFrame = QtWidgets.QFrame(self.centralWidget)
         self.messagesFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -44,6 +46,27 @@ class Ui_MainWindow(QtCore.QObject):
         self.messagesFrame.setMinimumWidth(400)
         self.messagesFrame.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
                                          QtWidgets.QSizePolicy.Expanding)
+
+        self.loggingFrame = QtWidgets.QFrame()
+        self.loggingFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.loggingFrame.setObjectName("LOGGINGFRAME")
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.loggingFrame)
+        self.horizontalLayout_2.setObjectName("HORIZONTAL_LAYOUT_2")
+        self.verticalLayout_top.addWidget(self.loggingFrame)
+
+        self.logLabel = QtWidgets.QLabel()
+        self.logLabel.setText("Enter filename:")
+        self.buttonLogging = QtWidgets.QPushButton()
+        self.buttonLogging.setObjectName("save")
+        self.buttonLogging.setText("Start logging as CSV")
+        self.buttonLogging.clicked.connect(self.saveToFile)
+        self.logLabel.setBuddy(self.buttonLogging)
+        self.fileName = QtWidgets.QLineEdit()
+        self.fileName.setObjectName("fileName")
+        self.fileName.returnPressed.connect(self.saveToFile)
+        self.horizontalLayout_2.addWidget(self.logLabel)
+        self.horizontalLayout_2.addWidget(self.fileName)
+        self.horizontalLayout_2.addWidget(self.buttonLogging)
 
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
@@ -54,7 +77,7 @@ class Ui_MainWindow(QtCore.QObject):
 
 
 #########################
-# Display Combobox code # (not finished)
+# Display Combobox code # 
 #########################
         self.displayLayout = QtWidgets.QHBoxLayout()
         self.verticalLayout_2.addLayout(self.displayLayout)
@@ -64,9 +87,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.displayCombo = QtWidgets.QComboBox()
         self.displayLayout.addWidget(self.displayLabel)
         self.displayLayout.addWidget(self.displayCombo)
+        # Note: displayList must be in order of enum at top of file
         displayList = ["Decoded", "Raw hex", "CSV"]
         self.displayCombo.addItems(displayList)
-
+        self.displayCombo.currentIndexChanged.connect(self.setOutput)
 
         self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
         self.messagesTextBrowser.setObjectName("messagesTextBrowser")
@@ -74,6 +98,7 @@ class Ui_MainWindow(QtCore.QObject):
 
 
 
+        '''
 ##################
 # buttonsGrid code
 ##################
@@ -116,7 +141,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.checkRaw = QtWidgets.QCheckBox()
         self.checkRaw.setObjectName("checkBoxRaw")
         self.checkRaw.setText("Hex")
-        self.checkRaw.stateChanged.connect(self.setOutput)
 
         self.checkCSV = QtWidgets.QCheckBox()
         self.checkCSV.setObjectName("checkBoxCSV")
@@ -142,7 +166,7 @@ class Ui_MainWindow(QtCore.QObject):
 
         #self.buttonResetTime.clicked.connect(self.resetTime)
         self.buttonsGrid.addWidget(self.logLabel, 1,0)
-#        self.buttonsGrid.addWidget(self.buttonClear, 0,0)
+#        self.buttonsGrid.addWidget(self.buttonClear, 3,0)
         self.buttonsGrid.addWidget(self.buttonLogging, 0,0, 1,3)
         self.buttonsGrid.addWidget(self.fileName, 1,2)
         self.buttonsGrid.addLayout(self.displayCheckBox, 2,0, 1,3)
@@ -150,9 +174,21 @@ class Ui_MainWindow(QtCore.QObject):
         #self.buttonsGrid.addWidget(self.buttonResetTime, 2,1, 1,2)
         if self.dataBack.args.debug:
             self.buttonsGrid.addWidget(self.debug, 3,1, 1,2)
+
 ##################
 # End of buttonsGrid code
 ##################
+        '''
+
+        if self.dataBack.args.debug:
+            self.debug = QtWidgets.QPushButton()
+            self.debug.setText("pdb")
+            self.debug.clicked.connect(self.debugMode)
+            self.buttonsGrid = QtWidgets.QGridLayout()
+            self.verticalLayout_2.addLayout(self.buttonsGrid)
+            self.buttonsGrid.setObjectName("button grid layout")
+            self.buttonsGrid.addWidget(self.debug, 3,1, 1,2)
+
 
         self.horizontalLayout.addWidget(self.messagesFrame)
         self.visualizeFrame = QtWidgets.QFrame(self.centralWidget)
@@ -312,20 +348,6 @@ class Ui_MainWindow(QtCore.QObject):
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
 
-    # This function is called whenever the filtering is changed via
-    # filtersTreeWidget checkbox signal.
-    def csvOutputSet(self):
-        self.dataBack.guiCSVDisplayList = []
-        self.dataBack.fieldIndices = {}
-        map = sorted(self.dataBack.messageInfo_to_fields.items())
-        # this returns a funky list which has to be access as follows:
-        i = 1
-        for item in map:
-            for field in item[1]:
-                self.dataBack.guiCSVDisplayList.append(item[0]+'_'+field)
-                self.dataBack.fieldIndices[field] = i
-                i += 1
-
     def comportSelect(self):
         self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
@@ -371,53 +393,29 @@ class Ui_MainWindow(QtCore.QObject):
         # Is this still necessary?
         self.update_messageInfo_to_fields()
 
-    '''
-    if this is used, need to change 'filter' to 'messageInfo', etc
-    def xmlImport(self, fileName):
-        if fileName is None:
-            self.dataBack.messageInfoFlag = False
-            return False
-        try:
-            xmlFile = open(fileName, 'r')
-            rawXml = xmlFile.read()
-            xmlFile.close()
-            root = ET.fromstring(rawXml)
-            for filter in root.findall('filter'):
-                if 'pgn' in filter.keys() and 'id' in filter.keys():
-                    self.warnPgnId()
-                    return False
-                filterName = filter.get('name')
-                self.dataBack.messages[filterName] = Filter(filter, self.dataBack)
-        except IOError as err:
-            print("could not open file '" + filename + "', " + err)
-        # For error checking in caller function
-        return True
-    '''
 
 
-########## deprecated ##################################################
-    '''
-    def loadFilter(self):
-        filename = None
-        dialog = QtWidgets.QFileDialog()
-        dialog.setNameFilter(tr("(*.xml)"))
-        dialog.setDefaultSuffix('xml')
-        dialog.setViewMode(QtWidgets.QFileDialog.Detail)
-        if (dialog.exec()):
-            fileName = dialog.selectedFiles()
-#        while filename is None:
-
-#            filename = QtWidgets.QFileDialog.getOpenFileName(self, )
-#            filename = filename[0]
-        blob = None
-        fallacy = xmlimport(self.dataBack, blob, filename)
-        if fallacy:
-            self.warnFiltersImport()
-            return
-        self.filtersTreeWidget.populateTree()
-        self.update_messageInfo_to_fields()
-    '''
-
+########## deprecated but keep around for default suffix code. ########
+#    def loadFilter(self):
+#        filename = None
+#        dialog = QtWidgets.QFileDialog()
+#        dialog.setNameFilter(tr("(*.xml)"))
+#        dialog.setDefaultSuffix('xml')
+#        dialog.setViewMode(QtWidgets.QFileDialog.Detail)
+#        if (dialog.exec()):
+#            fileName = dialog.selectedFiles()
+##        while filename is None:
+#
+##            filename = QtWidgets.QFileDialog.getOpenFileName(self, )
+##            filename = filename[0]
+#        blob = None
+#        fallacy = xmlimport(self.dataBack, blob, filename)
+#        if fallacy:
+#            self.warnFiltersImport()
+#            return
+#        self.filtersTreeWidget.populateTree()
+#        self.update_messageInfo_to_fields()
+#######################################################################
 
     def comportUnavailable(self):
         pass
@@ -439,12 +437,46 @@ class Ui_MainWindow(QtCore.QObject):
                     self.dataBack.messageInfo_to_fields[name] = []
                     self.dataBack.messageInfo_to_fields[name].append(field)
 
+    # For creating the outmessage.
+    # recall: DECODED, RAW_HEX, CSV = range(3)
     def setOutput(self):
-        self.dataBack.displayList['pgn'] = bool(self.checkPGN.checkState())
-        self.dataBack.displayList['raw'] = bool(self.checkRaw.checkState())
-        self.dataBack.displayList['ID'] = bool(self.checkID.checkState())
-        self.dataBack.displayList['body'] = bool(self.checkBody.checkState())
-        self.dataBack.GUI_CSVflag = bool(self.checkCSV.checkState())
+        currentIndex = self.displayCombo.currentIndex()
+        # Python switch?
+        if currentIndex == CSV:
+            self.dataBack.GUI_CSVflag = True
+            self.csvOutputSet()
+            return
+
+        elif currentIndex == DECODED:
+            self.dataBack.GUI_CSVflag = False
+            self.dataBack.displayList['ID'] = True
+            self.dataBack.displayList['pgn'] = True
+            self.dataBack.displayList['body'] = True
+            self.dataBack.displayList['raw'] = False
+            return
+            
+        elif currentIndex == RAW_HEX:
+            self.dataBack.GUI_CSVflag = False
+            self.dataBack.displayList['ID'] = False
+            self.dataBack.displayList['pgn'] = False
+            self.dataBack.displayList['body'] = False
+            self.dataBack.displayList['raw'] = True
+            return
+
+    # This function is called whenever the filtering is changed via
+    # filtersTreeWidget checkbox signal.
+    def csvOutputSet(self):
+        self.dataBack.guiCSVDisplayList = []
+        self.dataBack.fieldIndices = {}
+        map = sorted(self.dataBack.messageInfo_to_fields.items())
+        # this returns a funky list which has to be access as follows:
+        i = 1
+        for item in map:
+            for field in item[1]:
+                self.dataBack.guiCSVDisplayList.append(item[0]+'_'+field)
+                self.dataBack.fieldIndices[field] = i
+                i += 1
+
 
     def clearTextBrowser(self):
         self.messagesTextBrowser.clear()
@@ -453,7 +485,7 @@ class Ui_MainWindow(QtCore.QObject):
         #pyqtRemoveInputHook()
         #pdb.set_trace()
         if self.dataBack.logflag:
-            self.buttonLogging.setText("Begin Logging")
+            self.buttonLogging.setText("Start logging as CSV")
             self.file.write(self.messagesTextBrowser.toPlainText())
             self.file.close()
             self.dataBack.logflag = False

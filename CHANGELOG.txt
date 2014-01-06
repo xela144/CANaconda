@@ -31,4 +31,8 @@ CHANGED:
 
  * Separated all GUI and command-line code. Encapsulated data structures and their methods into individual files.
 
+ * Removed 'displayCheckBox' from ui_mainwindow. Replaced with 'displayCombo', and updated corresponding code.
+
+ * Moved logging buttons to bottom of window. Now spans entire window
+ * Changed "Begin Logging" button into "Start logging as CSV"
 

@@ -89,7 +89,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
 
 def main():
     import backend
-    import canpython
+    import CANaconda
     import argparse
     import sys
     import messageInfoParse

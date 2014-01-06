@@ -6,7 +6,7 @@ All message data will be accessed through this class
 '''
 
 import queue
-import canpython
+import CANaconda
 from Nmea2000_decode_encode import *
 import pdb
 
