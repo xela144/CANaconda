@@ -5,10 +5,9 @@ TO DO:
 TO IMPROVE:
  * To test functionality w/o certain libraries, use `virtualenv`. This lets you run 
    multiple instances of Python with their own packages.
- * Add a global reset button. This code should be executed when a new xml file is 
-   __successfully__ loaded, and not before.
+ * Add a global reset button. The same function should be callsed when a new xml 
+   file is loaded.
  * Ignore error when filters are loaded when raw message viewing has already begun.
- * Make FromValue field more clear
  * While waiting for the first carriage return, show hourglass cursor
  * Support current xmltest.txt file (the Instance field for PGN 130311)
  * Restrict files to select only '.xml' files in the file selector dialog
@@ -17,8 +16,6 @@ TO IMPROVE:
  * Specifying a filter for a data field should not show that message in the window 
    at all even if other data fields in that message don't have a filter. 
    The filter should be specified by field but applied per message.
- * Change "Begin Logging" button into "Start logging as CSV" so it's more clear 
-   what it does since we have the space for that extra text.
  * Add a status ("RECORDING" or "STOPPED"), followed by the number 
    messages that have been recorded into each log session.
  * Unknown units in the units column shouldn't result in it being a textfield, 

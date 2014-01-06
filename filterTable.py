@@ -10,7 +10,7 @@ import backend
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # Columns:
-NAME, FIELD, VALUE, BYVALUE, UNITS = range(5)
+MESSAGE, FIELD, VALUE, BYVALUE, UNITS, RATE = range(6)
 
 
 class FilterTable(QtWidgets.QDialog):
@@ -61,7 +61,7 @@ class FilterTable(QtWidgets.QDialog):
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
-        headerList = ['Name', 'Field', 'Latest value',
+        headerList = ['Message', 'Field', 'Latest value',
                       'ByValue', 'Units']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
@@ -72,7 +72,7 @@ class FilterTable(QtWidgets.QDialog):
             ##
             nameItem = QtWidgets.QTableWidgetItem(messageInfoName)
             nameItem.setCheckState(~QtCore.Qt.Unchecked)
-            self.tableWidget.setItem(row, NAME, nameItem)
+            self.tableWidget.setItem(row, MESSAGE, nameItem)
             fieldItem = QtWidgets.QTableWidgetItem(fieldName)
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             self.tableWidget.setItem(row, FIELD, fieldItem)
@@ -83,8 +83,11 @@ class FilterTable(QtWidgets.QDialog):
             ##
             fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
             ##
-            byValue = QtWidgets.QTableWidgetItem(
-                                            str(bool(len(fieldData.byValue))))
+            if len(fieldData.byValue) == 0:
+                byValueText = 'None'
+            else:
+                byValueText = str(fieldData.byValue)[1:-1]
+            byValue = QtWidgets.QTableWidgetItem(byValueText)
             self.tableWidget.setItem(row, BYVALUE, byValue)
             ##
 
@@ -123,7 +126,7 @@ class FilterTable(QtWidgets.QDialog):
         if widgyWidge:
             index = self.tableWidget.indexAt(widgyWidge.pos())
         row = index.row()
-        messageInfoName = self.tableWidget.item(row, NAME).text()
+        messageInfoName = self.tableWidget.item(row, MESSAGE).text()
         fieldName = self.tableWidget.item(row, FIELD).text()
         newUnits = text
         self.dataBack.messages[messageInfoName].fields[fieldName]\
@@ -163,13 +166,22 @@ class FilterTable(QtWidgets.QDialog):
             return
         valueString = item.text()
         currentRow = item.row()
-        messageInfoName = self.tableWidget.item(currentRow, NAME).data(0)
+        messageInfoName = self.tableWidget.item(currentRow, MESSAGE).data(0)
         fieldName = self.tableWidget.item(currentRow, FIELD).data(0)
         self.dataBack.messages[messageInfoName].fields[fieldName].byValue = []
         byValueList = self.dataBack.messages[messageInfoName]\
                                                 .fields[fieldName].byValue
         for value in valueString.split(','):
-            byValueList.append(float(value))
+            try:
+                byValueList.append(float(value))
+            except ValueError:
+                self.dataBack.messages[messageInfoName].fields[fieldName].byValue = []
+                self.tableWidget.item(currentRow,BYVALUE).setText('None')
+            #except ValueError:
+            #    pass  
+                # Lets us go from a filterByValue back to 'None'
+                # without an error
+
 
     def pdbset(self):
         pyqtrm()
