@@ -3,6 +3,8 @@ messageInfo.py
 The data structures for the CANaconda filters.
 '''
 
+import queue
+
 
 # This instances of this class are filters created from
 # the metadata file. This class gets instantiated during the
@@ -11,9 +13,6 @@ The data structures for the CANaconda filters.
 # xmlimport is responsible for creating entries in the
 # dataBack.messages dictionary.
 ##
-# The init function of this class includes an instantiation
-# of the Field object, which becomes a key in the
-# self.fields dictionary of this class.
 class MessageInfo():
     def __init__(self):
         self.name = ''
@@ -22,6 +21,8 @@ class MessageInfo():
         self.desc = ''
         self.parent = ''
         self.fields = {}
+        self.freqQueue = queue.Queue()
+        self.freq = 0
 
     # A method used to determine if any of the fields must be
     # displayed by value.

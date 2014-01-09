@@ -111,6 +111,11 @@ class CanData():
         # For noGUI+CSV mode: all the fieds that must be displayed
         self.fieldList_CSV = {}
 
+        # A dictionary object for counting the frequencies of message
+        # message transmission. GUI only.
+        self.frequencyMap = {}
+        self.latest_frequencies = {}
+
         # defaults to display pgn, ID, body
         self.displayList = {'pgn': False, 'raw': False,
                             'ID': False, 'body': False}

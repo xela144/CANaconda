@@ -10,3 +10,4 @@ class CANacondaMessage():
         self.ID = ''
         self.body = {}
         self.raw = ''
+        self.freq = 0

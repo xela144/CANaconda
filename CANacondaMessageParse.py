@@ -8,6 +8,8 @@ hexToVal
 '''
 from backend import conversionMap
 from Nmea2000_decode_encode import Iso11783Decode
+from queue import Queue
+import time
 import pdb
 
 # The goal here is to fill in all of the following:
@@ -62,6 +64,22 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
                                                     currentMessage, match)
         except:
             pass
+
+
+    # Now to calculate message frequency:
+    if self.name not in dataBack.frequencyMap:
+        dataBack.frequencyMap[self.name] = Queue()
+    else:
+        dataBack.frequencyMap[self.name].put(time.time())
+
+    # If the first element(s) in the queue is/are older than 1 second, pop:
+    if dataBack.frequencyMap[self.name].qsize() > 0:
+        while (time.time() - dataBack.frequencyMap[self.name].queue[0] > 1.0):
+            null = dataBack.frequencyMap[self.name].get()
+            if dataBack.frequencyMap[self.name].empty():
+                break
+    self.freq = dataBack.frequencyMap[self.name].qsize()
+
     # The CANacondaMessage has now been created.
 
 ########### GUI related #################################
@@ -69,9 +87,14 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     dataBack.headers.add(self.ID)
     dataBack.pgnSeenSoFar.add(self.pgn)
 
-    # Add a copy of the message to the self.messageRecord dict.
+    # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
     dataBack.latest_CANacondaMessages[self.name] = self.body
 
+    # Add the frequency to the 'latest_frequencies' dictionary:
+    dataBack.latest_frequencies[self.name] = self.freq
+    
+    # Make the frequency calculation and add to CANacondaMessage object:
+    # dataBack.frequencyMap[self.name].qsize()
 
 # Parse the message without any information from the metadata file
 # This just gives a fancy way of displaying hex data from the

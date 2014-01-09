@@ -62,7 +62,7 @@ class FilterTable(QtWidgets.QDialog):
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
         headerList = ['Message', 'Field', 'Latest value',
-                      'ByValue', 'Units']
+                      'ByValue', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         # a map from (filter,field) to row
@@ -108,6 +108,13 @@ class FilterTable(QtWidgets.QDialog):
 #### Now that the displayList is generated from the dataBack.messagesSeenSoFar
 #### dict, try enumerate(dataBack.messages) or something...
             self.tableMap[(messageInfoName, fieldName)] = row
+
+            ## rate colum
+            rateItem = QtWidgets.QTableWidgetItem()
+            rateItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            self.tableWidget.setItem(row, RATE, rateItem)
+
+
         # Before returning, finish off with signals and table flags/geometry
         self.tableWidget.itemChanged.connect(self.filterByValue)
         self.tableWidget.itemChanged.connect(
@@ -143,7 +150,9 @@ class FilterTable(QtWidgets.QDialog):
             # get the update values from dataBack.latest_CANacondaMessages
             try:
                 newValue = self.dataBack.latest_CANacondaMessages[messageInfo][field]
+                newFreq = self.dataBack.latest_frequencies[messageInfo]
                 self.tableWidget.item(row, VALUE).setText(str(newValue))
+                self.tableWidget.item(row, RATE).setText(str(newFreq))
             except KeyError:
                 pass
         # if viewport() is not called, update is slow for some reason

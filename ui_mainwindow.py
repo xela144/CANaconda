@@ -64,9 +64,14 @@ class Ui_MainWindow(QtCore.QObject):
         self.fileName = QtWidgets.QLineEdit()
         self.fileName.setObjectName("fileName")
         self.fileName.returnPressed.connect(self.saveToFile)
+        self.loggingStatusLabel = QtWidgets.QLabel()
+        self.loggingStatusLabel.setText("Status:  not recording")
         self.horizontalLayout_2.addWidget(self.logLabel)
         self.horizontalLayout_2.addWidget(self.fileName)
         self.horizontalLayout_2.addWidget(self.buttonLogging)
+        self.horizontalLayout_2.addSpacing(100)
+        self.horizontalLayout_2.addWidget(self.loggingStatusLabel)
+
 
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
@@ -199,8 +204,28 @@ class Ui_MainWindow(QtCore.QObject):
         self.visualizeFrame.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                           QtWidgets.QSizePolicy.Expanding)
 
+
+        ##### Right side #####
         self.verticalLayout = QtWidgets.QVBoxLayout(self.visualizeFrame)
         self.verticalLayout.setObjectName("verticalLayout")
+#        self.metaDataTitleGrid = QtWidgets.QGridLayout()
+#        self.metaDataLabel = QtWidgets.QLabel()
+#        self.metaDataLabel.setText("MetaData and Filtering")
+
+#        self.verticalLayout.addLayout(self.metaDataTitleGrid)
+#        self.statusLabel = QtWidgets.QLabel(self.centralWidget)
+#        self.statusLabel.setText("Status: ")
+#        self.status = QtWidgets.QLabel()
+#        self.status.setText("Not Recording")
+#        self.metaDataTitleGrid.addWidget(self.metaDataLabel, 0, 0)
+#        self.metaDataTitleGrid.addStretch(0,1)
+#        self.metaDataTitleGrid.addWidget(self.statusLabel, 0, 2)
+#        self.metaDataTitleGrid.addWidget(self.status, 0, 3)
+
+
+
+
+        # make this QLabel fit inside a grid
         self.label_2 = QtWidgets.QLabel(self.visualizeFrame)
         self.label_2.setObjectName("label_2")
 #        self.label_2.setText("Metadata and Filtering")
@@ -488,6 +513,7 @@ class Ui_MainWindow(QtCore.QObject):
             self.buttonLogging.setText("Start logging as CSV")
             self.file.write(self.messagesTextBrowser.toPlainText())
             self.file.close()
+            self.loggingStatusLabel.setText("Status:  not recording")
             self.dataBack.logflag = False
         else:
             if self.fileName.text() == '':
@@ -508,6 +534,7 @@ class Ui_MainWindow(QtCore.QObject):
                 self.file.write(header)
                 self.file.write('\n')
             self.buttonLogging.setText("End Logging")
+            self.loggingStatusLabel.setText("Status:  recording    ")
             self.dataBack.logflag = True
 
     def resetTime(self):
