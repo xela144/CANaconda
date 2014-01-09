@@ -1,8 +1,7 @@
 # The FilterTable class gets instantiated in ui_mainwindow.py
-# This table gets populated each time the filtersTreeWidget is modified.
+# This table gets populated each time a new message is seen for the first time
+# on the bus.
 # Changing units and filtering by value is done here.
-# Sometimes the program crashes while changing units when program is streaming
-# This may be due to the fact that QThreads are not being used.
 
 from PyQt5 import QtCore, QtWidgets
 import pdb
