@@ -63,7 +63,7 @@ class FilterTable(QtWidgets.QDialog):
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
         headerList = ['Message', 'Field', 'Latest value',
-                      'ByValue', 'Units', 'Rate']
+                      'ByValue', 'Units', 'Rate [Hz]']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         # a map from (filter,field) to row
@@ -115,16 +115,13 @@ class FilterTable(QtWidgets.QDialog):
             rateItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             self.tableWidget.setItem(row, RATE, rateItem)
 
-
         # Before returning, finish off with signals and table flags/geometry
         self.tableWidget.itemChanged.connect(self.filterByValue)
         self.tableWidget.itemChanged.connect(
                                      self.parent.update_messageInfo_to_fields)
         self.tableWidget.itemChanged.connect(self.parent.csvOutputSet)
-        #pyqtrm()
-        #pdb.set_trace()
-        #self.tableWidget.setSortingEnabled(True)
-        #self.tableWidget.sortByColumn(0,0)
+        #self.tableWidget.setSortingEnabled(True)  #  Not working
+        #self.tableWidget.sortByColumn(0,0)        # 
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.setColumnWidth(VALUE, 120)
 
@@ -140,13 +137,10 @@ class FilterTable(QtWidgets.QDialog):
         self.dataBack.messages[messageInfoName].fields[fieldName]\
                                               .unitsConversion = newUnits
 
-    def checkNoFreq(self):
-        for tuple in self.tableMap:
-            pass
 
-    # Populate the "Latest value" column by calling update() on table.
+    # Populate the "Latest value" and "Rate" columns by calling update() on table.
     def updateValueInTable(self):
-        # update the table using the tableMap: {('filter','field'):row)}
+        # Use tableMap as {('filter','field'): row)}
         for tuple in self.tableMap:
             # first break apart the tuples:
             messageInfo, field = tuple
@@ -163,18 +157,19 @@ class FilterTable(QtWidgets.QDialog):
                     newFreq = 0
                 else:
                     newFreq = self.dataBack.latest_frequencies[messageInfo]
-            # Will through exception for first few runs; ignore.
+            # Will throw exception for first few runs; ignore.
             except IndexError:
                 pass
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
-                newValue = self.dataBack.latest_CANacondaMessages[messageInfo][field]
+                newValue = self.dataBack.latest_CANacondaMessages[
+                                                            messageInfo][field]
                 self.tableWidget.item(row, VALUE).setText(str(newValue))
                 self.tableWidget.item(row, RATE).setText(str(newFreq))
             except KeyError:
                 pass
-        # if viewport() is not called, update is slow for some reason
+        # if viewport() is not called, update is slow
         self.tableWidget.viewport().update()
 
 
