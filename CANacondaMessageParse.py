@@ -68,21 +68,19 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
         except:
             pass
 
-
     # Now to calculate message frequency:
     if self.name not in dataBack.frequencyMap:
         dataBack.frequencyMap[self.name] = Queue()
     else:
         dataBack.frequencyMap[self.name].put(time.time())
 
-    # If the first element(s) in the queue is/are older than 1 second, pop:
+    # If the first element(s) in the queue is/are older than 5 seconds, remove:
     if dataBack.frequencyMap[self.name].qsize() > 0:
-        # Remove the timestamps older than 5 seconds.
         while (time.time() - dataBack.frequencyMap[self.name].queue[0] > 5.0):
             null = dataBack.frequencyMap[self.name].get()
             if dataBack.frequencyMap[self.name].empty():
                 break
-    # Division by 5 gives us a running average
+    # Division by 5 now gives us a running average
     self.freq = dataBack.frequencyMap[self.name].qsize()/5.0
 
     # The CANacondaMessage has now been created.
