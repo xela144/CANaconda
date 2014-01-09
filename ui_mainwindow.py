@@ -208,24 +208,7 @@ class Ui_MainWindow(QtCore.QObject):
         ##### Right side #####
         self.verticalLayout = QtWidgets.QVBoxLayout(self.visualizeFrame)
         self.verticalLayout.setObjectName("verticalLayout")
-#        self.metaDataTitleGrid = QtWidgets.QGridLayout()
-#        self.metaDataLabel = QtWidgets.QLabel()
-#        self.metaDataLabel.setText("MetaData and Filtering")
 
-#        self.verticalLayout.addLayout(self.metaDataTitleGrid)
-#        self.statusLabel = QtWidgets.QLabel(self.centralWidget)
-#        self.statusLabel.setText("Status: ")
-#        self.status = QtWidgets.QLabel()
-#        self.status.setText("Not Recording")
-#        self.metaDataTitleGrid.addWidget(self.metaDataLabel, 0, 0)
-#        self.metaDataTitleGrid.addStretch(0,1)
-#        self.metaDataTitleGrid.addWidget(self.statusLabel, 0, 2)
-#        self.metaDataTitleGrid.addWidget(self.status, 0, 3)
-
-
-
-
-        # make this QLabel fit inside a grid
         self.label_2 = QtWidgets.QLabel(self.visualizeFrame)
         self.label_2.setObjectName("label_2")
 #        self.label_2.setText("Metadata and Filtering")
@@ -238,23 +221,14 @@ class Ui_MainWindow(QtCore.QObject):
         self.tabWidget.setObjectName("tabWidget")
         self.filterTab = QtWidgets.QWidget()
         self.filterTab.setObjectName("filterTab")
-      #  self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.filterTab)
-      #  self.verticalLayout_3.setObjectName("verticalLayout_3")
-#        self.progressBar = QtWidgets.QProgressBar(self.treeViewTab)
-#        self.progressBar.setProperty("value", 24)
-#        self.progressBar.setObjectName("progressBar")
-#        self.verticalLayout_3.addWidget(self.progressBar)
         self.filterTable = filterTable.FilterTable()
         self.filterTable.setup(self.dataBack, self)
         self.filterTable.setObjectName("filterTable")
         self.filterTable.populateTable()
         self.treeWidgetTab = QtWidgets.QWidget()
         self.treeWidgetTab.setObjectName("treeWidgetTab")
-       # self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.treeWidgetTab)
-       # self.verticalLayout_4.setObjectName("verticalLayout_4")
         self.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
         self.filtersTreeWidget.setup(self, self.dataBack)
-       # self.verticalLayout_4.addWidget(self.filtersTreeWidget)
         self.tabWidget.addTab(self.filterTable, "")
         self.tabWidget.addTab(self.filtersTreeWidget, "")
         self.verticalLayout.addWidget(self.tabWidget)
@@ -360,7 +334,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     def updateUi(self):
         outmsg = self.getMessage(self.dataBack.CANacondaMessage_queue)
-
+        #''' emit a countMessage signal here'''
         if outmsg is not None:
             self.messagesTextBrowser.append("%s" % outmsg)
 
@@ -379,7 +353,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.setOutput()
         self.receiveMessage()  # <-- The serial thread is created here
 
-# begin receiving messages and push to CANacondaMessage_queue
+    # begin receiving messages and push to CANacondaMessage_queue
     def receiveMessage(self):
         self.dataBack.canPort = canport_QT.CANPort_QT(self.dataBack)
         self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
@@ -540,7 +514,9 @@ class Ui_MainWindow(QtCore.QObject):
                 self.file.write(header)
                 self.file.write('\n')
             self.buttonLogging.setText("End Logging")
-            self.loggingStatusLabel.setText("Status:  recording    ")
+# Move this functionality to another spot:
+            self.loggingStatusLabel.setText("Status:  <font color=red><b>\
+                                            recording</b></font>    ")
             self.dataBack.logflag = True
 
     def resetTime(self):

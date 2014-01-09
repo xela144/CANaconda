@@ -31,7 +31,8 @@ class CANPort_QT(QObject):
         self.args = dataBack.args
 
     def getmessage(self):
-    #opens a serial connection called serialCAN on COM? at 57600 Baud
+        # emit the startHourGlass here
+        #open a serial connection at 57600 Baud
         try:
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
@@ -48,7 +49,6 @@ class CANPort_QT(QObject):
             # maritime standard. if the CAN device is not closed
             # properly this may take up to ~20 seconds to clear the
             #serial buffer of old messages
-            print("looking for carriage return")
             temp = serialCAN.read()
             while(temp != (b'\r' or b't' or b'T')):
                 time.sleep(.2)
@@ -56,7 +56,7 @@ class CANPort_QT(QObject):
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
-                print(temp)
+            # Emit the stopHourGlass signal here
             time.sleep(1)
             #Opens the CAN port to begin reciveing messages
             serialCAN.write(b'O\r')

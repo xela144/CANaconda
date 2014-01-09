@@ -11,9 +11,8 @@ CHANGED:
  * created CANacondaMessage.py, CANacondaMessageParse.py, CANacondaFilter.py, 
    CANacondaFilterParse.py, and refactored backend.py, canport.py, and 
    canport_QT.py
- * Make code more modular, it should be easy to interact with your code as 
-   libraries in other people's code
-   + remove the message parsing from canpython.py
+ * Made code more modular
+   + removed the message parsing from canpython.py
 
  * Made changes to namespace:
         self.filterList              --> messageInfoList
@@ -29,12 +28,16 @@ CHANGED:
         CANacondaFilter.py      --> messageInfo.py
         CANacondaFilterParse.py --> messageInfoParse.py
 
- * Separated all GUI and command-line code. Encapsulated data structures and their methods into individual files.
+ * Separated all GUI and command-line code. Encapsulated data structures and 
+   their methods into individual files.
 
- * Removed 'displayCheckBox' from ui_mainwindow. Replaced with 'displayCombo', and updated corresponding code.
+ * Removed 'displayCheckBox' from ui_mainwindow. Replaced with 'displayCombo', 
+   and updated corresponding code.
 
  * Moved logging buttons to bottom of window. Now spans entire window
  * Changed "Begin Logging" button into "Start logging as CSV"
 
  * Made the 'filter by value' function more clear and less buggy. Still need to
    use mouseover functionality for help
+
+

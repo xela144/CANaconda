@@ -102,7 +102,9 @@ class FilterTable(QtWidgets.QDialog):
                 unitsComboBox.currentTextChanged.connect(self.changeUnits)
             else:
                 _units = QtWidgets.QTableWidgetItem(fieldData.units)
+                _units.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
                 self.tableWidget.setItem(row, UNITS, _units)
+                
             # Update table map dict. This is used to display the latest message
             # in the tableWidget
 #### Now that the displayList is generated from the dataBack.messagesSeenSoFar
