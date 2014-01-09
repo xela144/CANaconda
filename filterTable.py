@@ -109,7 +109,7 @@ class FilterTable(QtWidgets.QDialog):
 #### dict, try enumerate(dataBack.messages) or something...
             self.tableMap[(messageInfoName, fieldName)] = row
 
-            ## rate colum
+            ## rate column
             rateItem = QtWidgets.QTableWidgetItem()
             rateItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             self.tableWidget.setItem(row, RATE, rateItem)
