@@ -64,6 +64,7 @@ class CANPort_QT(QObject):
             #Sets the CAN port to disable timestamps
             serialCAN.write(b'Z0\r')
             time.sleep(1)
+            i = 0
             while(1):
                 self.serialParse(serialCAN)
 

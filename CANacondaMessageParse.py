@@ -12,6 +12,9 @@ from queue import Queue
 import time
 import pdb
 
+from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+
+
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
 def CANacondaMessageParse(self, match, rawmsg, dataBack):
@@ -74,11 +77,13 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
 
     # If the first element(s) in the queue is/are older than 1 second, pop:
     if dataBack.frequencyMap[self.name].qsize() > 0:
-        while (time.time() - dataBack.frequencyMap[self.name].queue[0] > 1.0):
+        # Remove the timestamps older than 5 seconds.
+        while (time.time() - dataBack.frequencyMap[self.name].queue[0] > 5.0):
             null = dataBack.frequencyMap[self.name].get()
             if dataBack.frequencyMap[self.name].empty():
                 break
-    self.freq = dataBack.frequencyMap[self.name].qsize()
+    # Division by 5 gives us a running average
+    self.freq = dataBack.frequencyMap[self.name].qsize()/5.0
 
     # The CANacondaMessage has now been created.
 

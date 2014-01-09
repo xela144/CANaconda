@@ -8,6 +8,7 @@ from PyQt5 import QtCore, QtWidgets
 import pdb
 import backend
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+import time
 
 # Columns:
 MESSAGE, FIELD, VALUE, BYVALUE, UNITS, RATE = range(6)
@@ -139,6 +140,10 @@ class FilterTable(QtWidgets.QDialog):
         self.dataBack.messages[messageInfoName].fields[fieldName]\
                                               .unitsConversion = newUnits
 
+    def checkNoFreq(self):
+        for tuple in self.tableMap:
+            pass
+
     # Populate the "Latest value" column by calling update() on table.
     def updateValueInTable(self):
         # update the table using the tableMap: {('filter','field'):row)}
@@ -147,16 +152,31 @@ class FilterTable(QtWidgets.QDialog):
             messageInfo, field = tuple
             # next get the row:
             row = self.tableMap[tuple]
-            # get the update values from dataBack.latest_CANacondaMessages
+
+            # Get the latest freqency value
+            frequencyQueue = self.dataBack.frequencyMap[messageInfo]
+            newFreq = 0
             try:
+                # If we haven't seen a new messages in the last 3 seconds,
+                # set the frequency to 0.
+                if time.time() - frequencyQueue.queue[-1] > 3:
+                    newFreq = 0
+                else:
+                    newFreq = self.dataBack.latest_frequencies[messageInfo]
+            # Will through exception for first few runs; ignore.
+            except IndexError:
+                pass
+
+            try:
+                # get the update values from dataBack.latest_CANacondaMessages
                 newValue = self.dataBack.latest_CANacondaMessages[messageInfo][field]
-                newFreq = self.dataBack.latest_frequencies[messageInfo]
                 self.tableWidget.item(row, VALUE).setText(str(newValue))
                 self.tableWidget.item(row, RATE).setText(str(newFreq))
             except KeyError:
                 pass
         # if viewport() is not called, update is slow for some reason
         self.tableWidget.viewport().update()
+
 
     # Get a list of format ('filter', 'field') to be displayed
     # in the tableWidget

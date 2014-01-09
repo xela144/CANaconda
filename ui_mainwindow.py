@@ -388,10 +388,16 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.canPort.messageUp.connect(self.filterTable.populateTable)
         serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
     
-    # setting daemon to true lets program quit successfully
+        # setting daemon to true lets program quit successfully
         serialThread.daemon = True
         serialThread.start()
-                                   
+
+        # Use this timer as a watchdog for when a node on the bus is shut off.
+        # Without it, frequency column won't go back to zero.
+        self.freqTimer = QtCore.QTimer()
+        self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
+        self.freqTimer.start(1000)
+
 
 
     def newLoadFilter(self):
