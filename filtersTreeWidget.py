@@ -36,7 +36,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         # Give the tree headers even if not populated
         self.treeWidget.clear()
         self.treeWidget.setColumnCount(2)
-        self.treeWidget.setHeaderLabels(["Filter Name", "ID or PGN"])
+        self.treeWidget.setHeaderLabels(["Message Name", "ID or PGN"])
         self.treeWidget.setItemsExpandable(True)
 
     def populateTree(self, selectedFilter=None):

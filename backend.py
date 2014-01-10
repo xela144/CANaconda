@@ -1,8 +1,6 @@
 '''
-This code has the classes that contain all the backend data structures.
-The messageInfo's and fields are already implemented.
-The message class is to be used to capture data from the serial connection.
-All message data will be accessed through this class
+This file contains the CanData class, which is implemented as a singleton
+'dataBack' at run-time.
 '''
 
 import queue
@@ -39,7 +37,7 @@ conversionMap = {
 
 class CanData():
     def __init__(self, args):
-        # Store arg from argparse:
+        # Store args from argparse:
         self.args = args
         #Headers is the set of all CAN IDs that have been seen
         self.headers = set()
@@ -136,6 +134,9 @@ class CanData():
         # For CSV output in GUI mode
         self.GUI_CSVflag = False
 
+        # For raw output in GUI mode
+        self.GUI_rawFlag = False
+
     # when a messageInfo is removed from the treeview:
     # deletes from memory, but does not change xml file.
     # Possible alternative: remove from ui.treeWidget instead of here.
@@ -145,19 +146,6 @@ class CanData():
             if messageInfo.name == target:
                 self.messages.remove(messageInfo)
                 del messageInfo
-
-
-# This instances of this class are messageInfos created from
-# the metadata file. This class gets instantiated during the
-# call to xmlimport().
-##
-# xmlimport is responsible for creating entries in the
-# dataBack.messages dictionary.
-##
-# The init function of this class includes an instantiation
-# of the Field object, which becomes a key in the
-# self.fields dictionary of this class.
-
 
 
 

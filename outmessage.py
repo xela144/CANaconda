@@ -5,7 +5,7 @@
 
 import time
 import pdb
-
+from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # this is just a copy of the parseMessage function from canpython
 # add boolean checks to match args for correct outmsg format
@@ -15,8 +15,6 @@ import pdb
 def noGuiParse(dataBack, message):
     if message.name not in dataBack.messageInfo_to_fields:
         return
-    #pdb.set_trace()
-
     # Build a text string that gets put to screen.
     outmsg = ""
     #datddaFound = False
@@ -25,7 +23,7 @@ def noGuiParse(dataBack, message):
             break
     else:
         return
-
+    dataFound = False
     if message.name:
         outmsg += "\n" + message.name
     if dataBack.displayList['pgn']:
@@ -39,13 +37,15 @@ def noGuiParse(dataBack, message):
         if dataBack.displayList['body']:
             for field in message.body:
                 if field in dataBack.messageInfo_to_fields[message.name]:
+                    if field:
+                        dataFound = True
                     try:
                         outmsg += "\n" + field + ": " + '{0:3f}'.\
                                     format((message.body[field]))
                     except:
                         outmsg += "\n" + field + ": " + message.body[field]
-   # if outmsg and dataFound:
-    return outmsg
+    if dataFound:
+        return outmsg
 
 
 # For CSV output. First column is time stamp.
@@ -70,8 +70,6 @@ def noGuiParseCSV(dataBack, message):
         if dataBack.CSVtimeFlag:
             lineData[0] = "{0:0.5f}".format(time.time())
         return (','.join(lineData))
-        #print(','.join(lineData))
-        #sys.stdout.flush()
 
 
 # This version of the output in CSV mode is used when the user

@@ -62,7 +62,7 @@ class FilterTable(QtWidgets.QDialog):
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
         headerList = ['Message', 'Field', 'Latest value',
-                      'ByValue', 'Units', 'Rate [Hz]']
+                      'ByValue', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         # a map from (filter,field) to row
@@ -150,24 +150,30 @@ class FilterTable(QtWidgets.QDialog):
 
             # Get the latest freqency value
             frequencyQueue = self.dataBack.frequencyMap[messageInfo]
-            newFreq = 0
+            newRate = 0
             try:
                 # If we haven't seen a new messages in the last 3 seconds,
                 # set the frequency to 0.
                 if time.time() - frequencyQueue.queue[-1] > 3:
-                    newFreq = 0
+                    newRate = 0
                 else:
-                    newFreq = self.dataBack.latest_frequencies[messageInfo]
+                    newRate = self.dataBack.latest_frequencies[messageInfo]
             # Will throw exception for first few runs; ignore.
             except IndexError:
                 pass
+
+            # If newRate < 1Hz, take reciprocal to give time period in seconds
+            if newRate < 1 and newRate > 0:
+                newRate = str(1.0/newRate) + 's'
+            else:
+                newRate = str(newRate) + 'Hz'
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
                 newValue = self.dataBack.latest_CANacondaMessages[
                                                             messageInfo][field]
                 self.tableWidget.item(row, VALUE).setText(str(newValue))
-                self.tableWidget.item(row, RATE).setText(str(newFreq))
+                self.tableWidget.item(row, RATE).setText(newRate)
             except KeyError:
                 pass
         # if viewport() is not called, update is slow

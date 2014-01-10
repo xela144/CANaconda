@@ -339,12 +339,13 @@ class Ui_MainWindow(QtCore.QObject):
             self.messagesTextBrowser.append("%s" % outmsg)
 
     def getMessage(self, CANacondaMessage_queue):
+        dataBack = self.dataBack
         CANacondaMessage = CANacondaMessage_queue.get()
-        if self.dataBack.messageInfoFlag is False:
+        if dataBack.messageInfoFlag is False or dataBack.GUI_rawFlag:
             return CANacondaMessage.raw
-        elif self.dataBack.GUI_CSVflag:
-            return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
-        return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
+        elif dataBack.GUI_CSVflag:
+            return outmessage.guiParseCSV(dataBack, CANacondaMessage)
+        return outmessage.noGuiParse(dataBack, CANacondaMessage)
 
 
     def comportSelect(self):
@@ -449,11 +450,13 @@ class Ui_MainWindow(QtCore.QObject):
         # Python switch?
         if currentIndex == CSV:
             self.dataBack.GUI_CSVflag = True
+            self.dataBack.GUI_rawFlag = False
             self.csvOutputSet()
             return
 
         elif currentIndex == DECODED:
             self.dataBack.GUI_CSVflag = False
+            self.dataBack.GUI_rawFlag = False
             self.dataBack.displayList['ID'] = True
             self.dataBack.displayList['pgn'] = True
             self.dataBack.displayList['body'] = True
@@ -461,6 +464,7 @@ class Ui_MainWindow(QtCore.QObject):
             return
             
         elif currentIndex == RAW_HEX:
+            self.dataBack.GUI_rawFlag = True
             self.dataBack.GUI_CSVflag = False
             self.dataBack.displayList['ID'] = False
             self.dataBack.displayList['pgn'] = False
@@ -468,8 +472,8 @@ class Ui_MainWindow(QtCore.QObject):
             self.dataBack.displayList['raw'] = True
             return
 
-    # This function is called whenever the filtering is changed via
-    # filtersTreeWidget checkbox signal.
+    # This function is called whenever the filtering is changed 
+    # in filterTable object
     def csvOutputSet(self):
         self.dataBack.guiCSVDisplayList = []
         self.dataBack.fieldIndices = {}
@@ -482,13 +486,10 @@ class Ui_MainWindow(QtCore.QObject):
                 self.dataBack.fieldIndices[field] = i
                 i += 1
 
-
     def clearTextBrowser(self):
         self.messagesTextBrowser.clear()
 
     def saveToFile(self):
-        #pyqtRemoveInputHook()
-        #pdb.set_trace()
         if self.dataBack.logflag:
             self.buttonLogging.setText("Start logging as CSV")
             self.file.write(self.messagesTextBrowser.toPlainText())

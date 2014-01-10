@@ -25,12 +25,6 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     elif match.group(2):
         self.ID = match.group(2)
 
-#    # Find the metadata that matches the parsed message
-#    if message_id in dataBack.id_to_name or str(self.pgn) in\
-#                     dataBack.pgn_to_name:
-#        # Give the message the ID
-#        self.ID = message_id
-
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
@@ -43,16 +37,6 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     if not self.name:
         return
 
-    # If the metadata did not give an ID, we need to add it for completeness:
-#    if self.ID not in dataBack.id_to_name:
-#        try:
-#            dataBack.messages[dataBack.pgn_to_name[
-#                                        str(self.pgn)]].id = self.ID
-#        except:
-#            pass
-#        dataBack.id_to_name[self.ID] = dataBack.messages[
-#                        dataBack.pgn_to_name[str(self.pgn)]].name
-
     # make a pointer to the filter. First, try with filter ID. Then PGN.
     try:
         currentMessage = dataBack.messages[dataBack.id_to_name[self.ID]]
@@ -63,8 +47,8 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     for fieldName in currentMessage.fields:
         dataFilter = currentMessage.fields[fieldName]
         try: # may cause an assertion error that we can ignore
-            self.body[dataFilter.name] = getPayload(dataFilter, 
-                                                    currentMessage, match)
+            payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
+            self.body[dataFilter.name] = payLoadData
         except:
             pass
 
@@ -125,10 +109,10 @@ def pgnSet(match):
     return pgn
 
 
-# hexToVal
-# Function paramaters: hexData is the raw hex value of the message body
-# The return value is the CAN message payload
-def hexToVal(hexData, dataFilter):
+# Function parameters: hexData is the raw hex value of the message body
+# dataFilter is the CAN message specification given in the meta data by the user.
+# The return value is the CAN message payload, before filtering
+def getPayload(hexData, dataFilter):
     # Variables used in this function:
     endian = dataFilter.endian
     signed = dataFilter.signed
@@ -192,10 +176,11 @@ def hexToVal(hexData, dataFilter):
 
 
 
-        # make a pointer to the field
-def getPayload(dataFilter, currentMessage, match):
+# Retrieves the data field from the CAN message body and does any units 
+# conversion and/or filtering specified by the user during runtime.
+def getBodyFieldData(dataFilter, currentMessage, match):
     msgBody = match.group(4)
-    value = hexToVal(msgBody, dataFilter)
+    value = getPayload(msgBody, dataFilter)
     # Check for invalid data.
     # 0xFFFF is the 'invalid data' code
     if value == 65535:
@@ -208,7 +193,7 @@ def getPayload(dataFilter, currentMessage, match):
             try:
             # Data conversion done by adding, multiplying, then
             # adding the tuple entries found in the conversion map
-            # at the top of this file.
+            # in backend.py
                 value += float(conversionMap[dataFilter.units][
                                         dataFilter.unitsConversion][1])
                 value *= float(conversionMap[dataFilter.units][
@@ -218,12 +203,8 @@ def getPayload(dataFilter, currentMessage, match):
             except KeyError:
                 pass
 
-    # Check for data.byValue
+    # Last but not least, if we are doing a 'filterByValue':
     if dataFilter.byValue:
-        #pdb.set_trace()
         if value not in dataFilter.byValue:
             value = ''
-
     return value
-
-        # Add the value to the Message.body dictionary

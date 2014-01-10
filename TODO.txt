@@ -11,7 +11,8 @@ TO DO:
  * Restrict files to select only '.xml' files in the file selector dialog
  * Specifying a filter for a data field should not show that message in the window 
    at all even if other data fields in that message don't have a filter. 
-   The filter should be specified by field but applied per message.
+   The filter should be specified by field but applied per message. The 'latest value'
+   isn't working either in this respect.
  * Add a status ("RECORDING" or "STOPPED"), followed by the number 
    messages that have been recorded into each log session.
  * Unknown units in the units column shouldn't result in it being a textfield, 
