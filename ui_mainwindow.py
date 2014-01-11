@@ -2,6 +2,9 @@
 # Originally generated with QtCreator and pyuic.
 
 from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QCursor
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfoParse import xmlImport
 import threading
@@ -21,7 +24,7 @@ DECODED, RAW_HEX, CSV = range(3)
 
 
 class Ui_MainWindow(QtCore.QObject):
-
+    startHourGlass = pyqtSignal()
     def setupUi(self, mainWindow, dataBack):
         self.dataBack = dataBack
        # pyqtrm()
@@ -101,90 +104,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.messagesTextBrowser.setObjectName("messagesTextBrowser")
         self.verticalLayout_2.addWidget(self.messagesTextBrowser)
 
-
-
-        '''
-##################
-# buttonsGrid code
-##################
-        # Buttons for clearing textbrowser, csv, pgn, body, raw display,
-        # and saving textbrowser contents to file.
-        self.buttonsGrid = QtWidgets.QGridLayout()
-        self.verticalLayout_2.addLayout(self.buttonsGrid)
-        self.buttonsGrid.setObjectName("button grid layout")
-
-        self.buttonClear = QtWidgets.QPushButton()
-        self.buttonClear.setObjectName("clear")
-        self.buttonClear.setText("Clear Message Stream")
-        self.buttonClear.clicked.connect(self.clearTextBrowser)
-        self.logLabel = QtWidgets.QLabel()
-        self.logLabel.setText("Enter filename:")
-        self.buttonLogging = QtWidgets.QPushButton()
-        self.buttonLogging.setObjectName("save")
-        self.buttonLogging.setText("Begin Logging")
-        self.buttonLogging.clicked.connect(self.saveToFile)
-        self.logLabel.setBuddy(self.buttonLogging)
-        self.fileName = QtWidgets.QLineEdit()
-        self.fileName.setObjectName("fileName")
-        self.fileName.returnPressed.connect(self.saveToFile)
-
-        self.checkBody = QtWidgets.QCheckBox()
-        self.checkBody.setObjectName("checkBoxBody")
-        self.checkBody.setText("Body")
-        self.checkBody.setCheckState(2)
-        self.checkBody.stateChanged.connect(self.setOutput)
-        self.checkPGN = QtWidgets.QCheckBox()
-        self.checkPGN.setObjectName("checkBoxPGN")
-        self.checkPGN.setText("PGN")
-        self.checkPGN.setCheckState(2)
-        self.checkPGN.stateChanged.connect(self.setOutput)
-        self.checkID = QtWidgets.QCheckBox()
-        self.checkID.setObjectName("checkBoxId")
-        self.checkID.setText("ID")
-        self.checkID.setCheckState(2)
-        self.checkID.stateChanged.connect(self.setOutput)
-        self.checkRaw = QtWidgets.QCheckBox()
-        self.checkRaw.setObjectName("checkBoxRaw")
-        self.checkRaw.setText("Hex")
-
-        self.checkCSV = QtWidgets.QCheckBox()
-        self.checkCSV.setObjectName("checkBoxCSV")
-        self.checkCSV.setText("CSV")
-        self.checkCSV.stateChanged.connect(self.setOutput)
-        self.checkCSV.stateChanged.connect(self.csvOutputSet)
-        self.displayLabel = QtWidgets.QLabel()
-        self.displayLabel.setText("Display opts:")
-
-        self.displayCheckBox = QtWidgets.QHBoxLayout()
-        self.displayCheckBox.addWidget(self.displayLabel)
-        self.displayCheckBox.addWidget(self.checkBody)
-        self.displayCheckBox.addWidget(self.checkPGN)
-        self.displayCheckBox.addWidget(self.checkID)
-        self.displayCheckBox.addWidget(self.checkRaw)
-        self.displayCheckBox.addWidget(self.checkCSV)
-
-        if self.dataBack.args.debug:
-            self.debug = QtWidgets.QPushButton()
-            self.debug.setText("pdb")
-            self.debug.clicked.connect(self.debugMode)
-
-
-        #self.buttonResetTime.clicked.connect(self.resetTime)
-        self.buttonsGrid.addWidget(self.logLabel, 1,0)
-#        self.buttonsGrid.addWidget(self.buttonClear, 3,0)
-        self.buttonsGrid.addWidget(self.buttonLogging, 0,0, 1,3)
-        self.buttonsGrid.addWidget(self.fileName, 1,2)
-        self.buttonsGrid.addLayout(self.displayCheckBox, 2,0, 1,3)
-#        self.buttonsGrid.addWidget(self.checkCSV, 3,0)
-        #self.buttonsGrid.addWidget(self.buttonResetTime, 2,1, 1,2)
-        if self.dataBack.args.debug:
-            self.buttonsGrid.addWidget(self.debug, 3,1, 1,2)
-
-##################
-# End of buttonsGrid code
-##################
-        '''
-
         if self.dataBack.args.debug:
             self.debug = QtWidgets.QPushButton()
             self.debug.setText("pdb")
@@ -193,7 +112,6 @@ class Ui_MainWindow(QtCore.QObject):
             self.verticalLayout_2.addLayout(self.buttonsGrid)
             self.buttonsGrid.setObjectName("button grid layout")
             self.buttonsGrid.addWidget(self.debug, 3,1, 1,2)
-
 
         self.horizontalLayout.addWidget(self.messagesFrame)
         self.visualizeFrame = QtWidgets.QFrame(self.centralWidget)
@@ -259,7 +177,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionLoad_filters_from_file = QtWidgets.QAction(mainWindow)
         self.actionLoad_filters_from_file.setObjectName(
                                         "actionLoad_filters_from_file")
-        self.actionLoad_filters_from_file.triggered.connect(self.newLoadFilter)
+        self.actionLoad_filters_from_file.triggered.connect(self.loadFilter)
         self.actionComports = QtWidgets.QAction(mainWindow)
         self.actionComports.setObjectName("actionComports")
         # comports code:
@@ -289,9 +207,6 @@ class Ui_MainWindow(QtCore.QObject):
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
 
         if self.dataBack.args.fast:
-            #xmlImport(self.dataBack, self.dataBack.args, FAST_FILENAME)
-            #self.filtersTreeWidget.populateTree()
-            # Is this still necessary?
             self.filterTable.populateTable()
             self.update_messageInfo_to_fields()
             self.dataBack.comport = '/dev/ttyUSB0'
@@ -303,7 +218,8 @@ class Ui_MainWindow(QtCore.QObject):
             self.receiveMessage()  # <-- The serial thread is created here
 
             self.dataBack.messageInfoFlag = True
-
+        # HourGlass signal
+        self.startHourGlass.connect(self.setHourGlass)
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -349,6 +265,7 @@ class Ui_MainWindow(QtCore.QObject):
 
 
     def comportSelect(self):
+        self.startHourGlass.emit()
         self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
         self.setOutput()
@@ -361,11 +278,11 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)
         self.dataBack.canPort.messageUp.connect(self.filterTable.populateTable)
-        serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
+        self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
     
         # setting daemon to true lets program quit successfully
-        serialThread.daemon = True
-        serialThread.start()
+        self.serialThread.daemon = True
+        self.serialThread.start()
 
         # Use this timer as a watchdog for when a node on the bus is shut off.
         # Without it, frequency column won't go back to zero.
@@ -373,9 +290,12 @@ class Ui_MainWindow(QtCore.QObject):
         self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
         self.freqTimer.start(1000)
 
+        # HourGlass code
+        self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
 
 
-    def newLoadFilter(self):
+
+    def loadFilter(self):
         # These "reset" statements should actually be moved to a
         # reset function that can be called from anywhere in the code.
         self.dataBack.messages = {}
@@ -402,7 +322,7 @@ class Ui_MainWindow(QtCore.QObject):
 
 
 ########## deprecated but keep around for default suffix code. ########
-#    def loadFilter(self):
+#    def oldLoadFilter(self):
 #        filename = None
 #        dialog = QtWidgets.QFileDialog()
 #        dialog.setNameFilter(tr("(*.xml)"))
@@ -555,3 +475,9 @@ class Ui_MainWindow(QtCore.QObject):
     def debugMode(self):
         pyqtrm()
         pdb.set_trace()
+
+    def setHourGlass(self):
+        QApplication.setOverrideCursor(QCursor(QtCore.Qt.WaitCursor))
+
+    def removeHourGlass(self):
+        QApplication.restoreOverrideCursor()

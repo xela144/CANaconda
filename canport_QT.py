@@ -21,7 +21,8 @@ from CANacondaMessageParse import *
 class CANPort_QT(QObject):
     parsedMsgPut = pyqtSignal()
     messageUp = pyqtSignal()
-
+    stopHourGlass = pyqtSignal()
+    
     def __init__(self, dataBack, parent=None):
         QObject.__init__(self)
         super(CANPort_QT, self).__init__(parent)
@@ -56,7 +57,6 @@ class CANPort_QT(QObject):
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
-            # Emit the stopHourGlass signal here
             time.sleep(1)
             #Opens the CAN port to begin reciveing messages
             serialCAN.write(b'O\r')
@@ -65,6 +65,8 @@ class CANPort_QT(QObject):
             serialCAN.write(b'Z0\r')
             time.sleep(1)
             i = 0
+            # Emit the stopHourGlass signal here
+            self.stopHourGlass.emit()
             while(1):
                 self.serialParse(serialCAN)
 
