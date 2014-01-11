@@ -25,10 +25,10 @@ DECODED, RAW_HEX, CSV = range(3)
 
 class Ui_MainWindow(QtCore.QObject):
     startHourGlass = pyqtSignal()
+    outmsgSignal = pyqtSignal()
     def setupUi(self, mainWindow, dataBack):
         self.dataBack = dataBack
-       # pyqtrm()
-       # pdb.set_trace()
+        self.messageCount = 0
 #############################
 ## Layout code
 #############################
@@ -68,7 +68,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.fileName.setObjectName("fileName")
         self.fileName.returnPressed.connect(self.saveToFile)
         self.loggingStatusLabel = QtWidgets.QLabel()
+        self.loggingStatusLabel.setTextFormat(1)
         self.loggingStatusLabel.setText("Status:  not recording")
+        # Signal handler:
+        self.outmsgSignal.connect(self.loggingStatusHandler)
         self.horizontalLayout_2.addWidget(self.logLabel)
         self.horizontalLayout_2.addWidget(self.fileName)
         self.horizontalLayout_2.addWidget(self.buttonLogging)
@@ -218,7 +221,8 @@ class Ui_MainWindow(QtCore.QObject):
             self.receiveMessage()  # <-- The serial thread is created here
 
             self.dataBack.messageInfoFlag = True
-        # HourGlass signal
+
+        # HourGlass signal.
         self.startHourGlass.connect(self.setHourGlass)
 
     def retranslateUi(self, mainWindow):
@@ -250,9 +254,9 @@ class Ui_MainWindow(QtCore.QObject):
 
     def updateUi(self):
         outmsg = self.getMessage(self.dataBack.CANacondaMessage_queue)
-        #''' emit a countMessage signal here'''
         if outmsg is not None:
             self.messagesTextBrowser.append("%s" % outmsg)
+            self.outmsgSignal.emit()
 
     def getMessage(self, CANacondaMessage_queue):
         dataBack = self.dataBack
@@ -278,21 +282,25 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)
         self.dataBack.canPort.messageUp.connect(self.filterTable.populateTable)
-        self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
-    
-        # setting daemon to true lets program quit successfully
-        self.serialThread.daemon = True
-        self.serialThread.start()
+        # Serial connection thread
+        # For the first run, everything is fine. However, if user selects
+        # comport again, a new thread is created. Bad.
+        alreadyStreaming = self.dataBack.alreadyStreaming
 
-        # Use this timer as a watchdog for when a node on the bus is shut off.
-        # Without it, frequency column won't go back to zero.
-        self.freqTimer = QtCore.QTimer()
-        self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
-        self.freqTimer.start(1000)
+        if not alreadyStreaming:
+            self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
+            self.serialThread.daemon = True
+            self.serialThread.start()
 
-        # HourGlass code
-        self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
+            # Use this timer as a watchdog for when a node on the bus is shut off.
+            # Without it, frequency column won't go back to zero.
+            self.freqTimer = QtCore.QTimer()
+            self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
+            self.freqTimer.start(1000)
 
+            # HourGlass signals
+            self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
+            self.dataBack.canPort.stopHourGlass.connect(self.setStreamingFlag)
 
 
     def loadFilter(self):
@@ -439,6 +447,15 @@ class Ui_MainWindow(QtCore.QObject):
             self.loggingStatusLabel.setText("Status:  <font color=red><b>\
                                             recording</b></font>    ")
             self.dataBack.logflag = True
+    
+    def loggingStatusHandler(self):
+        if self.dataBack.logflag == False:
+            self.loggingStatusLabel.setText("Status:  not recording")
+            self.messageCount = 0
+            return
+        self.statusText = "Status:  <font color=red><b>recording  </b></font><b>" + str(self.messageCount) + "</b>"
+        self.messageCount += 1
+        self.loggingStatusLabel.setText(self.statusText)
 
     def resetTime(self):
         self.dataBack.CSV_START_TIME = time.time()
@@ -477,7 +494,12 @@ class Ui_MainWindow(QtCore.QObject):
         pdb.set_trace()
 
     def setHourGlass(self):
-        QApplication.setOverrideCursor(QCursor(QtCore.Qt.WaitCursor))
+        alreadyStreaming = self.dataBack.alreadyStreaming
+        if not alreadyStreaming:
+            QApplication.setOverrideCursor(QCursor(QtCore.Qt.WaitCursor))
 
     def removeHourGlass(self):
         QApplication.restoreOverrideCursor()
+
+    def setStreamingFlag(self):
+        self.dataBack.alreadyStreaming = True

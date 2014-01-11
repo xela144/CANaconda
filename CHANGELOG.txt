@@ -40,4 +40,7 @@ CHANGED:
  * Made the 'filter by value' function more clear and less buggy. Still need to
    use mouseover functionality for help
 
+ * Added hourglass for when serial connection is being established.
 
+ * Added a status ("RECORDING" or "STOPPED"), followed by the number
+   messages that have been recorded into each log session.

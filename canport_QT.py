@@ -65,8 +65,10 @@ class CANPort_QT(QObject):
             serialCAN.write(b'Z0\r')
             time.sleep(1)
             i = 0
-            # Emit the stopHourGlass signal here
+
+            # Make cursor go back to normal
             self.stopHourGlass.emit()
+            
             while(1):
                 self.serialParse(serialCAN)
 

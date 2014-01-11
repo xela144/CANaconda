@@ -32,6 +32,8 @@ Messages which match a filter will appear in the table on the right hand pane, a
 
 To display a value in the Message Stream pane, click on the checkbox associated with it.
 
+Only one serial connection per program launch, i.e. you only get to choose a comport once. If for whatever reason you want to open a different port, close the program and start all over.
+
 From the terminal, a command-line version can be run by giving argument '--nogui'
 
 If the '--csv' argument is specified, the output can be piped to the 'pipePlotter.py' script for graphically viewing data in real-time. Currently, supported for Maretron WSO100 windspeed data only. If you don't have this device and you want to view your data in a plot, it's best to save the output to a file and view in your favorite number-crunching program, such as Matlab, or the matplotlib package in Python.

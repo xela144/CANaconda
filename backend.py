@@ -74,6 +74,9 @@ class CanData():
         # mix on screen
         self.messageInfoFlag = False
 
+        # For the hourglass not to be triggered twice:
+        self.alreadyStreaming = False
+        
         # GUI flag
         if args.nogui:
             self.nogui = True
