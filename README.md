@@ -105,11 +105,9 @@ Future development of this project will focus allowing the user to specify a lis
 _Note that these instructions are for Debian-based distributions. Some packages may be different if you are using another distribution._
 
 To install the pyserial package:
- * download from pypi.python.org/pypi/pyserial
- * In the pyserial directory, locate and run the setup.py script.
- * Unfortunately, patches must be applied to deal with the Python 2 -> 3 changes:
-   * pyserial\_patch from http://sourceforge.net/tracker/?func=detail&aid=3462364&group\_id=46487&atid=446304
-   * pyserial\_binary\_fix.patch from http://sourceforge.net/tracker/?func=detail&aid=3596060&group\_id=46487&atid=446302
+ * download from pypi.python.org/pypi/pyserial and follow instructions there or:
+ * if pip is installed on your system, use command
+    sudo pip3 install pyserial
      
 
 Serial data will be available at /dev/ttyUSB0. However, access to /dev/ttyUSB0 is by default limited to root. In order to give access to canpython.py, add user (self) to dialout group:
