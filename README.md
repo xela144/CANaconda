@@ -107,7 +107,8 @@ _Note that these instructions are for Debian-based distributions. Some packages 
 To install the pyserial package:
  * download from pypi.python.org/pypi/pyserial and follow instructions there or:
  * if pip is installed on your system, use command
-    sudo pip3 install pyserial
+
+> sudo pip3 install pyserial
      
 
 Serial data will be available at /dev/ttyUSB0. However, access to /dev/ttyUSB0 is by default limited to root. In order to give access to canpython.py, add user (self) to dialout group:
