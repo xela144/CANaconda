@@ -129,12 +129,6 @@ By default, Qt also expects XCB and OpenGL drivers to be installed. Usually, man
 >sudo apt-get install libx11-xcb-dev libglu1-mesa-dev
 
 
-
-#There are many dependencies for Qt. From shell, start with these commands:
-
-#> sudo apt-get install build-essential perl python "^libxcb.\*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev flex bison gperf libicu-dev libxslt-dev ruby libcups2-dev libgstreamer-plugins-base0.10-dev libssl-dev libpulse-dev libasound2-dev libgtk2.0-dev
-
-
 From Qt downloads page, download qt-linux-opensource-5.2.0-x86-offline.run. Then type:
 
 > chmod u+x qt-linux-opensource-5.2.0-x86-offline.run
