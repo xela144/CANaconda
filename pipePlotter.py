@@ -1,17 +1,18 @@
 #!/usr/bin/python3
-
-# This is the matplotlib plotting program that takes
-# CSV formatted input from stdin and plots in real time.
-# Currently, the code loops for up to 200 iterations of
-# main While loop, then restarts. This can be altered by
-# a command line argument that gives the upper bound
-# for the np.arange array called xx.
-# For this code to work, it is necessary for the first
-# line of the CSV input to be the axis labels: 'X_LABEL,Y_LABEL'
-# It should be decided how many columns can be plotted, and
-# whether that is done on a single plot, or on subplots, and
-# what should be the best method for obtaining axis limits,
-# tick intervals, etc.
+'''
+This is the matplotlib plotting program that takes
+CSV formatted input from stdin and plots in real time.
+Currently, the code loops for up to 200 iterations of
+main While loop, then restarts. This can be altered by
+a command line argument that gives the upper bound
+for the np.arange array called xx.
+For this code to work, it is necessary for the first
+line of the CSV input to be the axis labels: 'X_LABEL,Y_LABEL'
+It should be decided how many columns can be plotted, and
+whether that is done on a single plot, or on subplots, and
+what should be the best method for obtaining axis limits,
+tick intervals, etc.
+'''
 
 import sys
 import numpy as np

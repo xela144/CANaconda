@@ -1,7 +1,9 @@
-# outmessage.py
-# This file is a collection of function definitions whose purpose
-# is to build the output message for both the console mode and the
-# GUI mode.
+
+'''
+outmessage.py
+Build the output string for the message stream.
+For both the console mode and the GUI mode.
+'''
 
 import time
 import pdb

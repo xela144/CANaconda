@@ -1,9 +1,10 @@
-#
-# setoptions.py
-# This file has function definitions that are used during 
-# the setup of the console mode. The functions here are 
-# used to parse the command line arguments and set the correct 
-# display filters and other parameters in the data backend object.
+'''
+setoptions.py
+Function definitions that are used during the setup of the console 
+mode. Certain functions need to be re-written to make better use of
+argparse module.
+'''
+
 import backend
 import pdb
 
