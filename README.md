@@ -55,20 +55,20 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
     <desc></desc>
     <field 
     name = "airspeed" 
-    offset = "8" 
-    length = "16" 
+    offset = 8 
+    length = 16 
     signed = "no" 
     units = "m/s" 
-    scaling = ".01" 
+    scaling = .01 
     endian = "little"
     />
     <field 
     name = "wind_dir" 
-    offset = "24" 
-    length = "16" 
+    offset = 24 
+    length = 16 
     signed = "no" 
     units = "rad" 
-    scaling = ".0001" 
+    scaling = .0001 
     endian = "little"
     />
   </messageInfo>
@@ -76,11 +76,11 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
     <desc></desc>
     <field
     name = "Humidity"
-    offset = "24"
-    length = "16"
+    offset = 24
+    length = 16
     signed = "yes"
     units = "%"
-    scaling = ".004"
+    scaling = .004
     endian = "little"
     />
   </messageInfo>
