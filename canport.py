@@ -51,7 +51,9 @@ class CANPort():
                 temp = serialCAN.read()
             time.sleep(1)
             # Open the CAN port to begin reciveing messages
-            serialCAN.write(b'O\r')
+            val = serialCAN.write(b'O\r')
+            while val != 2:
+                val = serialCAN.write(b'O\r')
             time.sleep(1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')

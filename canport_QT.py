@@ -70,9 +70,9 @@ class CANPort_QT(QObject):
             self.stopHourGlass.emit()
             
             while(1):
-                self.serialParse(serialCAN)
+                self.serialRxTx(serialCAN)
 
-    def serialParse(self, serialCAN):
+    def serialRxTx(self, serialCAN):
         dataBack = self.dataBack
         rawmsg, matchedmsg = self.getRegex(serialCAN)
         newCANacondaMessage = CANacondaMessage()
@@ -83,13 +83,11 @@ class CANPort_QT(QObject):
             self.dataBack.CANacondaMessage_queue.put(newCANacondaMessage)
             self.parsedMsgPut.emit()
 
-            # If not present already, add the message's filter
+            # If not present already, add the message's messageInfo
             # and field name to the dataBack.messagesSeenSoFar dict,
-            # and emit a signal.
+            # and emit a signal for redrawing the messages table
             if (newCANacondaMessage.name not in self.dataBack.
                 messagesSeenSoFar and newCANacondaMessage.name is not ''):
-                #pyqtrm()
-                #pdb.set_trace()
                 self.dataBack.messagesSeenSoFar[
                     newCANacondaMessage.name] = []
                 for field in newCANacondaMessage.body:

@@ -118,11 +118,25 @@ Serial data will be available at /dev/ttyUSB0. However, access to /dev/ttyUSB0 i
 To make changes active, log out, closing session completely, and log back in.
 
 To install Qt: 
-There are many dependencies for Qt. From shell, start with these commands:
+[From http://qt-project.org/wiki/Qt5_dependencies]
 
-> sudo apt-get install build-essential perl python "^libxcb.\*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev flex bison gperf libicu-dev libxslt-dev ruby libcups2-dev libgstreamer-plugins-base0.10-dev libssl-dev libpulse-dev libasound2-dev libgtk2.0-dev
+To get Qt 5 working here you’ll first need build-essentials, which will give you the compilers you’ll need(g++). Following that Qt 5 will need some graphics library stuff. Type the following code in the terminal to get the required dependencies respectively:
+
+>sudo apt-get install build-essential
+
+By default, Qt also expects XCB and OpenGL drivers to be installed. Usually, many modern distros already do have those packages included by default. If you don’t have other OpenGL drivers (supplied by graphics vendor, for example), you can use the mesa package:
+
+>sudo apt-get install libx11-xcb-dev libglu1-mesa-dev
+
+
+
+#There are many dependencies for Qt. From shell, start with these commands:
+
+#> sudo apt-get install build-essential perl python "^libxcb.\*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev flex bison gperf libicu-dev libxslt-dev ruby libcups2-dev libgstreamer-plugins-base0.10-dev libssl-dev libpulse-dev libasound2-dev libgtk2.0-dev
+
 
 From Qt downloads page, download qt-linux-opensource-5.2.0-x86-offline.run. Then type:
+
 > chmod u+x qt-linux-opensource-5.2.0-x86-offline.run
 > ./qt-linux-opensource-5.2.0-x86-offline.run 
 
@@ -136,14 +150,17 @@ To install PyQt5:
  * Likewise for the gcc compiler included in the Qt download:
 
 ```
-  export PATH=$PATH:/opt/Qt5.2.0/5.2.0/gcc/bin  // <-- change when necessary
+  export PATH=$PATH:/opt/Qt5.2.0/5.2.0/gcc/bin/qmake  // <-- change when necessary
 ```
+
+
+PyQt depends on Sip, which is found at www.riverbankcomputing.com. Download and follow installation directions there.
 
 Now in the PyQt-gpl-5.0 folder you can run the command
 
 > python3 configure.py
 
-If the configure script fails, rerun with the --verbose option. It may be necessary to install other packages, such as g++ and sip. The latest version of sip can be found at riverbankcomputing.com. After running the sip configure script, use the sudo make then sudo make install commands. If an error is generated that says python.h is not found, run sudo apt-get install python3.X-dev (where 'X' is the minor version you of Python 3 which you are using). 
+If the configure script fails, rerun with the --verbose option. If an error is generated that says python.h is not found, install python3.X-dev (where 'X' is the minor version you of Python 3 which you are using). 
 
 
 
