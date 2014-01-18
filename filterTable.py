@@ -4,6 +4,7 @@
 # Changing units and filtering by value is done here.
 
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QHeaderView
 import pdb
 import backend
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
@@ -13,7 +14,7 @@ import time
 MESSAGE, FIELD, VALUE, BYVALUE, UNITS, RATE = range(6)
 
 
-class FilterTable(QtWidgets.QDialog):
+class FilterTable(QtWidgets.QWidget):
     comboChanged = QtCore.pyqtSignal(int)
 
     def setup(self, dataBack, parent, singleshot=False):
@@ -96,7 +97,6 @@ class FilterTable(QtWidgets.QDialog):
                 unitsComboBox = QtWidgets.QComboBox()
                 for key in list(backend.conversionMap[fieldData.units].keys()):
                     unitsComboBox.addItem(key)
-               # pyqtrm(); pdb.set_trace()
                 unitsComboBox.setCurrentText(fieldData.units)
                 self.tableWidget.setCellWidget(row, UNITS, unitsComboBox)
                 unitsComboBox.currentTextChanged.connect(self.changeUnits)
@@ -107,8 +107,6 @@ class FilterTable(QtWidgets.QDialog):
                 
             # Update table map dict. This is used to display the latest message
             # in the tableWidget
-#### Now that the displayList is generated from the dataBack.messagesSeenSoFar
-#### dict, try enumerate(dataBack.messages) or something...
             self.tableMap[(messageInfoName, fieldName)] = row
 
             ## rate column
@@ -125,6 +123,12 @@ class FilterTable(QtWidgets.QDialog):
         #self.tableWidget.sortByColumn(0,0)        # 
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.setColumnWidth(VALUE, 120)
+
+        # STRETCHY CODE
+        #self.tableWidget.horizontalHeader().setSizePolicy(3,3)
+        self.tableWidget.horizontalHeader().setStretchLastSection(True)
+        #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  
+        #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  
 
     # Change units based on comboBox widget and update dataBack
     def changeUnits(self, text):
@@ -230,6 +234,7 @@ def main():
     args = parser.parse_args()
     args.nogui = None
     args.fast = None
+    args.debug = False
     dataBack = backend.CanData(args)
     CANaconda.xmlImport(dataBack, args, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)

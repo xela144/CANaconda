@@ -144,7 +144,7 @@ To install PyQt5:
  * Likewise for the gcc compiler included in the Qt download:
 
 ```
-  export PATH=$PATH:/opt/Qt5.2.0/5.2.0/gcc/bin/qmake  // <-- change when necessary
+  export PATH=$PATH:/opt/Qt5.2.0/5.2.0/gcc/bin/gcc  // <-- change when necessary
 ```
 
 

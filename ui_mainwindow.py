@@ -49,7 +49,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.messagesFrame.setMinimumWidth(400)
         self.messagesFrame.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
                                          QtWidgets.QSizePolicy.Expanding)
-
+        # loggingFrame has to do with um, logging message stream to file.
         self.loggingFrame = QtWidgets.QFrame()
         self.loggingFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.loggingFrame.setObjectName("LOGGINGFRAME")
@@ -77,6 +77,12 @@ class Ui_MainWindow(QtCore.QObject):
         self.horizontalLayout_2.addWidget(self.buttonLogging)
         self.horizontalLayout_2.addSpacing(100)
         self.horizontalLayout_2.addWidget(self.loggingStatusLabel)
+
+        # txFrame has to do with um transmitting messages over serial
+        self.txFrame = QtWidgets.QFrame()
+        self.txFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.txFrame.setObjectName("TXFRAME")
+
 
 
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
