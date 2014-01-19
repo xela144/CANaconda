@@ -82,6 +82,30 @@ class Ui_MainWindow(QtCore.QObject):
         self.txFrame = QtWidgets.QFrame()
         self.txFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.txFrame.setObjectName("TXFRAME")
+        self.verticalLayout_top.addWidget(self.txFrame)
+
+        self.txGrid = QtWidgets.QGridLayout(self.txFrame)
+        # add a vertical layout to the txFrame and put line edits inside it
+        self.txLabel = QtWidgets.QLabel()
+        self.txLabel.setText("Transmit Messages")
+        self.firstTxLEdit = QtWidgets.QLineEdit()
+        self.firstTxLabel = QtWidgets.QLabel()
+        self.firstTxLabel.setText("Enter message name: ")
+        self.firstTxLabel2 = QtWidgets.QLabel()
+        self.firstTxLabel2.setText("Payload: ")
+        self.firstTxLEdit2 = QtWidgets.QLineEdit()
+        self.firstTxLabel3 = QtWidgets.QLabel()
+        self.firstTxLabel3.setText("Frequency: ")
+        self.firstTxLEdit3 = QtWidgets.QLineEdit()
+        
+        self.firstTxLabel.setBuddy(self.firstTxLEdit)
+        self.txGrid.addWidget(self.txLabel, 0, 3)
+        self.txGrid.addWidget(self.firstTxLabel, 1, 0)
+        self.txGrid.addWidget(self.firstTxLEdit, 1, 1)
+        self.txGrid.addWidget(self.firstTxLabel2, 1, 2)
+        self.txGrid.addWidget(self.firstTxLEdit2, 1, 3)
+        self.txGrid.addWidget(self.firstTxLabel3, 1, 4)
+        self.txGrid.addWidget(self.firstTxLEdit3, 1, 5)
 
 
 
