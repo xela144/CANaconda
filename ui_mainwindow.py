@@ -97,6 +97,9 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxLabel3 = QtWidgets.QLabel()
         self.firstTxLabel3.setText("Frequency: ")
         self.firstTxLEdit3 = QtWidgets.QLineEdit()
+        self.firstTxButton = QtWidgets.QPushButton()
+        self.firstTxButton.setText("Activate")
+        self.firstTxButton.clicked.connect(self.txHandler)
         
         self.firstTxLabel.setBuddy(self.firstTxLEdit)
         self.txGrid.addWidget(self.txLabel, 0, 3)
@@ -106,6 +109,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.txGrid.addWidget(self.firstTxLEdit2, 1, 3)
         self.txGrid.addWidget(self.firstTxLabel3, 1, 4)
         self.txGrid.addWidget(self.firstTxLEdit3, 1, 5)
+        self.txGrid.addWidget(self.firstTxButton, 1, 6)
 
 
 
@@ -533,3 +537,6 @@ class Ui_MainWindow(QtCore.QObject):
 
     def setStreamingFlag(self):
         self.dataBack.alreadyStreaming = True
+
+    def txHandler(self):
+        pass
