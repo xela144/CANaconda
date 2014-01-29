@@ -7,7 +7,8 @@ is created. Message streaming will begin.
 When a metadata file is loaded, the 'ViewMetadata' tree widget is populated.
 When new decoded messages are put in the message queue, self.populateTree is called,
 as is self.populateTxCombo
-
+Message transmission will take place if the 'Activate' pushbutton is pressed
+and no error occurs.
 '''
 
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -126,7 +127,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxButton = QtWidgets.QPushButton()
         self.firstTxButton.setText("Activate")
         self.firstTxButton.setDisabled(True)
-        self.firstTxButton.clicked.connect(self.txHandler)
+        self.firstTxButton.clicked.connect(self.txActivateHandler)
         
         self.txGrid.addWidget(self.txLabel,            0, 3)
         self.txGrid.addWidget(self.firstTxLabel1,      1, 0)
@@ -412,6 +413,56 @@ class Ui_MainWindow(QtCore.QObject):
         for field in self.dataBack.messages[key].fields.keys():
             self.firstTxField.addItem(field)
 
+    def txActivateHandler(self):
+        if not self.dataBack.alreadyStreaming:
+            self.notStreamingWarn()
+            return
+        payload = self.firstTxBody.text()
+        freq = self.firstTxFreq.text()
+        # payload and frequency must be either int or float:
+        try:
+            payload = int(payload)
+        except ValueError:
+            try:
+                payload = float(payload)
+            except ValueError:
+                self.txTypeError()
+        # now for frequency
+        try:
+            payload = int(payload)
+        except ValueError:
+            try:
+                payload = float(payload)
+            except ValueError:
+                self.txTypeError()
+
+        # now payload and float are chill
+
+        self.generateMessage(payload, freq)
+        
+
+    # use inverse of getPayload()
+    def generateMessage(self, payload, frequency):
+        # start here
+        pass
+        
+
+    def txTypeError(self):
+        effedUp = QtWidgets.QMessageBox()
+        effedUp.setText("Message Transmit Error")
+        effedUp.setInformativeText("Payload and frequency values must\
+                                    be of type 'int' or 'float'")
+        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        effedUp.exec()
+
+    def notStreamingWarn(self):
+        effedUp = QtWidgets.QMessageBox()
+        effedUp.setText("Message Transmit Error")
+        effedUp.setInformativeText("Make sure you have already begun streaming messages")
+        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        effedUp.exec()
+        
+
 ########## deprecated but keep around for default suffix code. ########
 #    def oldLoadFilter(self):
 #        filename = None
@@ -587,5 +638,3 @@ class Ui_MainWindow(QtCore.QObject):
     def setStreamingFlag(self):
         self.dataBack.alreadyStreaming = True
 
-    def txHandler(self):
-        pass
