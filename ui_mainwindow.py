@@ -1,5 +1,14 @@
 # ui_mainwindow.py
 # Originally generated with QtCreator and pyuic.
+'''
+Layout code is executed and GUI will load without any metadata loaded.
+When a comport is selected, self.receiveMessage is called, and serial thread
+is created. Message streaming will begin.
+When a metadata file is loaded, the 'ViewMetadata' tree widget is populated.
+When new decoded messages are put in the message queue, self.populateTree is called,
+as is self.populateTxCombo
+
+'''
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QApplication
@@ -21,7 +30,8 @@ import xml.etree.ElementTree as ET
 
 FAST_FILENAME = 'newMetaData.xml'
 DECODED, RAW_HEX, CSV = range(3)
-
+Truedat = True
+Hellno = False
 
 class Ui_MainWindow(QtCore.QObject):
     startHourGlass = pyqtSignal()
@@ -49,7 +59,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.messagesFrame.setMinimumWidth(400)
         self.messagesFrame.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
                                          QtWidgets.QSizePolicy.Expanding)
-        # loggingFrame has to do with um, logging message stream to file.
+
+        #### Logging ####
         self.loggingFrame = QtWidgets.QFrame()
         self.loggingFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.loggingFrame.setObjectName("LOGGINGFRAME")
@@ -78,38 +89,54 @@ class Ui_MainWindow(QtCore.QObject):
         self.horizontalLayout_2.addSpacing(100)
         self.horizontalLayout_2.addWidget(self.loggingStatusLabel)
 
-        # txFrame has to do with um transmitting messages over serial
+
+        #### Transmission ####
         self.txFrame = QtWidgets.QFrame()
         self.txFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.txFrame.setObjectName("TXFRAME")
         self.verticalLayout_top.addWidget(self.txFrame)
 
         self.txGrid = QtWidgets.QGridLayout(self.txFrame)
+        self.txGrid.setHorizontalSpacing(10)
+        self.txGrid.setColumnStretch(1, 2)
+        self.txGrid.setColumnStretch(3, 2)
+        
         # add a vertical layout to the txFrame and put line edits inside it
         self.txLabel = QtWidgets.QLabel()
         self.txLabel.setText("Transmit Messages")
-        self.firstTxLEdit = QtWidgets.QLineEdit()
-        self.firstTxLabel = QtWidgets.QLabel()
-        self.firstTxLabel.setText("Enter message name: ")
+        self.firstTxMessageInfo = QtWidgets.QComboBox()
+        self.firstTxMessageInfo.addItem('Metadata required for transmission')
+        self.firstTxMessageInfo.setDisabled(True)
+        self.firstTxLabel1 = QtWidgets.QLabel()
+        self.firstTxLabel1.setText("Message:")
         self.firstTxLabel2 = QtWidgets.QLabel()
-        self.firstTxLabel2.setText("Body: ")
-        self.firstTxLEdit2 = QtWidgets.QLineEdit()
+        self.firstTxLabel2.setText("Field:")
+        self.firstTxField = QtWidgets.QComboBox()
+        self.firstTxField.addItem('Metadata required for transmission')
+        self.firstTxField.setDisabled(True)
+        #self.firstTxField.setMinimumWidth(90)
+        self.firstTxBody = QtWidgets.QLineEdit()
+        self.firstTxBody.setPlaceholderText('payload data')
+        self.firstTxBody.setDisabled(Truedat)
         self.firstTxLabel3 = QtWidgets.QLabel()
         self.firstTxLabel3.setText("Frequency [Hz]: ")
-        self.firstTxLEdit3 = QtWidgets.QLineEdit()
+        self.firstTxFreq = QtWidgets.QLineEdit()
+        self.firstTxFreq.setDisabled(True)
+        self.firstTxFreq.setMaximumWidth(40)
         self.firstTxButton = QtWidgets.QPushButton()
         self.firstTxButton.setText("Activate")
+        self.firstTxButton.setDisabled(True)
         self.firstTxButton.clicked.connect(self.txHandler)
         
-        self.firstTxLabel.setBuddy(self.firstTxLEdit)
-        self.txGrid.addWidget(self.txLabel, 0, 3)
-        self.txGrid.addWidget(self.firstTxLabel, 1, 0)
-        self.txGrid.addWidget(self.firstTxLEdit, 1, 1)
-        self.txGrid.addWidget(self.firstTxLabel2, 1, 2)
-        self.txGrid.addWidget(self.firstTxLEdit2, 1, 3)
-        self.txGrid.addWidget(self.firstTxLabel3, 1, 4)
-        self.txGrid.addWidget(self.firstTxLEdit3, 1, 5)
-        self.txGrid.addWidget(self.firstTxButton, 1, 6)
+        self.txGrid.addWidget(self.txLabel,            0, 3)
+        self.txGrid.addWidget(self.firstTxLabel1,      1, 0)
+        self.txGrid.addWidget(self.firstTxMessageInfo, 1, 1)
+        self.txGrid.addWidget(self.firstTxLabel2,      1, 2)
+        self.txGrid.addWidget(self.firstTxField,       1, 3)
+        self.txGrid.addWidget(self.firstTxBody,        1, 4)
+        self.txGrid.addWidget(self.firstTxLabel3,      1, 5)
+        self.txGrid.addWidget(self.firstTxFreq,        1, 6)
+        self.txGrid.addWidget(self.firstTxButton,      1, 7)
 
 
 
@@ -121,9 +148,9 @@ class Ui_MainWindow(QtCore.QObject):
         self.verticalLayout_2.addWidget(self.label)
 
 
-#########################
-# Display Combobox code # 
-#########################
+        #### Display Combobox code ####
+        # Choose the format for displaying messages in the Message
+        # Stream frame
         self.displayLayout = QtWidgets.QHBoxLayout()
         self.verticalLayout_2.addLayout(self.displayLayout)
         self.displayLayout.setObjectName("display combobox layout")
@@ -360,8 +387,30 @@ class Ui_MainWindow(QtCore.QObject):
         self.filtersTreeWidget.populateTree()
         # Is this still necessary?
         self.update_messageInfo_to_fields()
+        # populate the 'transmission' combobox
+        self.populateTxMessageInfoCombo()
 
 
+    # Called when a metadata file is loaded
+    # populate the combobox with messageInfo/field names
+    def populateTxMessageInfoCombo(self):
+        self.firstTxMessageInfo.clear()            #
+        self.firstTxMessageInfo.setDisabled(False) #
+        self.firstTxBody.clear()                #
+        self.firstTxBody.setDisabled(Hellno)    # move to separate function
+        self.firstTxFreq.setDisabled(Hellno)    #
+        self.firstTxButton.setDisabled(Hellno)  #
+        for messageInfoName in self.dataBack.messages.keys():
+            self.firstTxMessageInfo.addItem(messageInfoName)
+        self.populateTxField()
+        self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
+
+    def populateTxField(self):
+        self.firstTxField.setDisabled(False)
+        self.firstTxField.clear()
+        key = self.firstTxMessageInfo.currentText()
+        for field in self.dataBack.messages[key].fields.keys():
+            self.firstTxField.addItem(field)
 
 ########## deprecated but keep around for default suffix code. ########
 #    def oldLoadFilter(self):

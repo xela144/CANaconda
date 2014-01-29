@@ -92,7 +92,8 @@ class FilterTable(QtWidgets.QWidget):
             self.tableWidget.setItem(row, BYVALUE, byValue)
             ##
 
-            # If there is a valid mapping
+            # If there is a valid conversion, its units will show up in 
+            # conversionMap
             if fieldData.units in backend.conversionMap:
                 unitsComboBox = QtWidgets.QComboBox()
                 for key in list(backend.conversionMap[fieldData.units].keys()):
