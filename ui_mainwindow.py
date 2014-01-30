@@ -435,17 +435,19 @@ class Ui_MainWindow(QtCore.QObject):
                 payload = float(payload)
             except ValueError:
                 self.txTypeError()
-
+        messageInfo = self.firstTxMessageInfo.currentText()
+        field = self.firstTxField.currentText()
         # now payload and float are chill
-
-        self.generateMessage(payload, freq)
-        
+        hexData = self.generateMessage(payload, messageInfo, field)
+        self.messageTxInit(hexData, freq)
 
     # use inverse of getPayload()
-    def generateMessage(self, payload, frequency):
+    def generateMessage(self, payload, messageInfo, field):
         # start here
         pass
         
+    def messageTxInit(hexData, freq):
+        pass
 
     def txTypeError(self):
         effedUp = QtWidgets.QMessageBox()

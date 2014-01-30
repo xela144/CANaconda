@@ -175,6 +175,8 @@ def getPayload(hexData, dataFilter):
     return value
 
 
+#def putPayload(
+
 
 # Retrieves the data field from the CAN message body and does any units 
 # conversion and/or filtering specified by the user during runtime.
