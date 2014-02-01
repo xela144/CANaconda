@@ -70,9 +70,10 @@ class CANPort_QT(QObject):
             self.stopHourGlass.emit()
             
             while(1):
-                self.serialRxTx(serialCAN)
+                self.serialRx(serialCAN)
+                self.serialTx(serialCAN)
 
-    def serialRxTx(self, serialCAN):
+    def serialRx(self, serialCAN):
         dataBack = self.dataBack
         rawmsg, matchedmsg = self.getRegex(serialCAN)
         newCANacondaMessage = CANacondaMessage()
@@ -94,6 +95,12 @@ class CANPort_QT(QObject):
                     self.dataBack.messagesSeenSoFar[newCANacondaMessage.
                                                     name].append(field)
                 self.messageUp.emit()
+
+    def serialTx(self, serialCAN):
+        if not self.dataBack.CANacondaTxMsg_queue.empty():
+            transmitMessage = bytes(self.dataBack.CANacondaTxMsg_queue.get(), 
+                                    encoding='ascii')
+            serialCAN.write(transmitMessage)
 
     def getRegex(self, serialCAN):
         character = None

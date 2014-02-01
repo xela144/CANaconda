@@ -19,6 +19,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfoParse import xmlImport
 import threading
 from serial.tools.list_ports_posix import comports
+from CANacondaMessageParse import encodePayload
 import pdb
 from backend import *
 import filtersTreeWidget
@@ -420,34 +421,50 @@ class Ui_MainWindow(QtCore.QObject):
         payload = self.firstTxBody.text()
         freq = self.firstTxFreq.text()
         # payload and frequency must be either int or float:
-        try:
-            payload = int(payload)
-        except ValueError:
-            try:
-                payload = float(payload)
-            except ValueError:
-                self.txTypeError()
-        # now for frequency
-        try:
-            payload = int(payload)
-        except ValueError:
-            try:
-                payload = float(payload)
-            except ValueError:
-                self.txTypeError()
-        messageInfo = self.firstTxMessageInfo.currentText()
-        field = self.firstTxField.currentText()
-        # now payload and float are chill
-        hexData = self.generateMessage(payload, messageInfo, field)
-        self.messageTxInit(hexData, freq)
+        payload = self.checkTypeAndConvert(payload)
+        freq = self.checkTypeAndConvert(freq)
+        # Check that that payload and frequency are valid
+        if payload == None or freq == None:
+            self.txTypeError()
+            return
+        messageName = self.firstTxMessageInfo.currentText()
+        field = self.firstTxField.currentText()  # later will need to adjust
+                                                 # for all fields in messageInfo
+        self.dataBack.asciiBucket = self.generateMessage(payload, messageName, field)
+        self.messageTxInit(freq)
 
-    # use inverse of getPayload()
-    def generateMessage(self, payload, messageInfo, field):
-        # start here
-        pass
+    # Creates a hex encoded message
+    def generateMessage(self, payload, messageName, field):
+        messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
+        hexData = 'T'  # N2K
+        hexData += self.dataBack.IDencodeMap[messageName]  # ID field
+        # later wrap this in a for loop
+        dataFilter = self.dataBack.messages[messageName].fields[field]
+        hexData += encodePayload(payload, dataFilter)     # body data
+        hexData += '\r'
+        return hexData
         
-    def messageTxInit(hexData, freq):
-        pass
+    # Push the encoded message to the transmit queue, and send a signal
+    def messageTxInit(self, freq):
+        freq = freq * 1000  # use milliseconds
+        self.TxTimer = QtCore.QTimer()
+        self.TxTimer.timeout.connect(self.pushToTransmitQueue)
+        self.TxTimer.start(freq)
+
+    def pushToTransmitQueue(self):
+        self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
+
+
+    def checkTypeAndConvert(self, value):
+        try:
+            value = int(value)
+            return value
+        except ValueError:
+            try:
+                value = float(value)
+                return value
+            except ValueError:
+                return None
 
     def txTypeError(self):
         effedUp = QtWidgets.QMessageBox()
@@ -566,9 +583,9 @@ class Ui_MainWindow(QtCore.QObject):
                 return
             if os.path.isfile(self.fileName.text()):
                 overWrite = self.warnOverwrite()
-                if overWrite == 0x400000:
+                if overWrite == 0x400000:  # 'don't overwrite'
                     return
-                elif overWrite == 0x400:
+                elif overWrite == 0x400:   # 'okay to overwrite'
                    os.remove(self.fileName.text())
             self.clearTextBrowser()
 

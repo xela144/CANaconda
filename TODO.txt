@@ -15,6 +15,9 @@ TO DO:
  * Add a status ("RECORDING" or "STOPPED"), followed by the number 
    messages that have been recorded into each log session.
  * Fix redundant names in tablewidget
+ * Since we are not requiring an ID for each message in the metadata, the transmit
+   function throws a keyError exception when a message is transmitted whose node is
+   not on the bus.
 
 
  

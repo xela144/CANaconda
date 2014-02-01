@@ -20,6 +20,9 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 def CANacondaMessageParse(self, match, rawmsg, dataBack):
     self.pgn = pgnSet(match)
     self.raw = parseRaw(rawmsg)
+##    
+    self.match = match  # For debugging -- delete
+##
     if match.group(1):
         self.ID = match.group(1)
     elif match.group(2):
@@ -42,6 +45,9 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
         currentMessage = dataBack.messages[dataBack.id_to_name[self.ID]]
     except:
         currentMessage = dataBack.messages[dataBack.pgn_to_name[str(self.pgn)]]
+
+    if self.ID not in dataBack.IDencodeMap:
+        dataBack.IDencodeMap[self.name] = self.ID.upper()
         
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
@@ -175,7 +181,25 @@ def getPayload(hexData, dataFilter):
     return value
 
 
-#def putPayload(
+# yeah so what else needs to happen here???
+def encodePayload(payload, dataFilter):
+    endian = dataFilter.endian
+    _signed = dataFilter.signed
+    offset = dataFilter.offset
+    length = dataFilter.length
+    scaling = dataFilter.scaling
+
+    # byte order still needs to be adjusted.
+    payload = hex(int(payload/scaling))[2:]
+    while len(payload) < length//4:
+        payload += '0'
+#    if _signed == 'no':
+#        _signed = False
+#    else:
+#        _signed = True
+    return payload
+
+    
 
 
 # Retrieves the data field from the CAN message body and does any units 

@@ -63,8 +63,16 @@ class CanData():
         # Populated with messageInfo objects
         self.messages = {}
 
-        # This queue is used to move data between threads
+        # Multithreading queue for receiving messages from the bus
         self.CANacondaMessage_queue = queue.Queue()
+
+        # Multithreading queue for transmitting messages tot he bus
+        self.CANacondaTxMsg_queue = queue.Queue()
+
+#### Change this later on ####
+        # Storage for the outgoing message in hex, ascii format (for serial):
+        self.asciiBucket = '' 
+
 
         # A nested dictionary of 'messageInfo'->'field'->'latest message'
         self.latest_CANacondaMessages = {}
@@ -103,6 +111,9 @@ class CanData():
         # For matching message PGN to name, as in previous example.
         self.pgn_to_name = {}
 
+        # We will use this to give an ID while encoding messages
+        self.IDencodeMap = {}
+        
         # For noGUI+CSV mode: Dictionary of messageInfo and values with units,
         # if any.
         # This map is set once at program launch, and accessed in
