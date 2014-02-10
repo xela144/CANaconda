@@ -44,3 +44,5 @@ CHANGED:
 
  * Added a status ("RECORDING" or "STOPPED"), followed by the number
    messages that have been recorded into each log session.
+
+ * Added transmission to GUI. Need to make this code more modular

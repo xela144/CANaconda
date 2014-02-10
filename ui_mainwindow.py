@@ -109,19 +109,18 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxMessageInfo = QtWidgets.QComboBox()
         self.firstTxMessageInfo.addItem('Metadata required for transmission')
         self.firstTxMessageInfo.setDisabled(True)
-        self.firstTxLabel1 = QtWidgets.QLabel()
-        self.firstTxLabel1.setText("Message:")
-        self.firstTxLabel2 = QtWidgets.QLabel()
-        self.firstTxLabel2.setText("Field:")
-        self.firstTxField = QtWidgets.QComboBox()
-        self.firstTxField.addItem('Metadata required for transmission')
-        self.firstTxField.setDisabled(True)
-        #self.firstTxField.setMinimumWidth(90)
-        self.firstTxBody = QtWidgets.QLineEdit()
-        self.firstTxBody.setPlaceholderText('payload data')
-        self.firstTxBody.setDisabled(Truedat)
-        self.firstTxLabel3 = QtWidgets.QLabel()
-        self.firstTxLabel3.setText("Frequency [Hz]: ")
+        self.firstTxLabelMsg = QtWidgets.QLabel()
+        self.firstTxLabelMsg.setText("Message:")
+        self.firstTxLabelField = QtWidgets.QLabel()
+        self.firstTxLabelField.setText("Field:")
+        self.firstTxField1 = QtWidgets.QLabel()
+        self.firstTxField1.setText(' ...')
+        #self.firstTxField1.setMinimumWidth(90)
+        self.firstTxBody1 = QtWidgets.QLineEdit()
+        self.firstTxBody1.setPlaceholderText('payload data')
+        self.firstTxBody1.setDisabled(Truedat)
+        self.firstTxLabelFreq = QtWidgets.QLabel()
+        self.firstTxLabelFreq.setText("Frequency [Hz]: ")
         self.firstTxFreq = QtWidgets.QLineEdit()
         self.firstTxFreq.setDisabled(True)
         self.firstTxFreq.setMaximumWidth(40)
@@ -130,15 +129,15 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxButton.setDisabled(True)
         self.firstTxButton.clicked.connect(self.txActivateHandler)
         
-        self.txGrid.addWidget(self.txLabel,            0, 3)
-        self.txGrid.addWidget(self.firstTxLabel1,      1, 0)
-        self.txGrid.addWidget(self.firstTxMessageInfo, 1, 1)
-        self.txGrid.addWidget(self.firstTxLabel2,      1, 2)
-        self.txGrid.addWidget(self.firstTxField,       1, 3)
-        self.txGrid.addWidget(self.firstTxBody,        1, 4)
-        self.txGrid.addWidget(self.firstTxLabel3,      1, 5)
-        self.txGrid.addWidget(self.firstTxFreq,        1, 6)
-        self.txGrid.addWidget(self.firstTxButton,      1, 7)
+        self.txGrid.addWidget(self.txLabel,              0, 3)
+        self.txGrid.addWidget(self.firstTxLabelMsg,      1, 0)
+        self.txGrid.addWidget(self.firstTxMessageInfo,   1, 1)
+        self.txGrid.addWidget(self.firstTxLabelField,    1, 2)
+        self.txGrid.addWidget(self.firstTxField1,        1, 3)
+        self.txGrid.addWidget(self.firstTxBody1,         1, 4)
+        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 5)
+        self.txGrid.addWidget(self.firstTxFreq,          1, 6)
+        self.txGrid.addWidget(self.firstTxButton,        1, 7)
 
 
 
@@ -398,49 +397,85 @@ class Ui_MainWindow(QtCore.QObject):
     def populateTxMessageInfoCombo(self):
         self.firstTxMessageInfo.clear()            #
         self.firstTxMessageInfo.setDisabled(False) #
-        self.firstTxBody.clear()                #
-        self.firstTxBody.setDisabled(Hellno)    # move to separate function
-        self.firstTxFreq.setDisabled(Hellno)    #
-        self.firstTxButton.setDisabled(Hellno)  #
+        try:
+            self.firstTxBody1.clear()                  #
+        except RuntimeError:
+            # The widget has already been deleted
+            pass
+        # move to separate function
+        self.firstTxFreq.setDisabled(Hellno)       #
+        self.firstTxButton.setDisabled(Hellno)     #
         for messageInfoName in self.dataBack.messages.keys():
             self.firstTxMessageInfo.addItem(messageInfoName)
         self.populateTxField()
         self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
 
     def populateTxField(self):
-        self.firstTxField.setDisabled(False)
-        self.firstTxField.clear()
+        #self.firstTxField.setDisabled(False)
+        rowcount = self.txGrid.rowCount()
+        for i in range(1, rowcount):
+            try:
+                self.txGrid.itemAtPosition(i, 4).widget().deleteLater()
+                self.txGrid.itemAtPosition(i, 3).widget().deleteLater()
+            except AttributeError:
+                # If widget has already been deleted
+                pass
+
+        #self.firstTxField1.clear()
+        self.txQLabel_LineContainer = []  # store QLineEdits here
         key = self.firstTxMessageInfo.currentText()
+        row = 1   # counter for adding to txGrid row
         for field in self.dataBack.messages[key].fields.keys():
-            self.firstTxField.addItem(field)
+            newLabel = QtWidgets.QLabel()
+            newLabel.setText(field)
+            newLineEdit = QtWidgets.QLineEdit()
+            self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
+            self.txGrid.addWidget(newLabel,    row, 3)
+            self.txGrid.addWidget(newLineEdit, row, 4)
+            row += 1
+
 
     def txActivateHandler(self):
         if not self.dataBack.alreadyStreaming:
             self.notStreamingWarn()
             return
-        payload = self.firstTxBody.text()
+        payload = {}
+        for pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
+            payload[pair[0].text()] = pair[1].text()
         freq = self.firstTxFreq.text()
-        # payload and frequency must be either int or float:
-        payload = self.checkTypeAndConvert(payload)
+        for val in payload:
+            payload[val] = self.checkTypeAndConvert(payload[val])
+            # Check that that payload value is valid
+            if payload[val] == None:
+                self.txTypeError()
+                return
+        # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
-        # Check that that payload and frequency are valid
-        if payload == None or freq == None:
+        if freq == None:
             self.txTypeError()
             return
+        pyqtrm()
+        pdb.set_trace()
+
         messageName = self.firstTxMessageInfo.currentText()
-        field = self.firstTxField.currentText()  # later will need to adjust
+        #field = self.firstTxField.currentText()  # later will need to adjust
                                                  # for all fields in messageInfo
-        self.dataBack.asciiBucket = self.generateMessage(payload, messageName, field)
+        self.dataBack.asciiBucket = self.generateMessage(payload, messageName)
         self.messageTxInit(freq)
 
     # Creates a hex encoded message
-    def generateMessage(self, payload, messageName, field):
+    # 'payload' is a dictionary mapping of field names to payload data
+    # 
+    def generateMessage(self, payload, messageName):
         messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
         hexData = 'T'  # N2K
         hexData += self.dataBack.IDencodeMap[messageName]  # ID field
+        hexData += '0000'  # dummy time-stamp
         # later wrap this in a for loop
-        dataFilter = self.dataBack.messages[messageName].fields[field]
-        hexData += encodePayload(payload, dataFilter)     # body data
+        for field in messageInfo.fields:
+            
+            dataFilter = self.dataBack.messages[messageName].fields[field]
+            hexData += encodePayload(payload[field], dataFilter)     # body data
         hexData += '\r'
         return hexData
         
@@ -454,7 +489,8 @@ class Ui_MainWindow(QtCore.QObject):
     def pushToTransmitQueue(self):
         self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
 
-
+    # Check the type of the payload data. If it is neither int
+    # nor float, returns None.
     def checkTypeAndConvert(self, value):
         try:
             value = int(value)

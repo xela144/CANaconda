@@ -128,7 +128,7 @@ def getPayload(hexData, dataFilter):
     # Strip the time stamp off the end of the message if it is there
     hexData = hexData[0:2 * length]
 
-    assert(length == len(hexData))
+    assert(length == len(hexData))  # Let's change this assert to something else
     count = len(hexData)
     dataflipped = ""
     while count > 0:
@@ -182,6 +182,8 @@ def getPayload(hexData, dataFilter):
 
 
 # yeah so what else needs to happen here???
+# Need to check for return value length. Should be same as 'length'
+# specified in metadata. Current code does not handle numbers that are too big.
 def encodePayload(payload, dataFilter):
     endian = dataFilter.endian
     _signed = dataFilter.signed
