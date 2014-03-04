@@ -17,7 +17,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfoParse import xmlImport
 import threading
-from serial.tools.list_ports_posix import comports
+from serial.tools.list_ports import comports
 import pdb
 from backend import *
 import filtersTreeWidget
