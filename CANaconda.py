@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
 '''
 This file is the top level implementation of the canpython script.
