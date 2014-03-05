@@ -17,7 +17,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfoParse import xmlImport
 import threading
-from serial.tools.list_ports_posix import comports
+from serial.tools.list_ports import comports
 import pdb
 from backend import *
 import filtersTreeWidget
@@ -242,14 +242,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionLoad_filters_from_file.setObjectName(
                                         "actionLoad_filters_from_file")
         self.actionLoad_filters_from_file.triggered.connect(self.loadFilter)
-        self.actionComports = QtWidgets.QAction(mainWindow)
-        self.actionComports.setObjectName("actionComports")
         # comports code:
         ##########
-        self.menuChoose_port.addAction(self.actionComports)
+        # Populate the serial port menu with all the available ports.
         for port in comports():
-            #pyqtrm()
-            #pdb.set_trace()
             _port = QtWidgets.QAction(port[0], mainWindow)
             self.menuChoose_port.addAction(_port)
             _port.triggered.connect(self.comportSelect)
@@ -309,7 +305,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionCAN_PGNs.setText(_translate("MainWindow", "Show CAN &PGNs"))
         self.actionLoad_filters_from_file.setText(_translate(
                                     "MainWindow", "Load &Filters from file"))
-        #self.actionComports.setText(_translate("MainWindow", "comports()"))
         self.actionTab1.setText(_translate("MainWindow", "Tab 1"))
         self.actionTab2.setText(_translate("MainWindow", "Tab 2"))
 

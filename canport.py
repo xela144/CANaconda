@@ -20,8 +20,8 @@ import sys
 import pdb
 
 
-# CanPort is the thread which handles direct comunication with the CAN device.
-# CanPort initializes the connection and then recieves and parses standard CAN
+# CanPort is the thread which handles direct communication with the CAN device.
+# CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
 # CANacondaMessage_queue queue where they are added to the GUI
 class CANPort():
@@ -37,31 +37,32 @@ class CANPort():
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
         except:
-            pass
+            print("ERROR: Could not open connection to {0}. Is port already in use?".format(self.comport))
+            return
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
             temp = None
-            while(temp != b'\r'):
+            while temp != b'\r':
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
-            time.sleep(1)
-            # Open the CAN port to begin reciveing messages
+            time.sleep(.1)
+            # Open the CAN port to begin receiving messages
             val = serialCAN.write(b'O\r')
             while val != 2:
                 val = serialCAN.write(b'O\r')
-            time.sleep(1)
+            time.sleep(.1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')
-            time.sleep(1)
+            time.sleep(.1)
 
             # Now that set-up is complete, the CANport thread can repeat
             # forever with the following call:
-            while(1):
+            while True:
                 self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object,
@@ -98,27 +99,22 @@ class CANPort():
         return rawmsg, matchedMsg
 
     def buildOutMessage(self, canacondamessage):
+        outmsg = None
         if self.args.csv:
-            # For CSV mode, call std.flush() so that the
-            # output can be piped into a plotting script
             if self.args.zero:
                 outmsg = noGuiParseCSV_zero(
                                self.dataBack, canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
             else:
                 outmsg = noGuiParseCSV(self.dataBack,
                                        canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
         else:
             if self.args.messages is not None:
                 outmsg = noGuiParse(self.dataBack,
                                     canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
+        if outmsg:
+            print(outmsg)
+            # We call flush here to speed up the output. This allows the CSV output to be used as
+            # input for pipePlotter and render in real-time.
+            sys.stdout.flush()
 
 
