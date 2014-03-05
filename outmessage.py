@@ -32,7 +32,7 @@ def noGuiParse(dataBack, message):
         outmsg += "\nPGN: " + str(message.pgn)
     if dataBack.displayList['raw']:
         outmsg += "\n" + message.raw
-    if (message.ID):  # prevent execution of unitialized message
+    if (message.ID):  # prevent execution of uninitialised message
         if dataBack.displayList['ID']:
             outmsg += "\nFilter ID: " + message.ID
         # if displayList is empty, display all:

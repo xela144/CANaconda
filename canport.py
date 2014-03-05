@@ -20,8 +20,8 @@ import sys
 import pdb
 
 
-# CanPort is the thread which handles direct comunication with the CAN device.
-# CanPort initializes the connection and then recieves and parses standard CAN
+# CanPort is the thread which handles direct communication with the CAN device.
+# CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
 # CANacondaMessage_queue queue where they are added to the GUI
 class CANPort():

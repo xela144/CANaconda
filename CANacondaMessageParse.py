@@ -146,12 +146,12 @@ def getPayload(hexData, dataFilter):
                                                             + binaryData[2:]
     # This prepends the number of dropped 0's to the front of the binary
 
-    #shifting indices to right orentated
+    #shifting indices to the right
     start = len(binaryData) - offset
     stop = len(binaryData) - (length + offset)
 
     datasect = binaryData[stop: start]
-    # from the offset to the end of size is selected to seperate
+    # from the offset to the end of size is selected to separate
     # the relevant data
 
     dataset = []
