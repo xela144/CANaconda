@@ -37,7 +37,8 @@ class CANPort():
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
         except:
-            pass
+            print("ERROR: Could not open connection to {0}. Is port already in use?".format(self.comport))
+            return
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
