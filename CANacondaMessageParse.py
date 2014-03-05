@@ -114,7 +114,7 @@ def pgnSet(match):
     pgn = None
     if match.group(1):
         [pgn, x, y, z] = Iso11783Decode(match.group(1))
-    else:
+    elif match.group(2):
         [pgn, x, y, z] = Iso11783Decode(match.group(2))
     return pgn
 
