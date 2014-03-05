@@ -50,15 +50,15 @@ class CANPort():
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
-            time.sleep(1)
-            # Open the CAN port to begin reciveing messages
+            time.sleep(.1)
+            # Open the CAN port to begin receiving messages
             val = serialCAN.write(b'O\r')
             while val != 2:
                 val = serialCAN.write(b'O\r')
-            time.sleep(1)
+            time.sleep(.1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')
-            time.sleep(1)
+            time.sleep(.1)
 
             # Now that set-up is complete, the CANport thread can repeat
             # forever with the following call:
