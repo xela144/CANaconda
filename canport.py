@@ -44,7 +44,7 @@ class CANPort():
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
             temp = None
-            while(temp != b'\r'):
+            while temp != b'\r':
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 serialCAN.write(b'S5\r')
@@ -62,7 +62,7 @@ class CANPort():
 
             # Now that set-up is complete, the CANport thread can repeat
             # forever with the following call:
-            while(1):
+            while True:
                 self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object,
