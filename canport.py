@@ -99,27 +99,22 @@ class CANPort():
         return rawmsg, matchedMsg
 
     def buildOutMessage(self, canacondamessage):
+        outmsg = None
         if self.args.csv:
-            # For CSV mode, call std.flush() so that the
-            # output can be piped into a plotting script
             if self.args.zero:
                 outmsg = noGuiParseCSV_zero(
                                self.dataBack, canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
             else:
                 outmsg = noGuiParseCSV(self.dataBack,
                                        canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
         else:
             if self.args.messages is not None:
                 outmsg = noGuiParse(self.dataBack,
                                     canacondamessage)
-                if outmsg:
-                    print(outmsg)
-                    sys.stdout.flush()
+        if outmsg:
+            print(outmsg)
+            # We call flush here to speed up the output. This allows the CSV output to be used as
+            # input for pipePlotter and render in real-time.
+            sys.stdout.flush()
 
 
