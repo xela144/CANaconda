@@ -87,15 +87,25 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
 # This just gives a fancy way of displaying hex data from the
 # serial stream.
 def parseRaw(rawmsg):
-    raw = "Head: 0x"
-    if (rawmsg[0] == 'T'):
-        raw += rawmsg[1:9] + ", Body: 0x["
-    n = 9
-    while (n < 9 + 2 * int(rawmsg[9])):
-        raw += rawmsg[n:n + 2] + " "
-        n += 2
-    raw = raw[:-1] + "]"
-    return raw
+    # Process a standard CAN frame
+    if rawmsg[0] == 't':
+        head = rawmsg[1:4]
+        dataLength = 2 * int(rawmsg[4], 16) # Because it takes 2 hex chars to represent a byte
+        data = rawmsg[5:5+dataLength]
+    # And an extended CAN frame message
+    elif rawmsg[0] == 'T':
+        head = rawmsg[1:10]
+        dataLength = 2 * int(rawmsg[10], 16) # Because it takes 2 hex chars to represent a byte
+        data = rawmsg[11:11+dataLength]
+    # And don't do anything for any other message
+    else:
+        return ""
+
+    # Now split our data every 2 characters
+    dataSplit = [data[start:start + 2] for start in range(0, len(data), 2)]
+    dataString = " ".join(dataSplit)
+
+    return "Head: 0x{0}, Body: 0x[{1}]".format(head, dataString)
 
 
 # Use the Iso11783 decoding routine to extract the PGN from
