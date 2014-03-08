@@ -58,7 +58,7 @@ class Field():
         self.byValue = []
 
     def __str__(self):
-        return self.name
+        return dir(self)
 
     def __iter__(self):
         return iter([self.name, self.header, self.length, self.offset,
