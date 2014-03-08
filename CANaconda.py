@@ -160,8 +160,6 @@ def main():
 
             # Setup for the CSV display
             else:
-                if args.time:
-                    dataBack.CSVtimeFlag = True
                 setDisplayCSVmode(dataBack)
         else:
             print("Opening connection to", dataBack.comport)

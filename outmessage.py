@@ -6,7 +6,6 @@ For both the console mode and the GUI mode.
 '''
 
 import time
-import pdb
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # this is just a copy of the parseMessage function from canpython
@@ -19,20 +18,31 @@ def noGuiParse(dataBack, message):
         return
     # Build a text string that gets put to screen.
     outmsg = ""
-    #datddaFound = False
     for field in message.body:
         if field in dataBack.messageInfo_to_fields[message.name]:
             break
     else:
         return
     dataFound = False
+    # Print the timestamp of the message first
+    if dataBack.args.time:
+        outmsg += "\nTime: {0:0.3f}".format(time.time())
+    
+    # Then the message name as specified in the metadata
     if message.name:
         outmsg += "\n" + message.name
+    
+    # Then the PGN
     if dataBack.displayList['pgn']:
         outmsg += "\nPGN: " + str(message.pgn)
+    
+    # Then the raw bytes of the message
+    # Note: This is required for GUI operation and always empty in the command-line interface.
     if dataBack.displayList['raw']:
         outmsg += "\n" + message.raw
-    if message.ID:  # prevent execution of uninitialised message
+    
+    # Now finally pretty-print the internal data if metadata exists for this message
+    if message.ID:
         if dataBack.displayList['ID']:
             outmsg += "\nFilter ID: " + message.ID
         # if displayList is empty, display all:
@@ -69,8 +79,8 @@ def noGuiParseCSV(dataBack, message):
             dataFound = True
     # Display message
     if dataFound:
-        if dataBack.CSVtimeFlag:
-            lineData[0] = "{0:0.5f}".format(time.time())
+        if dataBack.args.time:
+            lineData[0] = "{0:0.3f}".format(time.time())
         return (','.join(lineData))
 
 
@@ -90,11 +100,10 @@ def noGuiParseCSV_zero(dataBack, message):
         if message.name in dataBack.messageInfo_to_fields:
             if field in dataBack.messageInfo_to_fields[message.name]:
                 fieldList[field] = message.body[field]
-    if dataBack.CSVtimeFlag:
-        outmsg += "{0:0.5f}".format(time.time()) + ", "
+    if dataBack.args.time:
+        outmsg += "{0:0.3f}".format(time.time()) + ", "
     outmsg += (str([(fieldList[key]) for key in sorted(fieldList)])[1:-1])
     return (outmsg)
-
 
 # good enough for now
 def guiParseCSV(dataBack, message):
@@ -114,7 +123,6 @@ def guiParseCSV(dataBack, message):
             dataFound = True
     # Display message
     if dataFound:
-        #if dataBack.CSVtimeFlag:
-        lineData[0] = "{0:0.5f}".format(time.time())
+        lineData[0] = "{0:0.3f}".format(time.time())
         return (','.join(lineData))
 

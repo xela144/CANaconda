@@ -16,10 +16,6 @@ from outmessage import *
 import serial
 import sys
 
-# python debugger
-import pdb
-
-
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
@@ -112,7 +108,12 @@ class CANPort():
                                     canacondamessage)
             # Otherwise just print out the raw message data
             else:
-                outmsg = canacondamessage.raw
+                # Prepend timestamp to millisecond precision if the user requested it.
+                if self.args.time:
+                    outmsg = "{0:0.3f} ".format(time.time())
+                
+                # And then output the raw message data.
+                outmsg += canacondamessage.raw
 
         # Finally print the message data. We call flush here to speed up the output.
         # This allows the CSV output to be used as input for pipePlotter and render

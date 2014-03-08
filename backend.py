@@ -128,9 +128,6 @@ class CanData():
         # For displaying column titles in csv mode
         self.csvDisplayList = {}
 
-        # Add a time stamp in csv mode
-        self.CSVtimeFlag = False
-
         # For CSV output, an index mapping dictionary
         self.fieldIndices = {}
 
