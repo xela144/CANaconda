@@ -65,23 +65,18 @@ class CANPort():
             while True:
                 self.serialParse(serialCAN)
 
-    # parse the serial string, create the CANacondaMessage object,
-    # if no messageInfo's have been loaded print raw hex format, otherwise
-    # call 
+    # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
-        dataBack = self.dataBack
-        rawmsg, matchedmsg = self.getRegex(serialCAN)
+        (rawmsg, matchedmsg) = self.getRegex(serialCAN)
         canacondamessage = CANacondaMessage()
         if matchedmsg:
-            CANacondaMessageParse(canacondamessage, matchedmsg, 
-                                  rawmsg, dataBack)
+            CANacondaMessageParse(canacondamessage, matchedmsg,
+                                  rawmsg, self.dataBack)
         if not self.args.nogui:  # This queue is not necessary if separate
                                  # 'canport's are used for GUI and noGUI modes.
             self.dataBack.CANacondaMessage_queue.put(canacondamessage)
-        elif len(self.dataBack.messages) == 0:  # No messageInfo loaded, print
-            print(canacondamessage.raw, "\t\t",  canacondamessage.pgn)        # raw message format
         else:
-            self.buildOutMessage(canacondamessage)
+            self.PrintMessage(canacondamessage)
 
     def getRegex(self, serialCAN):
         character = None
@@ -97,23 +92,32 @@ class CANPort():
         matchedMsg = self.regex.match(rawmsg)
         return rawmsg, matchedMsg
 
-    def buildOutMessage(self, canacondamessage):
+    def PrintMessage(self, canacondamessage):
         outmsg = None
+
         if self.args.csv:
+            # If specified, do zero-order hold on output CSV data.
             if self.args.zero:
                 outmsg = noGuiParseCSV_zero(
                                self.dataBack, canacondamessage)
+            # If CSV mode is specified, print data comma-separated.
             else:
                 outmsg = noGuiParseCSV(self.dataBack,
                                        canacondamessage)
         else:
+            # If we have metadata for messages, pretty-print using it.
             if self.args.messages is not None:
                 outmsg = noGuiParse(self.dataBack,
                                     canacondamessage)
+            # Otherwise just print out the raw message data
+            else:
+                outmsg = canacondamessage.raw
+
+        # Finally print the message data. We call flush here to speed up the output.
+        # This allows the CSV output to be used as input for pipePlotter and render
+        # in real-time.
         if outmsg:
             print(outmsg)
-            # We call flush here to speed up the output. This allows the CSV output to be used as
-            # input for pipePlotter and render in real-time.
             sys.stdout.flush()
 
 
