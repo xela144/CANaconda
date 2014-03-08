@@ -73,7 +73,6 @@ class CANPort():
         rawmsg, matchedmsg = self.getRegex(serialCAN)
         canacondamessage = CANacondaMessage()
         if matchedmsg:
-            #pdb.set_trace()
             CANacondaMessageParse(canacondamessage, matchedmsg, 
                                   rawmsg, dataBack)
         if not self.args.nogui:  # This queue is not necessary if separate

@@ -66,7 +66,6 @@ def createListAndDict(dataBack, filterString):
 # However this loop is only executed once.
 # Refactor when necessary.
 def setFieldsFilterFieldDict(dataBack):
-    #pdb.set_trace()
     for key in dataBack.messageInfo_to_fields:
         for messageInfo in dataBack.messages:
             if key == messageInfo:
@@ -193,7 +192,6 @@ def setDisplayCSVmode(dataBack):
         else:
             for _messageInfo in dataBack.messages:
                 if _messageInfo == messageInfo:
-                #if _messageInfo.name == messageInfo:
                     for field in dataBack.messages[_messageInfo]:
                         dataBack.csvDisplayList[field] = messageInfo + field
                         dataBack.fieldList_CSV[field] = 0
@@ -202,16 +200,13 @@ def setDisplayCSVmode(dataBack):
     out = ""
     i = 1
 
-    #pdb.set_trace()
     for key in sorted(dataBack.csvDisplayList):
         out += str(dataBack.csvDisplayList[key]) + ","
         dataBack.fieldIndices[key] = i
         i += 1
     if dataBack.args.time:
-        #pass
         print("t,",out[:-1])
     else:
-        #pass
         print(out[:-1])
 
 ''' this is how you iterate through all the filters/fields in dataBack.messages:

@@ -99,7 +99,6 @@ def main():
     args.fast = None
     args.debug = False
     dataBack = backend.CanData(args)
-    #pdb.set_trace()
     messageInfoParse.xmlImport(dataBack, args, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))

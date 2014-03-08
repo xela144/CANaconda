@@ -144,7 +144,6 @@ class CanData():
     # deletes from memory, but does not change xml file.
     # Possible alternative: remove from ui.treeWidget instead of here.
     def removeMessageInfo(self, target):
-        #pdb.set_trace()
         for messageInfo in self.messages:
             if messageInfo.name == target:
                 self.messages.remove(messageInfo)
