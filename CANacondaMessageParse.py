@@ -94,9 +94,9 @@ def parseRaw(rawmsg):
         data = rawmsg[5:5+dataLength]
     # And an extended CAN frame message
     elif rawmsg[0] == 'T':
-        head = rawmsg[1:10]
-        dataLength = 2 * int(rawmsg[10], 16) # Because it takes 2 hex chars to represent a byte
-        data = rawmsg[11:11+dataLength]
+        head = rawmsg[1:9]
+        dataLength = 2 * int(rawmsg[9], 16) # Because it takes 2 hex chars to represent a byte
+        data = rawmsg[10:10+dataLength]
     # And don't do anything for any other message
     else:
         return ""
