@@ -52,11 +52,11 @@ class CanData():
         #The file where loging will takeplace if it is turned on
         self.logfile = None
         #This defines which COM port is used
-        if (args.nogui):
+        if args.nogui:
             self.comport = args.nogui[0]
         else:
             self.comport = None
-        if (args.fast):
+        if args.fast:
             self.comport = '/dev/ttyUSB0'
 
         # All of the current messages applied by the user.

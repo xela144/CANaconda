@@ -84,7 +84,7 @@ class CANPort():
         rawmsg = b""
         # Reads in characters from the serial stream until
         # a carriage return is encountered
-        while(character != (b'\r' or '\r')):
+        while character != (b'\r' or '\r'):
             character = serialCAN.read()
             # appends the newly read character to
             # the message being built

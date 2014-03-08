@@ -28,8 +28,7 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
-        if ((dataBack.messages[key].pgn == str(self.pgn)) or 
-                 (dataBack.messages[key].id == self.ID)):
+        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.ID:
             self.name = dataBack.messages[key].name
             break
     # If self.name is still None, then the  message is not in the xml 
@@ -60,7 +59,7 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
 
     # If the first element(s) in the queue is/are older than 5 seconds, remove:
     if dataBack.frequencyMap[self.name].qsize() > 0:
-        while (time.time() - dataBack.frequencyMap[self.name].queue[0] > 5.0):
+        while time.time() - dataBack.frequencyMap[self.name].queue[0] > 5.0:
             null = dataBack.frequencyMap[self.name].get()
             if dataBack.frequencyMap[self.name].empty():
                 break
@@ -164,19 +163,19 @@ def getPayload(hexData, dataFilter):
     dataset.append(int(datasect, 2))
 
     #little endian unsigned
-    if(endian == "little" and signed == "no"):
+    if endian == "little" and signed == "no":
         value = int.from_bytes(dataset, byteorder='little', signed=False)
 
     #little endian signed
-    elif(endian == "little" and signed == "yes"):
+    elif endian == "little" and signed == "yes":
         value = int.from_bytes(dataset, byteorder='little', signed=True)
 
     #big endian signed
-    elif(endian == "big" and signed == "yes"):
+    elif endian == "big" and signed == "yes":
         value = int.from_bytes(dataset, byteorder='big', signed=True)
 
     #big endian unsigned
-    elif(endian == "big" and signed == "no"):
+    elif endian == "big" and signed == "no":
         value = int.from_bytes(dataset, byteorder='big', signed=False)
 
     else:

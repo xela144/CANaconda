@@ -20,7 +20,7 @@ def createListAndDict(dataBack, filterString):
 
             # If the ',' comes before the next '{', then there is a toplevel
             # filter that comes before a lower level filter
-            if (',') in tuple[0]:
+            if ',' in tuple[0]:
                 tuple1 = tuple[0].partition(',')
                 # messageInfoList is used to print a message at console
                 # mode launch and to create displayList_CSV

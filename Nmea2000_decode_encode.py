@@ -23,7 +23,7 @@ def Iso11783Decode(can_id):
 	PS = (can_id >> 8) & 0xFF
 
 	pgn = None
-	if (PF > 239):
+	if PF > 239:
 		dest = 0xFF
 		pgn = (MS << 16) | (PF << 8) | (PS)
 	else:
@@ -49,7 +49,7 @@ def Iso11783Encode(pgn, src, dest, pri):
 	# it's PDU1.
 	# For PDU2
 
-	if (pgn & 0xFF):
+	if pgn & 0xFF:
 		can_id |= (pgn & 0x7FFFF) << 8
 
 	# For PDU1

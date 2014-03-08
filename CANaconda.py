@@ -66,7 +66,7 @@ def main():
     args = parser.parse_args()
 
     # Debug print statements
-    if (args.fast):
+    if args.fast:
         print("Fast debug mode")
 
     # create the dataBack singleton
@@ -188,7 +188,7 @@ def main():
         import ui_mainwindow
         import canport_QT
 
-        if (args.fast):
+        if args.fast:
             # import the filters from xml
             xmlImport(dataBack, args, 'exampleMetaData.xml')
         # create the threading object

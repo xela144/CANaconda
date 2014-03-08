@@ -414,7 +414,7 @@ class Ui_MainWindow(QtCore.QObject):
 #        dialog.setNameFilter(tr("(*.xml)"))
 #        dialog.setDefaultSuffix('xml')
 #        dialog.setViewMode(QtWidgets.QFileDialog.Detail)
-#        if (dialog.exec()):
+#        if dialog.exec():
 #            fileName = dialog.selectedFiles()
 ##        while filename is None:
 #

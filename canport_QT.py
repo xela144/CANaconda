@@ -51,7 +51,7 @@ class CANPort_QT(QObject):
             # properly this may take up to ~20 seconds to clear the
             #serial buffer of old messages
             temp = serialCAN.read()
-            while(temp != (b'\r' or b't' or b'T')):
+            while temp != (b'\r' or b't' or b'T'):
                 time.sleep(.2)
                 #initialize the CAN-USB device at 250Kbits/s
                 serialCAN.write(b'S5\r')
@@ -69,7 +69,7 @@ class CANPort_QT(QObject):
             # Make cursor go back to normal
             self.stopHourGlass.emit()
             
-            while(1):
+            while True:
                 self.serialRxTx(serialCAN)
 
     def serialRxTx(self, serialCAN):
@@ -77,8 +77,7 @@ class CANPort_QT(QObject):
         rawmsg, matchedmsg = self.getRegex(serialCAN)
         newCANacondaMessage = CANacondaMessage()
         if matchedmsg:
-            CANacondaMessageParse(newCANacondaMessage, matchedmsg,
-                                  rawmsg, dataBack)
+            CANacondaMessageParse(newCANacondaMessage, matchedmsg, rawmsg, dataBack)
             # use dataBack.nogui?
             self.dataBack.CANacondaMessage_queue.put(newCANacondaMessage)
             self.parsedMsgPut.emit()
@@ -86,13 +85,10 @@ class CANPort_QT(QObject):
             # If not present already, add the message's messageInfo
             # and field name to the dataBack.messagesSeenSoFar dict,
             # and emit a signal for redrawing the messages table
-            if (newCANacondaMessage.name not in self.dataBack.
-                messagesSeenSoFar and newCANacondaMessage.name is not ''):
-                self.dataBack.messagesSeenSoFar[
-                    newCANacondaMessage.name] = []
+            if newCANacondaMessage.name not in self.dataBack.messagesSeenSoFar and newCANacondaMessage.name is not ''):
+                self.dataBack.messagesSeenSoFar[newCANacondaMessage.name] = []
                 for field in newCANacondaMessage.body:
-                    self.dataBack.messagesSeenSoFar[newCANacondaMessage.
-                                                    name].append(field)
+                    self.dataBack.messagesSeenSoFar[newCANacondaMessage.name].append(field)
                 self.messageUp.emit()
 
     def getRegex(self, serialCAN):
@@ -100,7 +96,7 @@ class CANPort_QT(QObject):
         rawmsg = b""
         # Reads in characters from the serial stream until
         # a carriage return is encountered
-        while(character != (b'\r' or '\r')):
+        while character != (b'\r' or '\r'):
             character = serialCAN.read()
             # appends the newly read character to
             # the message being built
