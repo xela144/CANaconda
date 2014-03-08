@@ -52,10 +52,9 @@ def noGuiParse(dataBack, message):
                     if field:
                         dataFound = True
                     try:
-                        outmsg += "\n" + field + ": " + '{0:3f}'.\
-                                    format((message.body[field]))
+                        outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], dataBack.messages[message.name].fields[field].units)
                     except:
-                        outmsg += "\n" + field + ": " + message.body[field]
+                        outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:
         return outmsg
 
