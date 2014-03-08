@@ -38,6 +38,7 @@ class CANPort_QT(QObject):
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
         except:
+            print("ERROR: Could not open connection to {0}. Is port already in use?".format(self.comport))
             #self.mainwindow.comportUnavailable()
             pass
         else:
@@ -85,7 +86,7 @@ class CANPort_QT(QObject):
             # If not present already, add the message's messageInfo
             # and field name to the dataBack.messagesSeenSoFar dict,
             # and emit a signal for redrawing the messages table
-            if newCANacondaMessage.name not in self.dataBack.messagesSeenSoFar and newCANacondaMessage.name is not ''):
+            if newCANacondaMessage.name not in self.dataBack.messagesSeenSoFar and newCANacondaMessage.name is not '':
                 self.dataBack.messagesSeenSoFar[newCANacondaMessage.name] = []
                 for field in newCANacondaMessage.body:
                     self.dataBack.messagesSeenSoFar[newCANacondaMessage.name].append(field)

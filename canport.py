@@ -69,8 +69,7 @@ class CANPort():
         # Once we've parsed out a complete message, actually process the data for display.
         canacondamessage = CANacondaMessage()
         if matchedmsg:
-            CANacondaMessageParse(canacondamessage, matchedmsg,
-                                  rawmsg, self.dataBack)
+            CANacondaMessageParse(canacondamessage, matchedmsg, rawmsg, self.dataBack)
 
         # Finally just print the message since we're running in command line mode already.
         self.PrintMessage(canacondamessage)
