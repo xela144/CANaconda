@@ -67,16 +67,17 @@ class CANPort():
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
+        # Sit and wait for all the bytes for an entire CAN message from the serial port.
         (rawmsg, matchedmsg) = self.getRegex(serialCAN)
+        
+        # Once we've parsed out a complete message, actually process the data for display.
         canacondamessage = CANacondaMessage()
         if matchedmsg:
             CANacondaMessageParse(canacondamessage, matchedmsg,
                                   rawmsg, self.dataBack)
-        if not self.args.nogui:  # This queue is not necessary if separate
-                                 # 'canport's are used for GUI and noGUI modes.
-            self.dataBack.CANacondaMessage_queue.put(canacondamessage)
-        else:
-            self.PrintMessage(canacondamessage)
+
+        # Finally just print the message since we're running in command line mode already.
+        self.PrintMessage(canacondamessage)
 
     def getRegex(self, serialCAN):
         character = None
