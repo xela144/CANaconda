@@ -18,12 +18,8 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfoParse import xmlImport
 import threading
-<<<<<<< HEAD
 from serial.tools.list_ports import comports
-=======
-from serial.tools.list_ports_posix import comports
 from CANacondaMessageParse import encodePayload
->>>>>>> b8fe2412a970e9b20ce48aa857b56aafe7ec468f
 import pdb
 from backend import *
 import filtersTreeWidget
@@ -453,9 +449,6 @@ class Ui_MainWindow(QtCore.QObject):
         if freq == None:
             self.txTypeError()
             return
-        pyqtrm()
-        pdb.set_trace()
-
         messageName = self.firstTxMessageInfo.currentText()
         #field = self.firstTxField.currentText()  # later will need to adjust
                                                  # for all fields in messageInfo
