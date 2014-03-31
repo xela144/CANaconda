@@ -50,6 +50,7 @@ def messageInfoInit(self, messageInfo, dataBack):
     self.desc = messageInfo.get('desc')
     # for filtering messages, map id to name
     if self.id is not None:
+        dataBack.IDencodeMap[self.name] = self.id.upper()
         dataBack.id_to_name[self.id.upper()] = self.name
     # map pgn to name -- this could be wrong!
     dataBack.pgn_to_name[self.pgn] = self.name

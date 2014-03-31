@@ -24,7 +24,6 @@ from setoptions import *
 import outmessage
 
 
-
     ###########################
     # format we want:
     # pyserial.init()

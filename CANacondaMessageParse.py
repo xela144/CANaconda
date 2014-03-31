@@ -32,6 +32,9 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 def CANacondaMessageParse(self, match, rawmsg, dataBack):
     self.pgn = pgnSet(match)
     self.raw = parseRaw(rawmsg)
+##    
+    self.match = match  # For debugging -- delete
+##
     if match.group(1):
         self.ID = match.group(1)
     elif match.group(2):
@@ -53,6 +56,9 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
         currentMessage = dataBack.messages[dataBack.id_to_name[self.ID]]
     except:
         currentMessage = dataBack.messages[dataBack.pgn_to_name[str(self.pgn)]]
+
+    if self.ID not in dataBack.IDencodeMap:
+        dataBack.IDencodeMap[self.name] = self.ID.upper()
         
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
@@ -143,7 +149,7 @@ def getPayload(hexData, dataFilter):
     # Strip the time stamp off the end of the message if it is there
     hexData = hexData[0:2 * length]
 
-    assert(length == len(hexData))
+    assert(length == len(hexData))  # Let's change this assert to something else
     count = len(hexData)
     dataflipped = ""
     while count > 0:
@@ -195,6 +201,28 @@ def getPayload(hexData, dataFilter):
 
     return value
 
+
+# yeah so what else needs to happen here???
+# Need to check for return value length. Should be same as 'length'
+# specified in metadata. Current code does not handle numbers that are too big.
+def encodePayload(payload, dataFilter):
+    endian = dataFilter.endian
+    _signed = dataFilter.signed
+    offset = dataFilter.offset
+    length = dataFilter.length
+    scaling = dataFilter.scaling
+
+    # byte order still needs to be adjusted.
+    payload = hex(int(payload/scaling))[2:]
+    while len(payload) < length//4:
+        payload += '0'
+#    if _signed == 'no':
+#        _signed = False
+#    else:
+#        _signed = True
+    return payload
+
+    
 
 
 # Retrieves the data field from the CAN message body and does any units 

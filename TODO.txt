@@ -13,10 +13,13 @@ TO DO:
    The filter should be specified by field but applied per message. The 'latest value'
    isn't working either in this respect.
  * Fix redundant names in tablewidget
-
+ * Since we are not requiring an ID for each message in the metadata, the transmit
+   function throws a keyError exception when a message is transmitted whose node is
+   not on the bus.
+ * The transmission function does not do any error checking in the GUI.
+ * Further separate the threads to make code re-usable.
  * Raw message viewing in GUI is spewing all messages even if none are selected
    in the table widget
- 
 
 
 
