@@ -137,6 +137,8 @@ class CanData():
         # For raw output in GUI mode
         self.GUI_rawFlag = False
 
+        self.serialThread = None
+
     # when a messageInfo is removed from the treeview:
     # deletes from memory, but does not change xml file.
     # Possible alternative: remove from ui.treeWidget instead of here.

@@ -16,6 +16,8 @@ from outmessage import *
 import serial
 import sys
 
+import pdb
+
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
@@ -89,7 +91,7 @@ class CANPort():
         return rawmsg, matchedMsg
 
     def PrintMessage(self, canacondamessage):
-        outmsg = None
+        outmsg = ''
 
         if self.args.csv:
             # If specified, do zero-order hold on output CSV data.

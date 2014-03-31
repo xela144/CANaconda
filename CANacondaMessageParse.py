@@ -1,10 +1,20 @@
 
 '''
 For adding the data to the CANacondaMessage object.
-CANacondaMessageParse
-parseRaw
-pgnSet
-hexToVal
+CANacondaMessageParse -- main parser
+parseRaw  -------------- gets raw hex  
+pgnSet ----------------- gets parameter group number
+hexToVal --------------- converts the payload data
+
+A Regex Match object is passed to this parsing function contained in this file.
+Example parsed message:
+(None, '09FD0284', '8', 'D410002841FAFFFF', '5CCC')
+parsedmsg.groups() will give:
+     (1)               (2)            (3)          (4)       (5)
+header for 't'    header for 'T'     length        body      junk
+
+
+Note that the 'id' tag is sometimes referred to as 'header'
 '''
 from backend import conversionMap
 from Nmea2000_decode_encode import Iso11783Decode
@@ -13,6 +23,8 @@ import time
 import pdb
 
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+
+
 
 
 # The goal here is to fill in all of the following:

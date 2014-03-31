@@ -12,11 +12,10 @@ TO DO:
    at all even if other data fields in that message don't have a filter. 
    The filter should be specified by field but applied per message. The 'latest value'
    isn't working either in this respect.
- * Add a status ("RECORDING" or "STOPPED"), followed by the number 
-   messages that have been recorded into each log session.
  * Fix redundant names in tablewidget
 
-
+ * Raw message viewing in GUI is spewing all messages even if none are selected
+   in the table widget
  
 
 

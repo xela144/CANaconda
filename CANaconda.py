@@ -23,22 +23,42 @@ from Nmea2000_decode_encode import *
 from setoptions import *
 import outmessage
 
-# Move this comment to appropriate file:
-# This is a function which handles the parsing of an entire
-# CAN message.
-# Most of the actual parsing is done through repeated calls to
-# parssection which parses each section of the message.
-# Example parsed message:
-# (None, '09FD0284', '8', 'D410002841FAFFFF', '5CCC')
-# parsedmsg.groups() will give:
-#      (1)             (2)           (3)          (4)       (5)
-# header for 't'  header for 'T'     length       body      junk
-# Note that the 'id' tag is referred to as 'header'
 
 
+    ###########################
+    # format we want:
+    # pyserial.init()
+    # pyserial.run()
+    # canaconda.init(pyserial)
+    # canaconda.run()
+    # if gui:
+    #    import PyQt
+    #    gui.init()
+    #    gui.run(canaconda)
+    # else:
+    #    cancaconda.push(config)
+    ############################
 def main():
-
+    
     parser = argparse.ArgumentParser()
+    parserInit(parser)
+
+    args = parser.parse_args()
+
+    # Create the dataBack singleton with command-line arguments as parameters
+    dataBack = CanData(args)
+
+    if args.nogui:
+        canacondaNoGuiInit(dataBack)
+        pyserialNoGuiInit(dataBack)
+        pyserialNoGuiRun(dataBack)
+
+    else:
+        pyserialGuiInit(dataBack)
+        canacondaGuiRun(dataBack)
+
+
+def parserInit(parser):
     # first the development options --- remove later
     parser.add_argument('--fast', action="store_true",
             help="Load xmltest.txt and choose /dev/ttyUSB0 as port")
@@ -63,161 +83,136 @@ def main():
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
 
-    args = parser.parse_args()
 
+def canacondaNoGuiInit(dataBack):
+    args = dataBack.args
     # Debug print statements
     if args.fast:
         print("Fast debug mode")
 
-    # create the dataBack singleton
-    # command line arguments passed in
-# refactor: choose message file in dataBack, not xmlimport
-    dataBack = CanData(args)
+    # '--filter' option must come with '--messages'
+    if args.filter and not args.messages:
+        print("\nYou are selectively displaying messages",
+            "without specifying a way to parse CAN",
+            "messages.\n\t(Hint: Use option -m)")
+        return
 
-    # begin nogui mode
-    if args.nogui:
-        # nogui imports
-        import canport
+    # import filters, and return a boolean value as 'filtersNotImpoted'
+    fileName = dataBack.args.messages
+    noMessagesImported = xmlImport(dataBack, args, fileName)
 
-        # '--filter' option must come with '--messages'
-        if args.filter and not args.messages:
-            print("\nYou are selectively displaying messages",
-                "without specifying a way to parse CAN",
-                "messages.\n\t(Hint: Use option -m)")
+    # a typical usage might be something like:
+    # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
+
+    if args.filter:
+        filterString = args.filter[0]
+        # createListAndDict: load filters and syntax checking.
+        # After this call, the messageInfo_to_fields is created
+        # and the values are lists of fields to be displayed.
+        # Also messageInfoList is a list that contains all the
+        # keys that are in messageInfo_to_fields.
+        if not createListAndDict(dataBack, filterString):
+            print("createListAndDict failed")
             return
 
-        # import filters, and return a boolean value as 'filtersNotImpoted'
-        fileName = dataBack.args.messages
-        noMessagesImported = xmlImport(dataBack, args, fileName)
+        # The following function takes the messageInfo_to_fields
+        # and checks for empty list in the dictionary values.
+        # If empty, populate list with all the fields in the
+        # meta data file.
+        setFieldsFilterFieldDict(dataBack)
 
-        # a typical usage might be something like:
-        # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
+        # load units conversion and syntax checking:
+        # Units conversion is set in field.unitsConversion,
+        # which interacts with the backend.conversionMap
+        # dictionary when a message is being parsed.
+        if not setUnitsConversion(dataBack):
+            print("setUnitsConversion failed")
+            return
 
-        if args.filter:
-            filterString = args.filter[0]
-            # createListAndDict: load filters and syntax checking.
-            # After this call, the messageInfo_to_fields is created
-            # and the values are lists of fields to be displayed.
-            # Also messageInfoList is a list that contains all the
-            # keys that are in messageInfo_to_fields.
-            if not createListAndDict(dataBack, filterString):
-                print("createListAndDict failed")
-                return
+        # If the user has chosen to filter the data
+        # by value, this function handles those
+        # arguments:
+        setFilterByValue(dataBack)
 
-            # The following function takes the messageInfo_to_fields
-            # and checks for empty list in the dictionary values.
-            # If empty, populate list with all the fields in the
-            # meta data file.
-            setFieldsFilterFieldDict(dataBack)
+        # Now that the filters are set,
+        # make a copy of the messageInfo_to_fields
+        # for displaying the header in CSV mode
+        dataBack.messageInfo_to_fields_units = dataBack.messageInfo_to_fields.copy()
 
-            # load units conversion and syntax checking:
-            # Units conversion is set in field.unitsConversion,
-            # which interacts with the backend.conversionMap
-            # dictionary when a message is being parsed.
-            if not setUnitsConversion(dataBack):
-                print("setUnitsConversion failed")
-                return
-
-            # If the user has chosen to filter the data
-            # by value, this function handles those
-            # arguments:
-            setFilterByValue(dataBack)
-
-            # Now that the filters are set,
-            # make a copy of the messageInfo_to_fields
-            # for displaying the header in CSV mode
-            dataBack.messageInfo_to_fields_units = dataBack.messageInfo_to_fields.copy()
-
-        # No --filter argument given, just display all the messages
-        else:
-            createListAndDict_noFilter(dataBack)
-
-        # refactor:
-        if args.messages and not args.csv:
-            print("Filters to be displayed: ",
-                str(sorted(dataBack.messageInfoList))[1:-1])
-
-        # create displayList
-        if args.display and args.messages:
-            for arg in args.display[0].split(','):
-                dataBack.displayList[arg] = True
-        else:
-            dataBack.displayList['pgn'] = True
-            dataBack.displayList['ID'] = True
-            dataBack.displayList['body'] = True
-
-        if noMessagesImported:
-            print("Running CANaconda without messages specified,",
-                "for raw message viewing")
-
-        # For CSV mode:
-        if args.csv:
-            # Check argument syntax
-            if not args.messages:
-                print("Please specify a messages file.",
-                    "Use option -m")
-                return
-
-            # Setup for the CSV display
-            else:
-                setDisplayCSVmode(dataBack)
-        else:
-            print("Opening connection to", dataBack.comport)
-
-        # If --slow was given, halt program here.
-        # Otherwise, start streaming messages.
-        if not args.slow:
-            # create the threading object
-            canPort = canport.CANPort(dataBack)
-            #start the thread
-            serialThread = threading.Thread(target=canPort.getmessage)
-            # find a way to intercept KeyBoardInterrupt exception
-            # when quitting
-            try:
-                serialThread.start()
-            except: 
-                pass
-
-
-######### GUI #########
+    # No --filter argument given, just display all the messages
     else:
-        # Qt imports
-        from PyQt5.QtWidgets import QApplication, QMainWindow, QStyleFactory
-        import ui_mainwindow
-        import canport_QT
+        createListAndDict_noFilter(dataBack)
 
-        if args.fast:
-            # import the filters from xml
-            xmlImport(dataBack, args, 'exampleMetaData.xml')
-        # create the threading object
-        # Note: this canport is different from
-        # the one used in the console mode.
-        # This should be fixed.
-        dataBack.canPort = canport_QT.CANPort_QT(dataBack)
-        dataBack.noGui = bool(args.nogui)  # aka FALSE
+    # refactor:
+    if args.messages and not args.csv:
+        print("Filters to be displayed: ",
+            str(sorted(dataBack.messageInfoList))[1:-1])
 
-        # Start the serial thread if --fast was given as option
-        if args.fast:
-            serialThread = threading.Thread(target=dataBack.canPort.getmessage)
-                                           # change to canport.py
-            serialThread.daemon = True
-            serialThread.start()
+    # create displayList
+    if args.display and args.messages:
+        for arg in args.display[0].split(','):
+            dataBack.displayList[arg] = True
+    else:
+        dataBack.displayList['pgn'] = True
+        dataBack.displayList['ID'] = True
+        dataBack.displayList['body'] = True
 
-        # pyqt stuff
-        app = QApplication(sys.argv)
-        app.setStyle(QStyleFactory.create("Fusion"))
-        #app.setQuitOnLastWindowClosed()
-        #app.lastWindowClosed.connect(app.destroy)
-        mainWindow = QMainWindow()
-        ui = ui_mainwindow.Ui_MainWindow()
-        # connect the signal to the slot
-        if args.fast:
-            dataBack.canPort.parsedMsgPut.connect(ui.updateUi)
-        # call setupUi with the necessary objects
-        ui.setupUi(mainWindow, dataBack)
-        # run the gui
-        mainWindow.show()
-        sys.exit(app.exec_())
+    if noMessagesImported:
+        print("Running CANaconda without messages specified,",
+            "for raw message viewing")
+
+    # For CSV mode:
+    if args.csv:
+        # Check argument syntax
+        if not args.messages:
+            print("Please specify a messages file.",
+                "Use option -m")
+            return
+
+        # Setup for the CSV display
+        else:
+            setDisplayCSVmode(dataBack)
+    else:
+        print("Opening connection to", dataBack.comport)
+
+    # If --slow was given, halt program here.
+    # Otherwise, start streaming messages.
+
+
+def pyserialNoGuiInit(dataBack):
+    import canport
+    # create the threading object
+    dataBack.canPort = canport.CANPort(dataBack)
+    #start the thread
+    dataBack.serialThread = threading.Thread(target=dataBack.canPort.getmessage)
+    # find a way to intercept KeyBoardInterrupt exception
+    # when quitting
+
+def pyserialNoGuiRun(dataBack):
+    if dataBack.args.slow: # a debug mode -- cause program to halt
+        return
+    dataBack.serialThread.start()
+
+# Create the serial 
+def pyserialGuiInit(dataBack):
+    # create the threading object
+    import canport_QT
+    dataBack.canPort = canport_QT.CANPort_QT(dataBack)
+    dataBack.noGui = bool(dataBack.args.nogui)  # aka FALSE
+
+def canacondaGuiRun(dataBack):
+    # Qt imports
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QStyleFactory
+    import ui_mainwindow
+    app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create("Fusion"))
+    mainWindow = QMainWindow()
+    ui = ui_mainwindow.Ui_MainWindow()
+    # call setupUi with the necessary objects
+    ui.setupUi(mainWindow, dataBack)
+    # run the gui
+    mainWindow.show()
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
