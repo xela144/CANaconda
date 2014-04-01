@@ -7,12 +7,10 @@
 #  Once that is done, delete this file and
 
 from PyQt5.QtCore import pyqtSignal, QObject
-#import canport # not used because Qt stuff wasn't working
 import re
 import time
 import backend
 import serial
-import pdb
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from CANacondaMessage import *
 from CANacondaMessageParse import *
@@ -20,14 +18,14 @@ from CANacondaMessageParse import *
 
 class CANPort_QT(QObject):
     parsedMsgPut = pyqtSignal()
-    messageUp = pyqtSignal()
+    newMessageUp = pyqtSignal()
     stopHourGlass = pyqtSignal()
     
     def __init__(self, dataBack, parent=None):
         QObject.__init__(self)
         super(CANPort_QT, self).__init__(parent)
         self.dataBack = dataBack
-        self.CANacondaMessage_queue = dataBack.CANacondaMessage_queue
+        self.CANacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
         self.comport = dataBack.comport
         self.args = dataBack.args
 
@@ -80,7 +78,7 @@ class CANPort_QT(QObject):
         if matchedmsg:
             CANacondaMessageParse(newCANacondaMessage, matchedmsg, rawmsg, dataBack)
             # use dataBack.nogui?
-            self.dataBack.CANacondaMessage_queue.put(newCANacondaMessage)
+            self.dataBack.CANacondaRxMsg_queue.put(newCANacondaMessage)
             self.parsedMsgPut.emit()
 
             # If not present already, add the message's messageInfo
@@ -90,7 +88,7 @@ class CANPort_QT(QObject):
                 self.dataBack.messagesSeenSoFar[newCANacondaMessage.name] = []
                 for field in newCANacondaMessage.body:
                     self.dataBack.messagesSeenSoFar[newCANacondaMessage.name].append(field)
-                self.messageUp.emit()
+                self.newMessageUp.emit()
 
     def getRegex(self, serialCAN):
         character = None

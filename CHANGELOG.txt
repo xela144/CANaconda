@@ -46,3 +46,7 @@ CHANGED:
    messages that have been recorded into each log session.
 
  * Added transmission to GUI. Need to make this code more modular
+
+ * Fixed with 'dataFound = True': Raw message viewing in GUI is spewing 
+   all messages even if none are selected in the table widget
+

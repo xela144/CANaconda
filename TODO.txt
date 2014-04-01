@@ -18,9 +18,6 @@ TO DO:
    not on the bus.
  * The transmission function does not do any error checking in the GUI.
  * Further separate the threads to make code re-usable.
- * Raw message viewing in GUI is spewing all messages even if none are selected
-   in the table widget
-
 
 
 I'd also like to be able to filter by multiple identical IDs or PGN numbers

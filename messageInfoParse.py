@@ -6,7 +6,6 @@ abstraction, and Field is contained within.
 
 from messageInfo import *
 import xml.etree.ElementTree as ET
-import pdb
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # xmlImport 

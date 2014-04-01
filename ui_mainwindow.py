@@ -5,10 +5,14 @@ Layout code is executed and GUI will load without any metadata loaded.
 When a comport is selected, self.receiveMessage is called, and serial thread
 is created. Message streaming will begin.
 When a metadata file is loaded, the 'ViewMetadata' tree widget is populated.
-When new decoded messages are put in the message queue, self.populateTree is called,
-as is self.populateTxCombo
+When new decoded messages are discovered, the 'newMessageUp' signal is emitted
+from the serial thread, self.populateTable.
 Message transmission will take place if the 'Activate' pushbutton is pressed
-and no error occurs.
+and no error occurs. (error checking not yet implemented)
+
+Recieve queue:  CANacondaRxMsg_queue
+transmit queue: CANacondaTxMsg_queue
+
 '''
 
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -20,7 +24,6 @@ from messageInfoParse import xmlImport
 import threading
 from serial.tools.list_ports import comports
 from CANacondaMessageParse import encodePayload
-import pdb
 from backend import *
 import filtersTreeWidget
 import filterTable
@@ -30,10 +33,8 @@ import time
 import os
 import xml.etree.ElementTree as ET
 
-FAST_FILENAME = 'newMetaData.xml'
+# Message stream enum
 DECODED, RAW_HEX, CSV = range(3)
-Truedat = True
-Hellno = False
 
 class Ui_MainWindow(QtCore.QObject):
     startHourGlass = pyqtSignal()
@@ -74,7 +75,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.logLabel.setText("Enter filename:")
         self.buttonLogging = QtWidgets.QPushButton()
         self.buttonLogging.setObjectName("save")
-        self.buttonLogging.setText("Start logging as CSV")
+        self.buttonLogging.setText("Start logging (as CSV???)")
         self.buttonLogging.clicked.connect(self.saveToFile)
         self.logLabel.setBuddy(self.buttonLogging)
         self.fileName = QtWidgets.QLineEdit()
@@ -118,7 +119,7 @@ class Ui_MainWindow(QtCore.QObject):
         #self.firstTxField1.setMinimumWidth(90)
         self.firstTxBody1 = QtWidgets.QLineEdit()
         self.firstTxBody1.setPlaceholderText('payload data')
-        self.firstTxBody1.setDisabled(Truedat)
+        self.firstTxBody1.setDisabled(True)
         self.firstTxLabelFreq = QtWidgets.QLabel()
         self.firstTxLabelFreq.setText("Frequency [Hz]: ")
         self.firstTxFreq = QtWidgets.QLineEdit()
@@ -138,8 +139,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.txGrid.addWidget(self.firstTxLabelFreq,     1, 5)
         self.txGrid.addWidget(self.firstTxFreq,          1, 6)
         self.txGrid.addWidget(self.firstTxButton,        1, 7)
-
-
 
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
@@ -267,19 +266,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
 
-        if self.dataBack.args.fast:
-            self.filterTable.populateTable()
-            self.update_messageInfo_to_fields()
-            self.dataBack.comport = '/dev/ttyUSB0'
-            self.dataBack.comportsFlag = True
-            self.dataBack.displayList['pgn'] = True
-            self.dataBack.displayList['raw'] = False
-            self.dataBack.displayList['ID'] = True
-            self.dataBack.displayList['body'] = True
-            self.receiveMessage()  # <-- The serial thread is created here
-
-            self.dataBack.messageInfoFlag = True
-
         # HourGlass signal.
         self.startHourGlass.connect(self.setHourGlass)
 
@@ -310,19 +296,18 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionTab2.setText(_translate("MainWindow", "Tab 2"))
 
     def updateUi(self):
-        outmsg = self.getMessage(self.dataBack.CANacondaMessage_queue)
+        outmsg = self.getMessage(self.dataBack.CANacondaRxMsg_queue)
         if outmsg is not None:
             self.messagesTextBrowser.append("%s" % outmsg)
             self.outmsgSignal.emit()
 
-    def getMessage(self, CANacondaMessage_queue):
-        dataBack = self.dataBack
-        CANacondaMessage = CANacondaMessage_queue.get()
-        if dataBack.messageInfoFlag is False or dataBack.GUI_rawFlag:
-            return CANacondaMessage.raw
-        elif dataBack.GUI_CSVflag:
-            return outmessage.guiParseCSV(dataBack, CANacondaMessage)
-        return outmessage.noGuiParse(dataBack, CANacondaMessage)
+    def getMessage(self, CANacondaRxMsg_queue):
+        CANacondaMessage = CANacondaRxMsg_queue.get()
+        if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
+            return outmessage.noGuiParse(self.dataBack, CANacondaMessage) #CANacondaMessage.raw
+        elif self.dataBack.GUI_CSVflag:
+            return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
+        return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
 
     def comportSelect(self):
@@ -332,13 +317,13 @@ class Ui_MainWindow(QtCore.QObject):
         self.setOutput()
         self.receiveMessage()  # <-- The serial thread is created here
 
-    # begin receiving messages and push to CANacondaMessage_queue
+    # begin receiving messages and push to CANacondaRxMsg_queue
     def receiveMessage(self):
         self.dataBack.canPort = canport_QT.CANPort_QT(self.dataBack)
         self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)
-        self.dataBack.canPort.messageUp.connect(self.filterTable.populateTable)
+        self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
         # Serial connection thread
         # For the first run, everything is fine. However, if user selects
         # comport again, a new thread is created. Bad.
@@ -398,8 +383,8 @@ class Ui_MainWindow(QtCore.QObject):
             # The widget has already been deleted
             pass
         # move to separate function
-        self.firstTxFreq.setDisabled(Hellno)       #
-        self.firstTxButton.setDisabled(Hellno)     #
+        self.firstTxFreq.setDisabled(False)       #
+        self.firstTxButton.setDisabled(False)     #
         for messageInfoName in self.dataBack.messages.keys():
             self.firstTxMessageInfo.addItem(messageInfoName)
         self.populateTxField()
@@ -495,46 +480,23 @@ class Ui_MainWindow(QtCore.QObject):
                 return None
 
     def txTypeError(self):
-        effedUp = QtWidgets.QMessageBox()
-        effedUp.setText("Message Transmit Error")
-        effedUp.setInformativeText("Payload and frequency values must\
+        errormsg = QtWidgets.QMessageBox()
+        errormsg.setText("Message Transmit Error")
+        errormsg.setInformativeText("Payload and frequency values must\
                                     be of type 'int' or 'float'")
-        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        effedUp.exec()
+        errormsg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        errormsg.exec()
 
     def notStreamingWarn(self):
-        effedUp = QtWidgets.QMessageBox()
-        effedUp.setText("Message Transmit Error")
-        effedUp.setInformativeText("Make sure you have already begun streaming messages")
-        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        effedUp.exec()
+        warn = QtWidgets.QMessageBox()
+        warn.setText("Message Transmit Error")
+        warn.setInformativeText("Make sure you have already begun streaming messages")
+        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        warn.exec()
         
-
-########## deprecated but keep around for default suffix code. ########
-#    def oldLoadFilter(self):
-#        filename = None
-#        dialog = QtWidgets.QFileDialog()
-#        dialog.setNameFilter(tr("(*.xml)"))
-#        dialog.setDefaultSuffix('xml')
-#        dialog.setViewMode(QtWidgets.QFileDialog.Detail)
-#        if dialog.exec():
-#            fileName = dialog.selectedFiles()
-##        while filename is None:
-#
-##            filename = QtWidgets.QFileDialog.getOpenFileName(self, )
-##            filename = filename[0]
-#        blob = None
-#        fallacy = xmlimport(self.dataBack, blob, filename)
-#        if fallacy:
-#            self.warnFiltersImport()
-#            return
-#        self.filtersTreeWidget.populateTree()
-#        self.update_messageInfo_to_fields()
-#######################################################################
 
     def comportUnavailable(self):
         pass
-
 
     # Set the messageInfo_to_fields for correct message stream output
     def update_messageInfo_to_fields(self):
@@ -642,19 +604,19 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.CSV_START_TIME = time.time()
 
     def warnFilterImport(self):
-        effedUp = QtWidgets.QMessageBox()
-        effedUp.setText("Meta Data File Error")
-        effedUp.setInformativeText("Check XML file for correct formatting and syntax")
-        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        effedUp.exec()
+        warn = QtWidgets.QMessageBox()
+        warn.setText("Meta Data File Error")
+        warn.setInformativeText("Check XML file for correct formatting and syntax")
+        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        warn.exec()
 
 
     def warnPgnId(self):
-        effedUp = QtWidgets.QMessageBox()
-        effedUp.setText("Meta Data Error")
-        effedUp.setInformativeText("You can't have both PGN and ID in one filter in your meta data file")
-        effedUp.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        effedUp.exec()
+        warn = QtWidgets.QMessageBox()
+        warn.setText("Meta Data Error")
+        warn.setInformativeText("You can't have both PGN and ID in one filter in your meta data file")
+        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        warn.exec()
 
     def warnLogging(self):
         ok = QtWidgets.QMessageBox()

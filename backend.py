@@ -64,7 +64,7 @@ class CanData():
         self.messages = {}
 
         # Multithreading queue for receiving messages from the bus
-        self.CANacondaMessage_queue = queue.Queue()
+        self.CANacondaRxMsg_queue = queue.Queue()
 
         # Multithreading queue for transmitting messages tot he bus
         self.CANacondaTxMsg_queue = queue.Queue()

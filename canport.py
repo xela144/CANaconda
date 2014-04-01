@@ -16,16 +16,15 @@ from outmessage import *
 import serial
 import sys
 
-import pdb
 
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
-# CANacondaMessage_queue queue where they are added to the GUI
+# CANacondaRxMsg_queue queue where they are added to the GUI
 class CANPort():
     def __init__(self, dataBack, parent=None):
         self.dataBack = dataBack
-        self.CANacondaMessage_queue = dataBack.CANacondaMessage_queue
+        self.CANacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
         self.comport = dataBack.comport
         self.args = dataBack.args
 

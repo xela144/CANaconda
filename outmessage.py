@@ -39,7 +39,8 @@ def noGuiParse(dataBack, message):
     # Then the raw bytes of the message
     # Note: This is required for GUI operation and always empty in the command-line interface.
     if dataBack.displayList['raw']:
-        outmsg += "\n" + message.raw
+        outmsg += " " + message.raw
+        dataFound = True
     
     # Now finally pretty-print the internal data if metadata exists for this message
     if message.ID:
