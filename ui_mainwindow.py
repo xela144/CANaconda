@@ -2,7 +2,7 @@
 # Originally generated with QtCreator and pyuic.
 '''
 Layout code is executed and GUI will load without any metadata loaded.
-When a comport is selected, self.receiveMessage is called, and serial thread
+When a comport is selected, self.pyserialInit is called, and serial thread
 is created. Message streaming will begin.
 When a metadata file is loaded, the 'ViewMetadata' tree widget is populated.
 When new decoded messages are discovered, the 'newMessageUp' signal is emitted
@@ -268,6 +268,8 @@ class Ui_MainWindow(QtCore.QObject):
 
         # HourGlass signal.
         self.startHourGlass.connect(self.setHourGlass)
+        self.startHourGlass.connect(self.setOutput)
+        self.startHourGlass.connect(self.pyserialHandler)
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -311,39 +313,40 @@ class Ui_MainWindow(QtCore.QObject):
 
 
     def comportSelect(self):
-        self.startHourGlass.emit()
         self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
-        self.setOutput()
-        self.receiveMessage()  # <-- The serial thread is created here
+        # HourGlass signals
+        self.startHourGlass.emit()
+        self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
+        self.dataBack.canPort.stopHourGlass.connect(self.setStreamingFlag)
+
+    def pyserialHandler(self):
+        # Serial connection thread
+        # For the first run, everything is fine. However, if user selects
+        # comport again, a new thread is created. Bad.
+        alreadyStreaming = self.dataBack.alreadyStreaming
+        self.pyserialInit()  # <-- The serial thread is created here
+        if not alreadyStreaming:
+            self.pyserialRun()
+
+        # Use this timer as a watchdog for when a node on the bus is shut off.
+        # Without it, frequency column won't go back to zero.
+        self.freqTimer = QtCore.QTimer()
+        self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
+        self.freqTimer.start(1000)
 
     # begin receiving messages and push to CANacondaRxMsg_queue
-    def receiveMessage(self):
+    def pyserialInit(self):
         self.dataBack.canPort = canport_QT.CANPort_QT(self.dataBack)
         self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)
         self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
-        # Serial connection thread
-        # For the first run, everything is fine. However, if user selects
-        # comport again, a new thread is created. Bad.
-        alreadyStreaming = self.dataBack.alreadyStreaming
 
-        if not alreadyStreaming:
-            self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
-            self.serialThread.daemon = True
-            self.serialThread.start()
-
-            # Use this timer as a watchdog for when a node on the bus is shut off.
-            # Without it, frequency column won't go back to zero.
-            self.freqTimer = QtCore.QTimer()
-            self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
-            self.freqTimer.start(1000)
-
-            # HourGlass signals
-            self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
-            self.dataBack.canPort.stopHourGlass.connect(self.setStreamingFlag)
-
+    def pyserialRun(self):
+        self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
+        self.serialThread.daemon = True
+        self.serialThread.start()
 
     def loadFilter(self):
         # These "reset" statements should actually be moved to a

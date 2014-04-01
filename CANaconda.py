@@ -24,27 +24,26 @@ from setoptions import *
 import outmessage
 
 
-    ###########################
-    # format we want:
-    # pyserial.init()
-    # pyserial.run()
-    # canaconda.init(pyserial)
-    # canaconda.run()
-    # if gui:
-    #    import PyQt
-    #    gui.init()
-    #    gui.run(canaconda)
-    # else:
-    #    cancaconda.push(config)
-    ############################
+###########################
+# format we want:
+# pyserial.init()
+# pyserial.run()
+# canaconda.init(pyserial)
+# canaconda.run()
+# if gui:
+#    import PyQt
+#    gui.init()
+#    gui.run(canaconda)
+# else:
+#    cancaconda.push(config)
+############################
 def main():
     
     parser = argparse.ArgumentParser()
     parserInit(parser)
-
     args = parser.parse_args()
 
-    # Create the dataBack singleton with command-line arguments as parameters
+    # Create the dataBack singleton
     dataBack = CanData(args)
 
     if args.nogui:
