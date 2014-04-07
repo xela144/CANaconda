@@ -17,6 +17,8 @@ import serial
 import sys
 
 
+SUCCESS = True
+
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
@@ -28,7 +30,7 @@ class CANPort():
         self.comport = dataBack.comport
         self.args = dataBack.args
 
-    def getmessage(self):
+    def pyserialInit(self):
         #opens a serial connection called serialCAN on COM? at 57600 Baud
         try:
             serialCAN = serial.Serial(self.comport, 57600)
@@ -41,12 +43,18 @@ class CANPort():
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
             temp = None
+            
+            # Start a timer:
+            start = time.time()
             while temp != b'\r':
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
+                if time.time() - start > 5:
+                    print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
+                    return
             time.sleep(.1)
             # Open the CAN port to begin receiving messages
             val = serialCAN.write(b'O\r')
@@ -55,12 +63,12 @@ class CANPort():
             time.sleep(.1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')
-            time.sleep(.1)
+            return serialCAN
 
-            # Now that set-up is complete, the CANport thread can repeat
-            # forever with the following call:
-            while True:
-                self.serialParse(serialCAN)
+    # CANport thread can repeat targed is the getMessages function:
+    def getMessages(self, serialCAN):
+        while True:
+            self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):

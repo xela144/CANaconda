@@ -56,14 +56,13 @@ class CANPort_QT(QObject):
                 serialCAN.write(b'S5\r')
                 #print(temp)
                 temp = serialCAN.read()
-            time.sleep(1)
+            time.sleep(.1)
             #Opens the CAN port to begin reciveing messages
             serialCAN.write(b'O\r')
-            time.sleep(1)
+            time.sleep(.1)
             #Sets the CAN port to disable timestamps
             serialCAN.write(b'Z0\r')
-            time.sleep(1)
-            i = 0
+            time.sleep(.1)
 
             # Make cursor go back to normal
             self.stopHourGlass.emit()

@@ -48,8 +48,9 @@ def main():
 
     if args.nogui:
         canacondaNoGuiInit(dataBack)
-        pyserialNoGuiInit(dataBack)
-        pyserialNoGuiRun(dataBack)
+        success = pyserialNoGuiInit(dataBack)
+        if success:
+            pyserialNoGuiRun(dataBack)
 
     else:
         pyserialGuiInit(dataBack)
@@ -177,19 +178,28 @@ def canacondaNoGuiInit(dataBack):
     # Otherwise, start streaming messages.
 
 
+# 
 def pyserialNoGuiInit(dataBack):
     import canport
     # create the threading object
     dataBack.canPort = canport.CANPort(dataBack)
-    #start the thread
-    dataBack.serialThread = threading.Thread(target=dataBack.canPort.getmessage)
+    # initialize the serial connection to the CANusb device
+    # and report any errors
+    serialCAN = dataBack.canPort.pyserialInit()
+    if serialCAN:
+        dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages(serialCAN))
+        return True
     # find a way to intercept KeyBoardInterrupt exception
     # when quitting
 
 def pyserialNoGuiRun(dataBack):
     if dataBack.args.slow: # a debug mode -- cause program to halt
         return
-    dataBack.serialThread.start()
+    try:
+        dataBack.serialThread.start()
+    # This is the error thrown if serialThread did not initialize
+    except AttributeError:
+        pass
 
 # Create the serial 
 def pyserialGuiInit(dataBack):
