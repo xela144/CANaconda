@@ -24,6 +24,8 @@ from setoptions import *
 import outmessage
 
 
+SUCCESS, NO_DATA, NO_CONNECT, CANusb, BAUD = range(5) # This enum is repeated in canport -- ok?
+
 ###########################
 # format we want:
 # pyserial.init()
@@ -49,12 +51,22 @@ def main():
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         canacondaNoGuiInit(dataBack)
-        success = pyserialNoGuiInit(dataBack)
+        ErrorType = pyserialNoGuiInit(dataBack)
 
         # Make sure the serial port was initialized properly before settings things up to read from
         #  it.
-        if success:
+        if ErrorType == SUCCESS:
             pyserialNoGuiRun(dataBack)
+        # Later on when we define the different error cases for serial init, we can reportback to
+        # the user here.
+        elif ErrorType == NO_DATA:
+            print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
+        elif ErrorType == NO_CONNECT:
+            print("ERROR: Could not open connection to {0}. Is port already in use?".format(dataBack.comport))
+        elif ErrorType == CANusb:
+            print("ERROR: Could not open the CANusb device.")
+        elif ErrorType == BAUD:
+            print("ERROR: Could not set the baud rate on CAN bus.")
 
     # Otherwise we launch our GUI versions of this code.
     else:
@@ -191,11 +203,13 @@ def pyserialNoGuiInit(dataBack):
     # initialize the serial connection to the CANusb device
     # and report any errors
     serialCAN = dataBack.canPort.pyserialInit()
-    if serialCAN:
+    if type(serialCAN) != type(2):  # lol so serialCAN is an object and not an error code
+                                    # how should this be coded?
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages(serialCAN))
-        return True
+        return SUCCESS
     else:
-        return False
+        # At this point, serialCAN is one of the enum values at top of file.
+        return serialCAN
     # find a way to intercept KeyBoardInterrupt exception
     # when quitting
 

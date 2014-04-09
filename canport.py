@@ -17,7 +17,9 @@ import serial
 import sys
 
 
-SUCCESS = True
+SUCCESS, NO_DATA, NO_CONNECT, CANusb, BAUD = range(5)
+
+TIMEOUT = 5
 
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
@@ -36,8 +38,7 @@ class CANPort():
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
         except:
-            print("ERROR: Could not open connection to {0}. Is port already in use?".format(self.comport))
-            return None
+            return NO_CONNECT
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
@@ -49,17 +50,26 @@ class CANPort():
             while temp != b'\r':
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
-                serialCAN.write(b'S5\r')
-                #print(temp)
+                val = serialCAN.write(b'S5\r')
+                if val == '0x07': # THIS HAS NOT BEEN TESTED FOR TYPE MATCHING
+                                  # ie is this how you check to see of 'bell' was return by
+                                  # CANusb device?
+                    return BAUD
+                # Store the initial bytes in a temporary variable.
                 temp = serialCAN.read()
-                if time.time() - start > 5:
-                    print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
-                    return None
+
+                # Return if no data is being received over serial:
+                if time.time() - start > TIMEOUT:
+                    return NO_DATA
+
             time.sleep(.1)
-            # Open the CAN port to begin receiving messages
+            # Open the CAN port to begin receiving messages, using timer as above
+            start = time.time()
             val = serialCAN.write(b'O\r')
             while val != 2:
                 val = serialCAN.write(b'O\r')
+                if time.time() - start > TIMEOUT:
+                    return CANusb
             time.sleep(.1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')
