@@ -37,7 +37,7 @@ class CANPort():
             # self.comport is the com port which is opened
         except:
             print("ERROR: Could not open connection to {0}. Is port already in use?".format(self.comport))
-            return
+            return None
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
@@ -54,7 +54,7 @@ class CANPort():
                 temp = serialCAN.read()
                 if time.time() - start > 5:
                     print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
-                    return
+                    return None
             time.sleep(.1)
             # Open the CAN port to begin receiving messages
             val = serialCAN.write(b'O\r')

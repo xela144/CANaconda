@@ -46,12 +46,17 @@ def main():
     # Create the dataBack singleton
     dataBack = CanData(args)
 
+    # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         canacondaNoGuiInit(dataBack)
         success = pyserialNoGuiInit(dataBack)
+
+        # Make sure the serial port was initialized properly before settings things up to read from
+        #  it.
         if success:
             pyserialNoGuiRun(dataBack)
 
+    # Otherwise we launch our GUI versions of this code.
     else:
         pyserialGuiInit(dataBack)
         canacondaGuiRun(dataBack)
@@ -189,6 +194,8 @@ def pyserialNoGuiInit(dataBack):
     if serialCAN:
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages(serialCAN))
         return True
+    else:
+        return False
     # find a way to intercept KeyBoardInterrupt exception
     # when quitting
 
