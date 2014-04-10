@@ -51,10 +51,11 @@ class CANPort():
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 val = serialCAN.write(b'S5\r')
-                if val == '0x07': # THIS HAS NOT BEEN TESTED FOR TYPE MATCHING
-                                  # ie is this how you check to see of 'bell' was return by
-                                  # CANusb device?
+
+                # If a bell was received after sending 'S5', it means an error's occurred
+                if val == 7:
                     return BAUD
+
                 # Store the initial bytes in a temporary variable.
                 temp = serialCAN.read()
 
