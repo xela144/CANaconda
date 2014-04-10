@@ -26,7 +26,7 @@ TIMEOUT = 5
 # messages. These messages are then passed to the GUI thread via the
 # CANacondaRxMsg_queue queue where they are added to the GUI
 class CANPort():
-    def __init__(self, dataBack, parent=None):
+    def __init__(self, dataBack):
         self.dataBack = dataBack
         self.CANacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
         self.comport = dataBack.comport
@@ -108,7 +108,14 @@ class CANPort():
         matchedMsg = self.regex.match(rawmsg)
         return rawmsg, matchedMsg
 
+class CANPortCLI(CANPort):
+
+    def __init__(self, dataBack):
+        """Initialization only requires initializing the parent class, which really does all the work."""
+        super(CANPortCLI, self).__init__(dataBack)
+
     def PrintMessage(self, canacondamessage):
+        """Print the given message to stdout. It accounts for some program settings regarding how the output should look."""
         outmsg = ''
 
         if self.args.csv:

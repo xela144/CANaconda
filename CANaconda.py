@@ -199,7 +199,7 @@ def canacondaNoGuiInit(dataBack):
 def pyserialNoGuiInit(dataBack):
     import canport
     # create the threading object
-    dataBack.canPort = canport.CANPort(dataBack)
+    dataBack.canPort = canport.CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
     # and report any errors
     serialCAN = dataBack.canPort.pyserialInit()
