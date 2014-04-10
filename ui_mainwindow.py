@@ -28,7 +28,7 @@ from backend import *
 import filtersTreeWidget
 import filterTable
 import outmessage
-import canport_QT
+import canport
 import time
 import os
 import xml.etree.ElementTree as ET
@@ -316,9 +316,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
         # HourGlass signals
-        self.startHourGlass.emit()
-        self.dataBack.canPort.stopHourGlass.connect(self.removeHourGlass)
-        self.dataBack.canPort.stopHourGlass.connect(self.setStreamingFlag)
+        self.startHourGlass.emit() # We should remove this signal.
 
     def pyserialHandler(self):
         # Serial connection thread
@@ -337,14 +335,16 @@ class Ui_MainWindow(QtCore.QObject):
 
     # begin receiving messages and push to CANacondaRxMsg_queue
     def pyserialInit(self):
-        self.dataBack.canPort = canport_QT.CANPort_QT(self.dataBack)
+        self.dataBack.canPort = canport.CANPortGUI(self.dataBack)
+        self.serialCAN = self.dataBack.canPort.pyserialInit()
         self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)
         self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
+        self.removeHourGlass()
 
     def pyserialRun(self):
-        self.serialThread = threading.Thread(target=self.dataBack.canPort.getmessage)
+        self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
         self.serialThread.daemon = True
         self.serialThread.start()
 
