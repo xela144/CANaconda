@@ -24,7 +24,6 @@ from setoptions import *
 import outmessage
 
 
-SUCCESS, NO_DATA, NO_CONNECT, CANusb, BAUD = range(5) # This enum is repeated in canport -- ok?
 
 ###########################
 # format we want:
@@ -55,17 +54,17 @@ def main():
 
         # Make sure the serial port was initialized properly before settings things up to read from
         #  it.
-        if ErrorType == SUCCESS:
+        if type(ErrorType) == CANPort:
             pyserialNoGuiRun(dataBack)
         # Later on when we define the different error cases for serial init, we can reportback to
         # the user here.
-        elif ErrorType == NO_DATA:
+        elif ErrorType == canport.ERROR_NO_DATA:
             print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
-        elif ErrorType == NO_CONNECT:
+        elif ErrorType == canport.ERROR_NO_CONNECT:
             print("ERROR: Could not open connection to {0}. Is port already in use?".format(dataBack.comport))
-        elif ErrorType == CANusb:
+        elif ErrorType == canport.ERROR_TIMEOUT:
             print("ERROR: Could not open the CANusb device.")
-        elif ErrorType == BAUD:
+        elif ErrorType == canport.ERROR_BAUD:
             print("ERROR: Could not set the baud rate on CAN bus.")
 
     # Otherwise we launch our GUI versions of this code.
@@ -98,7 +97,6 @@ def parserInit(parser):
             help="Give zero-order hold output for CSV mode")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
-
 
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args
@@ -197,19 +195,21 @@ def canacondaNoGuiInit(dataBack):
 
 # 
 def pyserialNoGuiInit(dataBack):
-    import canport
+    from canport import CANPortCLI
     # create the threading object
-    dataBack.canPort = canport.CANPort(dataBack)
+    dataBack.canPort = CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
     # and report any errors
     serialCAN = dataBack.canPort.pyserialInit()
-    if type(serialCAN) != type(2):  # lol so serialCAN is an object and not an error code
-                                    # how should this be coded?
-        dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages(serialCAN))
-        return SUCCESS
-    else:
-        # At this point, serialCAN is one of the enum values at top of file.
-        return serialCAN
+
+    # If we successfully initialized the CANusb hardware and connected,
+    # start up a thread for processing messages
+    if type(serialCAN) != int:
+        dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages, args=(serialCAN,))
+    
+    # Just pass through the return value from pyserialInit()
+    return serialCAN
+    
     # find a way to intercept KeyBoardInterrupt exception
     # when quitting
 
@@ -225,8 +225,8 @@ def pyserialNoGuiRun(dataBack):
 # Create the serial 
 def pyserialGuiInit(dataBack):
     # create the threading object
-    import canport_QT
-    dataBack.canPort = canport_QT.CANPort_QT(dataBack)
+    from canport import CANPortGUI
+    dataBack.canPort = CANPortGUI(dataBack)
     dataBack.noGui = bool(dataBack.args.nogui)  # aka FALSE
 
 def canacondaGuiRun(dataBack):

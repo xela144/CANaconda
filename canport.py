@@ -16,17 +16,19 @@ from outmessage import *
 import serial
 import sys
 
-
-SUCCESS, NO_DATA, NO_CONNECT, CANusb, BAUD = range(5)
-
-TIMEOUT = 5
-
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the GUI thread via the
 # CANacondaRxMsg_queue queue where they are added to the GUI
 class CANPort():
-    def __init__(self, dataBack, parent=None):
+
+    # Declare some error constants to be returned by pyserialInit().
+    ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
+
+    # Set the timeout (in seconds) for connecting to the CANusb hardware.
+    TIMEOUT = 5
+
+    def __init__(self, dataBack):
         self.dataBack = dataBack
         self.CANacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
         self.comport = dataBack.comport
@@ -38,7 +40,7 @@ class CANPort():
             serialCAN = serial.Serial(self.comport, 57600)
             # self.comport is the com port which is opened
         except:
-            return NO_CONNECT
+            return CANPort.ERROR_NO_CONNECT
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
@@ -51,16 +53,17 @@ class CANPort():
                 time.sleep(.2)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 val = serialCAN.write(b'S5\r')
-                if val == '0x07': # THIS HAS NOT BEEN TESTED FOR TYPE MATCHING
-                                  # ie is this how you check to see of 'bell' was return by
-                                  # CANusb device?
-                    return BAUD
+
+                # If a bell was received after sending 'S5', it means an error's occurred
+                if val == 7:
+                    return CANPort.ERROR_BAUD
+
                 # Store the initial bytes in a temporary variable.
                 temp = serialCAN.read()
 
                 # Return if no data is being received over serial:
-                if time.time() - start > TIMEOUT:
-                    return NO_DATA
+                if time.time() - start > CANPort.TIMEOUT:
+                    return CANPort.ERROR_NO_DATA
 
             time.sleep(.1)
             # Open the CAN port to begin receiving messages, using timer as above
@@ -68,8 +71,8 @@ class CANPort():
             val = serialCAN.write(b'O\r')
             while val != 2:
                 val = serialCAN.write(b'O\r')
-                if time.time() - start > TIMEOUT:
-                    return CANusb
+                if time.time() - start > CANPort.TIMEOUT:
+                    return CANPort.ERROR_TIMEOUT
             time.sleep(.1)
             # Disable timestamps on the CAN port
             serialCAN.write(b'Z0\r')
@@ -107,7 +110,14 @@ class CANPort():
         matchedMsg = self.regex.match(rawmsg)
         return rawmsg, matchedMsg
 
+class CANPortCLI(CANPort):
+
+    def __init__(self, dataBack):
+        """Initialization only requires initializing the parent class, which really does all the work."""
+        super(CANPortCLI, self).__init__(dataBack)
+
     def PrintMessage(self, canacondamessage):
+        """Print the given message to stdout. It accounts for some program settings regarding how the output should look."""
         outmsg = ''
 
         if self.args.csv:
@@ -140,4 +150,37 @@ class CANPort():
             print(outmsg)
             sys.stdout.flush()
 
+try:
+    from PyQt5.QtCore import pyqtSignal, QObject
+    from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+
+    class CANPortGUI(CANPort, QObject):
+
+        parsedMsgPut = pyqtSignal()
+        newMessageUp = pyqtSignal()
+
+        def __init__(self, dataBack):
+            CANPort.__init__(self, dataBack)
+            QObject.__init__(self)
+
+        def serialParse(self, serialCAN):
+            dataBack = self.dataBack
+            rawmsg, matchedmsg = self.getRegex(serialCAN)
+            newCANacondaMessage = CANacondaMessage()
+            if matchedmsg:
+                CANacondaMessageParse(newCANacondaMessage, matchedmsg, rawmsg, dataBack)
+                # use dataBack.nogui?
+                self.dataBack.CANacondaRxMsg_queue.put(newCANacondaMessage)
+                self.parsedMsgPut.emit()
+
+                # If not present already, add the message's messageInfo
+                # and field name to the dataBack.messagesSeenSoFar dict,
+                # and emit a signal for redrawing the messages table
+                if newCANacondaMessage.name not in self.dataBack.messagesSeenSoFar and newCANacondaMessage.name is not '':
+                    self.dataBack.messagesSeenSoFar[newCANacondaMessage.name] = []
+                    for field in newCANacondaMessage.body:
+                        self.dataBack.messagesSeenSoFar[newCANacondaMessage.name].append(field)
+                    self.newMessageUp.emit()
+except ImportError:
+    pass
 
