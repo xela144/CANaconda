@@ -1,4 +1,4 @@
-# ui_mainwindow.py
+e ui_mainwindow.py
 # Originally generated with QtCreator and pyuic.
 '''
 Layout code is executed and GUI will load without any metadata loaded.
@@ -337,6 +337,7 @@ class Ui_MainWindow(QtCore.QObject):
     def pyserialInit(self):
         self.dataBack.canPort = canport.CANPortGUI(self.dataBack)
         self.serialCAN = self.dataBack.canPort.pyserialInit()
+### Do the error checking here ###
         self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
         self.dataBack.canPort.parsedMsgPut.connect(
                                            self.filterTable.updateValueInTable)

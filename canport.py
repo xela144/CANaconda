@@ -62,7 +62,7 @@ class CANPort():
                 temp = serialCAN.read()
 
                 # Return if no data is being received over serial:
-                if time.time() - start > CANPort.TIMEOUT:
+                if time.time() - start - 5 > CANPort.TIMEOUT:
                     return CANPort.ERROR_NO_DATA
 
             time.sleep(.1)
@@ -71,7 +71,7 @@ class CANPort():
             val = serialCAN.write(b'O\r')
             while val != 2:
                 val = serialCAN.write(b'O\r')
-                if time.time() - start > CANPort.TIMEOUT:
+                if time.time() - start - 5 > CANPort.TIMEOUT:
                     return CANPort.ERROR_TIMEOUT
             time.sleep(.1)
             # Disable timestamps on the CAN port

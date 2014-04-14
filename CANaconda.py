@@ -54,17 +54,17 @@ def main():
 
         # Make sure the serial port was initialized properly before settings things up to read from
         #  it.
-        if type(ErrorType) == CANPort:
+        if type(ErrorType) != int:
             pyserialNoGuiRun(dataBack)
         # Later on when we define the different error cases for serial init, we can reportback to
         # the user here.
-        elif ErrorType == canport.ERROR_NO_DATA:
+        elif ErrorType == dataBack.canPort.ERROR_NO_DATA:
             print("ERROR: No data is being transmitted on bus. Are CAN nodes connected?")
-        elif ErrorType == canport.ERROR_NO_CONNECT:
+        elif ErrorType == dataBack.canPort.ERROR_NO_CONNECT:
             print("ERROR: Could not open connection to {0}. Is port already in use?".format(dataBack.comport))
-        elif ErrorType == canport.ERROR_TIMEOUT:
+        elif ErrorType == dataBack.canPort.ERROR_TIMEOUT:
             print("ERROR: Could not open the CANusb device.")
-        elif ErrorType == canport.ERROR_BAUD:
+        elif ErrorType == dataBack.canPort.ERROR_BAUD:
             print("ERROR: Could not set the baud rate on CAN bus.")
 
     # Otherwise we launch our GUI versions of this code.
@@ -74,7 +74,7 @@ def main():
 
 
 def parserInit(parser):
-    # first the development options --- remove later
+    # firt the development options --- remove later
     parser.add_argument('--fast', action="store_true",
             help="Load xmltest.txt and choose /dev/ttyUSB0 as port")
     parser.add_argument('--slow', action="store_true",
