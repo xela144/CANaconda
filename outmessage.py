@@ -14,8 +14,14 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 # which may or may not be valued. These PGN numbers will still
 # be displayed.
 def noGuiParse(dataBack, message):
+    #import pdb
+    #pyqtrm()
+    #pdb.set_trace()
     if message.name not in dataBack.messageInfo_to_fields:
-        return
+        if dataBack.GUI_rawFlag is True:
+            return message.raw
+        else:
+            return
     # Build a text string that gets put to screen.
     outmsg = ""
     for field in message.body:

@@ -1,4 +1,4 @@
-e ui_mainwindow.py
+# ui_mainwindow.py
 # Originally generated with QtCreator and pyuic.
 '''
 Layout code is executed and GUI will load without any metadata loaded.
@@ -266,10 +266,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
 
-        # HourGlass signal.
-        self.startHourGlass.connect(self.setHourGlass)
-        self.startHourGlass.connect(self.setOutput)
-        self.startHourGlass.connect(self.pyserialHandler)
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -315,8 +311,16 @@ class Ui_MainWindow(QtCore.QObject):
     def comportSelect(self):
         self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
-        # HourGlass signals
-        self.startHourGlass.emit() # We should remove this signal.
+
+        # There are a few sequential items of business that need to happen when user
+        # selects the comport... Make this an init function instead???
+        self.setHourGlass()
+        if not self.dataBack.messageInfoFlag:
+            self.dataBack.GUI_rawFlag = True
+        else:
+            self.setOutput()
+        self.pyserialHandler()
+        
 
     def pyserialHandler(self):
         # Serial connection thread
@@ -343,6 +347,7 @@ class Ui_MainWindow(QtCore.QObject):
                                            self.filterTable.updateValueInTable)
         self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
         self.removeHourGlass()
+        self.setStreamingFlag()
 
     def pyserialRun(self):
         self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
