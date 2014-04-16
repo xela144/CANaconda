@@ -321,14 +321,18 @@ class Ui_MainWindow(QtCore.QObject):
             self.setOutput()
         self.pyserialHandler()
         
-
+        
+    # Called when user has selected a comport. Try to create the serial thread, and if successful,
+    # run it. Also create a timer for updating the message frequency in the table widget.
     def pyserialHandler(self):
         # Serial connection thread
         # For the first run, everything is fine. However, if user selects
         # comport again, a new thread is created. Bad.
         alreadyStreaming = self.dataBack.alreadyStreaming
-        self.pyserialInit()  # <-- The serial thread is created here
-        if not alreadyStreaming:
+        Success = self.pyserialInit()
+
+        # Run the serial thread if it was created successfully
+        if not alreadyStreaming and Success:
             self.pyserialRun()
 
         # Use this timer as a watchdog for when a node on the bus is shut off.
@@ -341,13 +345,30 @@ class Ui_MainWindow(QtCore.QObject):
     def pyserialInit(self):
         self.dataBack.canPort = canport.CANPortGUI(self.dataBack)
         self.serialCAN = self.dataBack.canPort.pyserialInit()
-### Do the error checking here ###
-        self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
-        self.dataBack.canPort.parsedMsgPut.connect(
-                                           self.filterTable.updateValueInTable)
-        self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
-        self.removeHourGlass()
-        self.setStreamingFlag()
+
+        # The serialCAN thread was initialized without error
+        if type(self.serialCAN) != int:
+            self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
+            self.dataBack.canPort.parsedMsgPut.connect(
+                                               self.filterTable.updateValueInTable)
+            self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
+            self.removeHourGlass()
+            self.setStreamingFlag()
+            return True
+
+        # Error handling here. Create modal dialog windows. Move to another function
+        else:
+            ErrorType = self.serialCAN
+            if ErrorType == self.dataBack.canPort.ERROR_NO_DATA:
+                print("ERROR_NO_DATA")
+            elif ErrorType == self.dataBack.canPort.ERROR_NO_CONNECT:
+                print("ERROR_NO_CONNECT")
+            elif ErrorType == self.dataBack.canPort.ERROR_TIMEOUT:
+                print("ERROR_TIMEOUT")
+            elif ErrorType == self.dataBack.canPort.ERROR_BAUD:
+                print("ERROR_BAUD")
+            self.removeHourGlass()
+            return False
 
     def pyserialRun(self):
         self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
