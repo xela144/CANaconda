@@ -92,14 +92,14 @@ def main():
     import CANaconda
     import argparse
     import sys
-    import messageInfoParse
+    import messageInfo
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.nogui = None
     args.fast = None
     args.debug = False
     dataBack = backend.CanData(args)
-    messageInfoParse.xmlImport(dataBack, args, 'exampleMetaData.xml')
+    messageInfo.xmlImport(dataBack, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     ui = FiltersTreeWidget()
