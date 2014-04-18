@@ -6,6 +6,7 @@ abstraction, and Field is contained within.
 
 import xml.etree.ElementTree as ET
 import queue
+from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
@@ -13,13 +14,11 @@ import queue
 # serial messages.
 # This function is shared by the command-line and GUI modes.
 def xmlImport(dataBack, fileName):
-
     # If there is a problem opening and/or reading from the file, error out.
     try:
         xmlFile = open(fileName, 'r')
         rawXML = xmlFile.read()
     except:
-        xmlFile.close()
         return False
 
     # Now try and process the XML file.
@@ -31,11 +30,15 @@ def xmlImport(dataBack, fileName):
                     print("Please specify only one of either: id, PGN.\n",
                           "Update meta data file and try again.")
                     return False
+            pyqtrm()
+            import pdb
+            pdb.set_trace()
             newMessageInfo = MessageInfo(message, dataBack)
             messageName = newMessageInfo.name
             dataBack.messages[messageName] = newMessageInfo
     except:
-        print("ERROR: Invalid XML file provided!")
+        if dataBack.args.nogui:
+            print("ERROR: Invalid XML file provided!")
         return False
 
     # If we parsed successfully, we can return True
@@ -112,8 +115,14 @@ class Field():
             self.units = 'MPS'
         else:
             self.units = units_.upper()
-        self.scaling = float(field.get('scaling'))
-        self.endian = field.get('endian')
+        scalar = field.get('scaling')
+        if scalar is None:
+            scalar = 1
+        self.scaling = float(scalar)
+        endian = field.get('endian')
+        if endian is None:
+            endian = 'little'
+        self.endian = endian
         self.unitsConversion = None
 
     def __str__(self):

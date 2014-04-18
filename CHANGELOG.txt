@@ -50,3 +50,6 @@ CHANGED:
  * Fixed with 'dataFound = True': Raw message viewing in GUI is spewing 
    all messages even if none are selected in the table widget
 
+ * Fixed another bug with raw messages always transmitting in GUI. Change was made
+   in outmessage.py. For the function to return the raw message, check to see if 
+   the GUI_rawFlag is True, and the messageInfo flag is False.

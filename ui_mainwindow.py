@@ -389,7 +389,7 @@ class Ui_MainWindow(QtCore.QObject):
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
         warn = False
         try:
-            xmlImport(self.dataBack, fileName)
+            warn = not xmlImport(self.dataBack, fileName)
         except:
             warn = True
         if warn:

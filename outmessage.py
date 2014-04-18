@@ -15,7 +15,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 # be displayed.
 def noGuiParse(dataBack, message):
     if message.name not in dataBack.messageInfo_to_fields:
-        if dataBack.GUI_rawFlag:
+        if dataBack.GUI_rawFlag and not dataBack.messageInfoFlag:
             return message.raw
         else:
             return
