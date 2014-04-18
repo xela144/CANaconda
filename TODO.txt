@@ -19,6 +19,12 @@ TO DO:
  * The transmission function does not do any error checking in the GUI.
  * Further separate the threads to make code re-usable.
 
+ * Fix the window size proportional resizing errors, and same for table.
+ * Set the clear flag to True for the TextBrowser ('message stream' window)
+ * When changing the units in the table, connect signal to 'latest value' so that it
+   gets updated immediately, as opposed to updating when the next message comes in.
+ * Add a 'type' parameter to message parsing so that we can get bitfield data.
+
 
 I'd also like to be able to filter by multiple identical IDs or PGN numbers
 with possibly different conditions. This means that you will probably want
