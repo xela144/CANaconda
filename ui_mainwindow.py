@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QCursor
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-from messageInfoParse import xmlImport
+from messageInfo import xmlImport
 import threading
 from serial.tools.list_ports import comports
 from CANacondaMessageParse import encodePayload
@@ -389,7 +389,7 @@ class Ui_MainWindow(QtCore.QObject):
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
         warn = False
         try:
-            xmlImport(self.dataBack, self.dataBack.args, fileName)
+            xmlImport(self.dataBack, fileName)
         except:
             warn = True
         if warn:

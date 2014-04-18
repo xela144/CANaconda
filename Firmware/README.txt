@@ -1,0 +1,1 @@
+This folder contains code suitable for the CANode hardware for providing a canusb-compatible UART interface for interacting with the CAN bus. Only the C, O, and S commands are processed (with S not having any affect currently, but still being required). Only the t and T messages are output. This is no way to transmit CAN messages at this time.

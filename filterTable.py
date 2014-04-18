@@ -237,7 +237,7 @@ def main():
     args.fast = None
     args.debug = False
     dataBack = backend.CanData(args)
-    CANaconda.xmlImport(dataBack, args, 'exampleMetaData.xml')
+    CANaconda.xmlImport(dataBack, 'exampleMetaData.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     singleshot = True
