@@ -1,8 +1,12 @@
+// Include custom library headers
 #include "Ecan1.h"
 #include "CircularBuffer.h"
 
+// Include standard C library headers
 #include <string.h>
 #include <stdbool.h>
+
+// Include Microchip library headers
 #include <ecan.h>
 #include <dma.h>
 
@@ -10,7 +14,7 @@
  * @file   Ecan1.c
  * @author Bryant Mairs
  * @author Pavlo Manovi
- * @date   September 28th, 202
+ * @date   September 28th, 2012
  * @brief  Provides C functions for ECAN blocks
  */
 
@@ -41,7 +45,7 @@ static bool currentlyTransmitting = 0;
 // Also track how many messages are pending for reading.
 static uint8_t receivedMessagesPending = 0;
 
-void Ecan1Init(uint32_t f_osc)
+void Ecan1Init(uint32_t f_osc, uint32_t f_baud)
 {
     // Initialize our circular buffers. If this fails, we crash and burn.
     if (!CB_Init(&ecan1TxCBuffer, txDataArray, ECAN1_BUFFERSIZE)) {
@@ -51,20 +55,20 @@ void Ecan1Init(uint32_t f_osc)
         while (1);
     }
 
-    // Set ECAN1 into configuration mode
+    // Set ECAN1 into configuration mode and wait until it switches modes.
     C1CTRL1bits.REQOP = 4;
     while (C1CTRL1bits.OPMODE != 4);
 
-    // Initialize the CAN node to 250kbaud, assuming a 80MHz clock.
+    // Initialize the CAN node. We assume a fixed length for all of the CAN
+    // segments, but otherwise let the user specify the baud rate.
     const uint16_t propagationSegmentLength = 5;
     const uint16_t phaseSegment1Length = 8;
     const uint16_t phaseSegment2Length = 6;
-    const uint64_t f_baud = 250000L;
     const uint64_t f_tq = (propagationSegmentLength + phaseSegment1Length + phaseSegment2Length + 1) * f_baud;
     const uint64_t f_cy = f_osc / 2;
-    const uint8_t BRP = (uint8_t) (f_cy / (2L * f_tq));
+    const uint8_t brp = (uint8_t)(f_cy / (2L * f_tq));
 
-    CAN1Initialize(CAN_SYNC_JUMP_WIDTH4 & CAN_BAUD_PRE_SCALE(BRP),
+    CAN1Initialize(CAN_SYNC_JUMP_WIDTH4 & CAN_BAUD_PRE_SCALE(brp),
             CAN_WAKEUP_BY_FILTER_DIS & CAN_PROPAGATIONTIME_SEG_TQ(propagationSegmentLength) & CAN_PHASE_SEG1_TQ(phaseSegment1Length) & CAN_PHASE_SEG2_TQ(phaseSegment2Length) & CAN_SEG2_FREE_PROG & CAN_SAMPLE3TIMES);
 
     // Use 4 buffers in DMA RAM (smallest value we can choose), other option is irrelevant.
@@ -110,7 +114,7 @@ void Ecan1Init(uint32_t f_osc)
 #ifdef __dsPIC33FJ128MC802__
             __builtin_dmaoffset(ecan1MsgBuf),
 #elif __dsPIC33EP256MC502__
-            (unsigned long int) ecan1MsgBuf,
+            (unsigned long int)ecan1MsgBuf,
 #endif
             0ul,
             (uint16_t) & C1TXD,
@@ -123,7 +127,7 @@ void Ecan1Init(uint32_t f_osc)
 #ifdef __dsPIC33FJ128MC802__
             __builtin_dmaoffset(ecan1MsgBuf),
 #elif __dsPIC33EP256MC502__
-            (unsigned long int) ecan1MsgBuf,
+            (unsigned long int)ecan1MsgBuf,
 #endif
             0ul,
             (uint16_t) & C1RXD,
@@ -186,14 +190,14 @@ void _ecan1TransmitHelper(const CanMessage *message)
     ecan_msg_buf_ptr[0] = word0;
     ecan_msg_buf_ptr[1] = word1;
     ecan_msg_buf_ptr[2] = ((word2 & 0xFFF0) + message->validBytes);
-    ecan_msg_buf_ptr[3] = ((uint16_t) message->payload[1] << 8 | ((uint16_t) message->payload[0]));
-    ecan_msg_buf_ptr[4] = ((uint16_t) message->payload[3] << 8 | ((uint16_t) message->payload[2]));
-    ecan_msg_buf_ptr[5] = ((uint16_t) message->payload[5] << 8 | ((uint16_t) message->payload[4]));
-    ecan_msg_buf_ptr[6] = ((uint16_t) message->payload[7] << 8 | ((uint16_t) message->payload[6]));
+    ecan_msg_buf_ptr[3] = ((uint16_t)message->payload[1] << 8 | ((uint16_t)message->payload[0]));
+    ecan_msg_buf_ptr[4] = ((uint16_t)message->payload[3] << 8 | ((uint16_t)message->payload[2]));
+    ecan_msg_buf_ptr[5] = ((uint16_t)message->payload[5] << 8 | ((uint16_t)message->payload[4]));
+    ecan_msg_buf_ptr[6] = ((uint16_t)message->payload[7] << 8 | ((uint16_t)message->payload[6]));
 
     // Set the correct transfer intialization bit (TXREQ) based on message buffer.
     offset = message->buffer >> 1;
-    bufferCtrlRegAddr = (uint16_t *) (&C1TR01CON + offset);
+    bufferCtrlRegAddr = (uint16_t *)(&C1TR01CON + offset);
     bit_to_set = 1 << (3 | ((message->buffer & 1) << 3));
     *bufferCtrlRegAddr |= bit_to_set;
 
@@ -311,7 +315,7 @@ void _ISR _C1Interrupt(void)
         if (ide == 0) {
             message.frame_type = CAN_FRAME_STD;
 
-            message.id = (uint32_t) ((ecan_msg_buf_ptr[0] & 0x1FFC) >> 2);
+            message.id = (uint32_t)((ecan_msg_buf_ptr[0] & 0x1FFC) >> 2);
         } else {
             message.frame_type = CAN_FRAME_EXT;
 
@@ -332,15 +336,15 @@ void _ISR _C1Interrupt(void)
         } else {
             message.message_type = CAN_MSG_DATA;
 
-            message.validBytes = (uint8_t) (ecan_msg_buf_ptr[2] & 0x000F);
-            message.payload[0] = (uint8_t) ecan_msg_buf_ptr[3];
-            message.payload[1] = (uint8_t) ((ecan_msg_buf_ptr[3] & 0xFF00) >> 8);
-            message.payload[2] = (uint8_t) ecan_msg_buf_ptr[4];
-            message.payload[3] = (uint8_t) ((ecan_msg_buf_ptr[4] & 0xFF00) >> 8);
-            message.payload[4] = (uint8_t) ecan_msg_buf_ptr[5];
-            message.payload[5] = (uint8_t) ((ecan_msg_buf_ptr[5] & 0xFF00) >> 8);
-            message.payload[6] = (uint8_t) ecan_msg_buf_ptr[6];
-            message.payload[7] = (uint8_t) ((ecan_msg_buf_ptr[6] & 0xFF00) >> 8);
+            message.validBytes = (uint8_t)(ecan_msg_buf_ptr[2] & 0x000F);
+            message.payload[0] = (uint8_t)ecan_msg_buf_ptr[3];
+            message.payload[1] = (uint8_t)((ecan_msg_buf_ptr[3] & 0xFF00) >> 8);
+            message.payload[2] = (uint8_t)ecan_msg_buf_ptr[4];
+            message.payload[3] = (uint8_t)((ecan_msg_buf_ptr[4] & 0xFF00) >> 8);
+            message.payload[4] = (uint8_t)ecan_msg_buf_ptr[5];
+            message.payload[5] = (uint8_t)((ecan_msg_buf_ptr[5] & 0xFF00) >> 8);
+            message.payload[6] = (uint8_t)ecan_msg_buf_ptr[6];
+            message.payload[7] = (uint8_t)((ecan_msg_buf_ptr[6] & 0xFF00) >> 8);
         }
 
         // Store the message in the buffer

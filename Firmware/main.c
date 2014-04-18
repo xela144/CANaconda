@@ -196,7 +196,8 @@ void CommandSetup(const void *d)
 {
     if (opMode != ACTIVE) {
         opMode = CONFIGURED;
-        Ecan1Init(F_OSC);
+        uint32_t baudRate = *(uint32_t*)d;
+        Ecan1Init(F_OSC, baudRate);
     }
 }
 
