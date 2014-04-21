@@ -25,6 +25,11 @@ TO DO:
    gets updated immediately, as opposed to updating when the next message comes in.
  * Add a 'type' parameter to message parsing so that we can get bitfield data.
 
+ * XML import: If a field has length of 8 bits, then endianness doesn't matter.
+   On the other hand, if length is more than 8 bits, and endianness isn't specified,
+   produce an error message.
+
+
 
 I'd also like to be able to filter by multiple identical IDs or PGN numbers
 with possibly different conditions. This means that you will probably want
