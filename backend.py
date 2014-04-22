@@ -5,8 +5,6 @@ This file contains the CanData class, which is implemented as a singleton
 
 import queue
 import CANaconda
-from Nmea2000_decode_encode import *
-import pdb
 
 # conversionMap is a mapping of valid base units to converted units.
 # For each base units, a map to the new units will be given by the
@@ -159,19 +157,6 @@ class CanData():
                 self.messages.remove(messageInfo)
                 del messageInfo
 
-
-
-
-# This class is used to create a Message object that results from a rawmessage
-# being filtered in the canport object. Arguments passed in:
-# dataBack is a CanData singleton
-# rawmsg: format is utf-8
-# match: regex match object
-# Example parsed message:
-# (None, '09FD0284', '8', 'D410002841FAFFFF', '5CCC')
-# match.groups() will give:
-#      (1)                 (2)           (3)          (4)        (5)
-# header for 't'     header for 'T'     length        body       junk
-# Note that the 'id' tag is referred to as 'header'
-
-### Moved to CANacondaMessage.py and CANacondaMessageParse.py
+    
+    def __str__(self):
+        return str(self.messages)

@@ -19,7 +19,6 @@ import xml.etree.ElementTree as ET
 import sys
 from messageInfo import *
 from backend import *
-from Nmea2000_decode_encode import *
 from setoptions import *
 import outmessage
 
