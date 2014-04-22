@@ -159,7 +159,9 @@ class CanData():
                 self.messages.remove(messageInfo)
                 del messageInfo
 
-
+    
+    def __str__(self):
+        return str(self.messages)
 
 
 # This class is used to create a Message object that results from a rawmessage

@@ -19,15 +19,13 @@ from Nmea2000_decode_encode import Iso11783Decode
 from queue import Queue
 import time
 import pdb
+from CanMessage import CANacondaMessage
 
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
-
-
-
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
-def CANacondaMessageParse(self, match, rawmsg, dataBack):
+def CANacondaMessageParse(self, match, dataBack):
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
         self.id = int(match.group(1), 16)

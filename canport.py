@@ -10,7 +10,7 @@ the serial data is no longer dealt with for that message.
 import re
 import time
 import backend
-from CANacondaMessage import *
+from CanMessage import CanMessage
 from CANacondaMessageParse import *
 from outmessage import *
 import serial
@@ -97,11 +97,12 @@ class CANPort():
         # Once we've parsed out a complete message, actually process the data for display.
         canacondamessage = CANacondaMessage()
         if matchedmsg:
-            CANacondaMessageParse(canacondamessage, matchedmsg, rawmsg, self.dataBack)
+            CANacondaMessageParse(canacondamessage, matchedmsg, self.dataBack)
 
         # Finally just print the message since we're running in command line mode already.
         self.PrintMessage(canacondamessage)
 
+    # FIXME: Change to a descriptive name
     def getRegex(self, serialCAN):
         character = None
         rawmsg = b""
@@ -174,7 +175,7 @@ try:
             rawmsg, matchedmsg = self.getRegex(serialCAN)
             newCANacondaMessage = CANacondaMessage()
             if matchedmsg:
-                CANacondaMessageParse(newCANacondaMessage, matchedmsg, rawmsg, dataBack)
+                CANacondaMessageParse(newCANacondaMessage, matchedmsg, dataBack)
                 # use dataBack.nogui?
                 self.dataBack.CANacondaRxMsg_queue.put(newCANacondaMessage)
                 self.parsedMsgPut.emit()
