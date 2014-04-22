@@ -6,7 +6,6 @@ abstraction, and Field is contained within.
 
 import xml.etree.ElementTree as ET
 import queue
-from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
@@ -30,9 +29,6 @@ def xmlImport(dataBack, fileName):
                     print("Please specify only one of either: id, PGN.\n",
                           "Update meta data file and try again.")
                     return False
-            pyqtrm()
-            import pdb
-            pdb.set_trace()
             newMessageInfo = MessageInfo(message, dataBack)
             messageName = newMessageInfo.name
             dataBack.messages[messageName] = newMessageInfo

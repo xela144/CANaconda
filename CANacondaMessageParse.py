@@ -2,8 +2,6 @@
 '''
 For adding the data to the CANacondaMessage object.
 CANacondaMessageParse -- main parser
-parseRaw  -------------- gets raw hex  
-pgnSet ----------------- gets parameter group number
 hexToVal --------------- converts the payload data
 
 A Regex Match object is passed to this parsing function contained in this file.
@@ -30,20 +28,28 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
 def CANacondaMessageParse(self, match, rawmsg, dataBack):
-    self.pgn = pgnSet(match)
-    self.raw = parseRaw(rawmsg)
-##    
-    self.match = match  # For debugging -- delete
-##
+    # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
-        self.ID = match.group(1)
+        self.id = int(match.group(1), 16)
     elif match.group(2):
-        self.ID = match.group(2)
+        self.id = int(match.group(2), 16)
+
+    payloadSize = int(match.group(3))
+
+    payloadString = match.group(4)
+    if payloadSize * 2 != len(payloadString):
+        payloadString = payloadString[0:2 * payloadSize]
+
+    self.payload = ParseBody(payloadString)
+
+    # Now grab a PGN value if one's found
+    [pgn, x, y, z] = Iso11783Decode(self.id)
+    self.pgn = pgn
 
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
-        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.ID:
+        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.id:
             self.name = dataBack.messages[key].name
             break
     # If self.name is still None, then the  message is not in the xml 
@@ -53,13 +59,13 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
 
     # make a pointer to the filter. First, try with filter ID. Then PGN.
     try:
-        currentMessage = dataBack.messages[dataBack.id_to_name[self.ID]]
+        currentMessage = dataBack.messages[dataBack.id_to_name[self.id]]
     except:
         currentMessage = dataBack.messages[dataBack.pgn_to_name[str(self.pgn)]]
 
-    if self.ID not in dataBack.IDencodeMap:
-        dataBack.IDencodeMap[self.name] = self.ID.upper()
-        
+    if self.id not in dataBack.IDencodeMap:
+        dataBack.IDencodeMap[self.name] = self.id
+
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
         dataFilter = currentMessage.fields[fieldName]
@@ -88,7 +94,7 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
 
 ########### GUI related #################################
     # Add data to the headers and messages sets
-    dataBack.headers.add(self.ID)
+    dataBack.headers.add(self.id)
     dataBack.pgnSeenSoFar.add(self.pgn)
 
     # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
@@ -100,45 +106,10 @@ def CANacondaMessageParse(self, match, rawmsg, dataBack):
     # Make the frequency calculation and add to CANacondaMessage object:
     # dataBack.frequencyMap[self.name].qsize()
 
-# Parse the message without any information from the metadata file
-# This just gives a fancy way of displaying hex data from the
-# serial stream.
-def parseRaw(rawmsg):
-    # Process a standard CAN frame
-    if rawmsg[0] == 't':
-        head = rawmsg[1:4]
-        dataLength = 2 * int(rawmsg[4], 16) # Because it takes 2 hex chars to represent a byte
-        data = rawmsg[5:5+dataLength]
-    # And an extended CAN frame message
-    elif rawmsg[0] == 'T':
-        head = rawmsg[1:9]
-        dataLength = 2 * int(rawmsg[9], 16) # Because it takes 2 hex chars to represent a byte
-        data = rawmsg[10:10+dataLength]
-    # And don't do anything for any other message
-    else:
-        return ""
-
-    # Now split our data every 2 characters
-    dataSplit = [data[start:start + 2] for start in range(0, len(data), 2)]
-    dataString = " ".join(dataSplit)
-
-    return "Head: 0x{0}, Body: 0x[{1}]".format(head, dataString)
-
-
-# Use the Iso11783 decoding routine to extract the PGN from
-# the CAN ID field.
-def pgnSet(match):
-    pgn = None
-    if match.group(1):
-        [pgn, x, y, z] = Iso11783Decode(match.group(1))
-    elif match.group(2):
-        [pgn, x, y, z] = Iso11783Decode(match.group(2))
-    return pgn
-
-
 # Function parameters: hexData is the raw hex value of the message body
 # dataFilter is the CAN message specification given in the meta data by the user.
 # The return value is the CAN message payload, before filtering
+# FIXME: Parse out the data from CanMessage.payload instead
 def getPayload(hexData, dataFilter):
     # Variables used in this function:
     endian = dataFilter.endian
@@ -146,10 +117,6 @@ def getPayload(hexData, dataFilter):
     offset = dataFilter.offset
     length = dataFilter.length
 
-    # Strip the time stamp off the end of the message if it is there
-    hexData = hexData[0:2 * length]
-
-    assert(length == len(hexData))  # Let's change this assert to something else
     count = len(hexData)
     dataflipped = ""
     while count > 0:
@@ -201,6 +168,18 @@ def getPayload(hexData, dataFilter):
 
     return value
 
+def ParseBody(payloadString):
+    """Parse out an array of integers from a string of hex chars"""
+    # Set the size of the output array
+    payloadSize = len(payloadString) // 2
+
+    # Parse out each byte from the payload string into an integer array
+    payload = [None] * payloadSize 
+    for i in range(payloadSize):
+        charIndex = 2 * i
+        payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
+
+    return payload
 
 # yeah so what else needs to happen here???
 # Need to check for return value length. Should be same as 'length'
@@ -227,6 +206,7 @@ def encodePayload(payload, dataFilter):
 
 # Retrieves the data field from the CAN message body and does any units 
 # conversion and/or filtering specified by the user during runtime.
+# FIXME: Don't pull data from `match`, instead pull from self.payload
 def getBodyFieldData(dataFilter, currentMessage, match):
     msgBody = match.group(4)
     value = getPayload(msgBody, dataFilter)

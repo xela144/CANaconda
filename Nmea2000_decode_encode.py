@@ -4,33 +4,34 @@ Translated from Bryant's Nmea2000.c file
 '''
 
 def Iso11783Decode(can_id):
-	# convert from string to int
-	can_id = int(can_id,16)
+    # Make sure we were passed an integer
+    if type(can_id) != int:
+        return (0, 0, 0, 0)
 
-	# The source address is the lowest 8 bits
-	src = can_id & 255
+    # The source address is the lowest 8 bits
+    src = can_id & 255
 
-	# The priority are the highest 3 bits
-	pri = (can_id >> 26) & 7
+    # The priority are the highest 3 bits
+    pri = (can_id >> 26) & 7
 
-	# Most significant byte
-	MS = (can_id >> 24) & 0x03
+    # Most significant byte
+    MS = (can_id >> 24) & 0x03
 
-	# PDU format byte
-	PF = (can_id >> 16) & 0xFF
+    # PDU format byte
+    PF = (can_id >> 16) & 0xFF
 
-	# PDU specific byte
-	PS = (can_id >> 8) & 0xFF
+    # PDU specific byte
+    PS = (can_id >> 8) & 0xFF
 
-	pgn = None
-	if PF > 239:
-		dest = 0xFF
-		pgn = (MS << 16) | (PF << 8) | (PS)
-	else:
-		dest = PS
-		pgn = (MS << 16) | (PF << 8)
+    pgn = None
+    if PF > 239:
+        dest = 0xFF
+        pgn = (MS << 16) | (PF << 8) | (PS)
+    else:
+        dest = PS
+        pgn = (MS << 16) | (PF << 8)
 
-	return (pgn, src, dest, pri)
+    return (pgn, src, dest, pri)
 
 
 def Iso11783Encode(pgn, src, dest, pri):

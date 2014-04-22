@@ -23,6 +23,7 @@ import sys
 class CANPort():
 
     # Declare some error constants to be returned by pyserialInit().
+    # FIXME: Add documentation for what each of these error codes means
     ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
 
     # Set the timeout (in seconds) for connecting to the CANusb hardware.
@@ -45,12 +46,20 @@ class CANPort():
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
-            temp = None
             
-            # Start a timer:
+            # If the port is open already, the following may fail. We therefore try to close
+            # the first first, and ignore whatever output we received.
+            val = serialCAN.write(b'C\r')
+            if val != 2:
+                return CANPort.ERROR_NO_CONNECT
+
+            # Start a timer to see if initialization has taken too long, erroring out in that case.
             start = time.time()
+            
+            # Now keep looping until we've successfully configured the CANusb hardware.
+            temp = serialCAN.read()
             while temp != b'\r':
-                time.sleep(.2)
+                time.sleep(.1)
                 # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
                 val = serialCAN.write(b'S5\r')
 
@@ -65,7 +74,6 @@ class CANPort():
                 if time.time() - start - 5 > CANPort.TIMEOUT:
                     return CANPort.ERROR_NO_DATA
 
-            time.sleep(.1)
             # Open the CAN port to begin receiving messages, using timer as above
             start = time.time()
             val = serialCAN.write(b'O\r')
@@ -74,8 +82,6 @@ class CANPort():
                 if time.time() - start - 5 > CANPort.TIMEOUT:
                     return CANPort.ERROR_TIMEOUT
             time.sleep(.1)
-            # Disable timestamps on the CAN port
-            serialCAN.write(b'Z0\r')
             return serialCAN
 
     # CANport thread can repeat targed is the getMessages function:
@@ -141,7 +147,7 @@ class CANPortCLI(CANPort):
                     outmsg = "{0:0.3f} ".format(time.time())
                 
                 # And then output the raw message data.
-                outmsg += canacondamessage.raw
+                outmsg += str(canacondamessage)
 
         # Finally print the message data. We call flush here to speed up the output.
         # This allows the CSV output to be used as input for pipePlotter and render

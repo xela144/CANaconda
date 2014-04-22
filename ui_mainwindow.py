@@ -302,7 +302,7 @@ class Ui_MainWindow(QtCore.QObject):
     def getMessage(self, CANacondaRxMsg_queue):
         CANacondaMessage = CANacondaRxMsg_queue.get()
         if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
-            return outmessage.noGuiParse(self.dataBack, CANacondaMessage) #CANacondaMessage.raw
+            return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
         elif self.dataBack.GUI_CSVflag:
             return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)

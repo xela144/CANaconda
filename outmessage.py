@@ -16,7 +16,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 def noGuiParse(dataBack, message):
     if message.name not in dataBack.messageInfo_to_fields:
         if dataBack.GUI_rawFlag and not dataBack.messageInfoFlag:
-            return message.raw
+            return str(message)
         else:
             return
     # Build a text string that gets put to screen.
@@ -42,13 +42,14 @@ def noGuiParse(dataBack, message):
     # Then the raw bytes of the message
     # Note: This is required for GUI operation and always empty in the command-line interface.
     if dataBack.displayList['raw']:
-        outmsg += " " + message.raw
+        outmsg += " " + str(message)
         dataFound = True
     
     # Now finally pretty-print the internal data if metadata exists for this message
-    if message.ID:
+    # FIXME: message.id will ALWAYS exist. Now metadata for it might not...
+    if message.id:
         if dataBack.displayList['ID']:
-            outmsg += "\nFilter ID: " + message.ID
+            outmsg += "\nFilter ID: " + str(message.id)
         # if displayList is empty, display all:
         if dataBack.displayList['body']:
             for field in message.body:
