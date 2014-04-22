@@ -29,6 +29,21 @@ TO DO:
    On the other hand, if length is more than 8 bits, and endianness isn't specified,
    produce an error message.
 
+ * The frequency of a message should be in a dictionary map, and not part of the
+   CANacondaMessage object
+
+ * The frequency and other data should not be 
+ * Trim CANacondaMessage object down to include only what is in the constructor.
+   Everything else goes in another message/file. When the program needs to access the
+   info, a lookup table should be used. Otherwise, we duplicating large amounts of data
+   and could lead to data corruption later on.
+
+ * When cancelling out the xml import, don't pop up a window.
+
+ * In ui_mainwindow.py, rename CANacondaMessage so that an instance doesn't have the same
+   name as a data type.
+
+ * When no metadata has been loaded, don't offer 'decoded as an option'
 
 
 I'd also like to be able to filter by multiple identical IDs or PGN numbers
