@@ -15,7 +15,7 @@ header for 't'    header for 'T'     length        body      junk
 Note that the 'id' tag is sometimes referred to as 'header'
 '''
 from backend import conversionMap
-from Nmea2000_decode_encode import Iso11783Decode
+from Nmea2000 import Iso11783Decode
 from queue import Queue
 import time
 import pdb
