@@ -23,7 +23,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfo import xmlImport
 import threading
 from serial.tools.list_ports import comports
-from CANacondaMessageParse import encodePayload
+from canport import encodePayload
 from backend import *
 import filtersTreeWidget
 import filterTable
@@ -293,7 +293,13 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionTab1.setText(_translate("MainWindow", "Tab 1"))
         self.actionTab2.setText(_translate("MainWindow", "Tab 2"))
 
+
+    #
     def updateUi(self):
+        #from PyQt5.QtCore import pyqtRemoveInputHook
+        #pyqtRemoveInputHook()
+        #import pdb
+        #pdb.set_trace()
         outmsg = self.getMessage(self.dataBack.CANacondaRxMsg_queue)
         if outmsg is not None:
             self.messagesTextBrowser.append("%s" % outmsg)
@@ -421,7 +427,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
 
     def populateTxField(self):
-        #self.firstTxField.setDisabled(False)
+        # First delete the old contents
         rowcount = self.txGrid.rowCount()
         for i in range(1, rowcount):
             try:
@@ -431,14 +437,18 @@ class Ui_MainWindow(QtCore.QObject):
                 # If widget has already been deleted
                 pass
 
-        #self.firstTxField1.clear()
+        # For storing the QLineEdits
         self.txQLabel_LineContainer = []  # store QLineEdits here
         key = self.firstTxMessageInfo.currentText()
         row = 1   # counter for adding to txGrid row
+        
+        # Add all of the widgets to the transmission QGridLayout
         for field in self.dataBack.messages[key].fields.keys():
             newLabel = QtWidgets.QLabel()
             newLabel.setText(field)
             newLineEdit = QtWidgets.QLineEdit()
+
+            # Append to the following list to access from txActivateHandler.
             self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
             self.txGrid.addWidget(newLabel,    row, 3)
             self.txGrid.addWidget(newLineEdit, row, 4)

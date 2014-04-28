@@ -240,7 +240,7 @@ def CANacondaMessageParse(self, match, dataBack):
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
-        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.id:
+        if dataBack.messages[key].pgn == str(self.pgn) or int(dataBack.messages[key].id, 16) == self.id:
             self.name = dataBack.messages[key].name
             break
     # If self.name is still None, then the  message is not in the xml 
