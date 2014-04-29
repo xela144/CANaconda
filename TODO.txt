@@ -32,7 +32,6 @@ TO DO:
  * The frequency of a message should be in a dictionary map, and not part of the
    CANacondaMessage object
 
- * The frequency and other data should not be 
  * Trim CANacondaMessage object down to include only what is in the constructor.
    Everything else goes in another message/file. When the program needs to access the
    info, a lookup table should be used. Otherwise, we duplicating large amounts of data

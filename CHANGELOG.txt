@@ -53,3 +53,12 @@ CHANGED:
  * Fixed another bug with raw messages always transmitting in GUI. Change was made
    in outmessage.py. For the function to return the raw message, check to see if 
    the GUI_rawFlag is True, and the messageInfo flag is False.
+
+ * Fixed a bug with message processing.. all messages had a value of 0 due to a missing
+   return value statement.
+
+ * Added an error code explanation in canport.py
+
+ * Added support for bitfield message types
+
+ * Removed the flawed logic in outmessage.py, where 'if message.id:' would always be true
