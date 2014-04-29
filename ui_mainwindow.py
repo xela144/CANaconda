@@ -393,6 +393,9 @@ class Ui_MainWindow(QtCore.QObject):
         fileName = None
         while fileName is None:
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
+        if fileName == '':
+            # If user canceled loading file, return
+            return
         warn = False
         try:
             warn = not xmlImport(self.dataBack, fileName)
