@@ -28,8 +28,11 @@ from Nmea2000 import Iso11783Decode
 # CANacondaRxMsg_queue queue where they are added to the GUI
 class CANPort():
 
-    # Declare some error constants to be returned by pyserialInit().
-    # FIXME: Add documentation for what each of these error codes means
+    # Error constants to be returned by pyserialInit():
+    # ERROR_NO_DATA    No data being transmitted.
+    # ERROR_NO_CONNECT Could not open serial port
+    # ERROR_TIMEOUT    Timeout in sending the 'O' command to CANusb device
+    # ERROR_BAUD       Could not set the baud rate for CAN bus
     ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
 
     # Set the timeout (in seconds) for connecting to the CANusb hardware.
@@ -98,7 +101,7 @@ class CANPort():
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
         # Sit and wait for all the bytes for an entire CAN message from the serial port.
-        (rawmsg, matchedmsg) = self.getRegex(serialCAN)
+        matchedmsg = self.getMatchObject(serialCAN)
         
         # Once we've parsed out a complete message, actually process the data for display.
         canacondamessage = CANacondaMessage()
@@ -108,8 +111,9 @@ class CANPort():
         # Finally just print the message since we're running in command line mode already.
         self.PrintMessage(canacondamessage)
 
-    # FIXME: Change to a descriptive name
-    def getRegex(self, serialCAN):
+    # Build up a message character by character from the serial stream, and then wrap it
+    # in a regex match object.
+    def getMatchObject(self, serialCAN):
         character = None
         rawmsg = b""
         # Reads in characters from the serial stream until
@@ -121,7 +125,7 @@ class CANPort():
             rawmsg += bytes(character)
         rawmsg = rawmsg.decode('utf-8')
         matchedMsg = self.regex.match(rawmsg)
-        return rawmsg, matchedMsg
+        return matchedMsg
 
 class CANPortCLI(CANPort):
 
@@ -178,7 +182,7 @@ try:
 
         def serialParse(self, serialCAN):
             dataBack = self.dataBack
-            rawmsg, matchedmsg = self.getRegex(serialCAN)
+            matchedmsg = self.getMatchObject(serialCAN)
             newCANacondaMessage = CANacondaMessage()
             if matchedmsg:
                 CANacondaMessageParse(newCANacondaMessage, matchedmsg, dataBack)
@@ -237,12 +241,6 @@ def CANacondaMessageParse(self, match, dataBack):
     [pgn, x, y, z] = Iso11783Decode(self.id)
     self.pgn = pgn
 
-    if self.id == 144:
-        from PyQt5.QtCore import pyqtRemoveInputHook
-        import pdb
-
-        #pyqtRemoveInputHook()
-        #pdb.set_trace()
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
@@ -265,12 +263,11 @@ def CANacondaMessageParse(self, match, dataBack):
 
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
-        dataFilter = currentMessage.fields[fieldName]  # FIXME change name to currentField
-        try: # may cause an assertion error that we can ignore
-            payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
-            self.body[dataFilter.name] = payLoadData
-        except:
-            pass
+        dataFilter = currentMessage.fields[fieldName]  # dataFilter is a MessageInfo.Field object. Used for parsing field data.
+        # The field data may be an int or a bitfield, depending on the type specified in metadata.
+        payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
+
+        self.body[dataFilter.name] = payLoadData
 
     # Now to calculate message frequency:
     if self.name not in dataBack.frequencyMap:
@@ -313,6 +310,7 @@ def getPayload(hexData, dataFilter):
     signed = dataFilter.signed
     offset = dataFilter.offset
     length = dataFilter.length
+    type   = dataFilter.type
 
     count = len(hexData)
     dataflipped = ""
@@ -343,9 +341,14 @@ def getPayload(hexData, dataFilter):
         datasect = datasect[:-8]
         dataset.append(int(highdata, 2))
     dataset.append(int(datasect, 2))
+    
+    if type == 'bitfield':
+        # Convert the value into a bitfield. The actual type is an 'int'.
+        #value = int(bin(int.from_bytes(dataset, byteorder=endian))[2:])  ## UGLY
+        value = bin(int.from_bytes(dataset, byteorder=endian))  ## UGLY
 
     #little endian unsigned
-    if endian == "little" and signed == "no":
+    elif endian == "little" and signed == "no":
         value = int.from_bytes(dataset, byteorder='little', signed=False)
 
     #little endian signed
@@ -364,6 +367,7 @@ def getPayload(hexData, dataFilter):
         print("not valid")
 
     return value
+
 
 def ParseBody(payloadString):
     """Parse out an array of integers from a string of hex chars"""
@@ -409,10 +413,16 @@ def getBodyFieldData(dataFilter, currentMessage, match):
     value = getPayload(msgBody, dataFilter)
     # Check for invalid data.
     # 0xFFFF is the 'invalid data' code
+   
+    # If we have a bitfield for status or error codes, just return the string.
+    if dataFilter.type == 'bitfield':
+        return value
+
+    # If it is an N2K FFFF, return Not A Number.
     if value == 65535:
         value = 'NaN'
 
-    # Normal data processing is the default case:
+    # Otherwise continue processing the int with scalar, converting to float.
     else:
         value *= dataFilter.scaling
         if dataFilter.unitsConversion:
@@ -434,3 +444,11 @@ def getBodyFieldData(dataFilter, currentMessage, match):
         if value not in dataFilter.byValue:
             value = ''
     return value
+
+def getBitfield(dataFilter, currentMessage, payload, match):
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    pyqtRemoveInputHook()
+    import pdb
+    pdb.set_trace()
+    msgBody = payload
+    

@@ -96,12 +96,15 @@ class Field():
     # 'field' is an ElementTree object
     def __init__(self, field):
         # Initialize some fields to default values
-        self.header = '' # FIXME: Check that this needs to exist
         self.byValue = []
 
         # set the 'field' information based on what's in the xml file.
         # 'field' must be an xml-etree object.
         self.name = field.get('name')
+        self.type = field.get('type')
+        if self.type != 'int' and self.type != 'bitfield':
+            print("Type specified was neither int nor bitfield.",
+                  "\nneed to code an error handler for this")
         self.length = int(field.get('length'))
         self.offset = int(field.get('offset'))
         self.signed = field.get('signed')
@@ -124,7 +127,7 @@ class Field():
         return "Field {name: {0}, length: {1}}".format(self.name, self.length)
 
     def __iter__(self):
-        return iter([self.name, self.header, self.length, self.offset,
+        return iter([self.name, self.type, self.length, self.offset,
                  self.signed, self.units, self.scaling, self.endian,
                  self.unitsConversion, self.byValue])
 

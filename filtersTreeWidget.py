@@ -70,6 +70,8 @@ class FiltersTreeWidget(QtWidgets.QDialog):
 
     def insertFieldAttributes(self, field, child):
         attr = QtWidgets.QTreeWidgetItem(child)
+        attr.setText(0, "Type:   " + str(field.type))
+        attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Length: " + str(field.length))
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Offset: " + str(field.offset))

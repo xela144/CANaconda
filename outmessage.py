@@ -46,20 +46,19 @@ def noGuiParse(dataBack, message):
         dataFound = True
     
     # Now finally pretty-print the internal data if metadata exists for this message
-    # FIXME: message.id will ALWAYS exist. Now metadata for it might not...
-    if message.id:
-        if dataBack.displayList['ID']:
-            outmsg += "\nFilter ID: " + str(message.id)
-        # if displayList is empty, display all:
-        if dataBack.displayList['body']:
-            for field in message.body:
-                if field in dataBack.messageInfo_to_fields[message.name]:
-                    if field:
-                        dataFound = True
-                    try:
-                        outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], dataBack.messages[message.name].fields[field].units)
-                    except:
-                        outmsg += "\n{0}: {1}".format(field, message.body[field])
+    # NOTE this was in an if block previously: 'if message.id:'
+    if dataBack.displayList['ID']:
+        outmsg += "\nFilter ID: " + str(message.id)
+    # if displayList is empty, display all:
+    if dataBack.displayList['body']:
+        for field in message.body:
+            if field in dataBack.messageInfo_to_fields[message.name]:
+                if field:
+                    dataFound = True
+                try:
+                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], dataBack.messages[message.name].fields[field].units)
+                except:
+                    outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:
         return outmsg
 
