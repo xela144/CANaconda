@@ -188,14 +188,23 @@ class Ui_MainWindow(QtCore.QObject):
 
 
         ##### Right side #####
+        
+
         self.verticalLayout = QtWidgets.QVBoxLayout(self.visualizeFrame)
         self.verticalLayout.setObjectName("verticalLayout")
+
+        self.topRightLabels = QtWidgets.QHBoxLayout()
+        self.topRightLabels.setObjectName("topRightLabels")
+        self.verticalLayout.addLayout(self.topRightLabels)
 
         self.label_2 = QtWidgets.QLabel(self.visualizeFrame)
         self.label_2.setObjectName("label_2")
 #        self.label_2.setText("Metadata and Filtering")
-        self.verticalLayout.addWidget(self.label_2)
+        self.topRightLabels.addWidget(self.label_2)
 
+        self.fileNameLabel = QtWidgets.QLabel()
+        self.topRightLabels.addWidget(self.fileNameLabel)
+        self.fileNameLabel.setText("MetaData file: <font color=grey><i>   None loaded</></font>    ")
 #################
 # TabWidget, tableWidget, and treeWidget code
 #################
@@ -296,10 +305,6 @@ class Ui_MainWindow(QtCore.QObject):
 
     #
     def updateUi(self):
-        #from PyQt5.QtCore import pyqtRemoveInputHook
-        #pyqtRemoveInputHook()
-        #import pdb
-        #pdb.set_trace()
         outmsg = self.getMessage(self.dataBack.CANacondaRxMsg_queue)
         if outmsg is not None:
             self.messagesTextBrowser.append("%s" % outmsg)
@@ -382,6 +387,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.serialThread.start()
 
     def loadFilter(self):
+        #from PyQt5.QtCore import pyqtRemoveInputHook
+        #import pdb
+        #pyqtRemoveInputHook()
+        #pdb.set_trace()
         # These "reset" statements should actually be moved to a
         # reset function that can be called from anywhere in the code.
         self.dataBack.messages = {}
@@ -404,16 +413,30 @@ class Ui_MainWindow(QtCore.QObject):
         if warn:
             self.warnFilterImport()
             return
+        # Save the filename for updating the UI
+        self.fileName = fileName
+
+
+        self.updateFileNameQLabel()
         self.filtersTreeWidget.populateTree()
         # Is this still necessary?
         self.update_messageInfo_to_fields()
         # populate the 'transmission' combobox
         self.populateTxMessageInfoCombo()
 
+    def updateFileNameQLabel(self):
+        self.fileName = self.fileName.split('/')[-1]
+        text = "MetaData file: <font color=grey><i>  " + self.fileName + "</></font>    "
+        self.fileNameLabel.setText(text)
+
 
     # Called when a metadata file is loaded
     # populate the combobox with messageInfo/field names
     def populateTxMessageInfoCombo(self):
+        try:
+            self.firstTxMessageInfo.currentTextChanged.disconnect(self.populateTxField)
+        except:
+            pass
         self.firstTxMessageInfo.clear()            #
         self.firstTxMessageInfo.setDisabled(False) #
         try:
@@ -434,29 +457,37 @@ class Ui_MainWindow(QtCore.QObject):
         rowcount = self.txGrid.rowCount()
         for i in range(1, rowcount):
             try:
-                self.txGrid.itemAtPosition(i, 4).widget().deleteLater()
-                self.txGrid.itemAtPosition(i, 3).widget().deleteLater()
+                # Remove the old widgets from the grid, then delete
+                widget4 = self.txGrid.itemAtPosition(i, 4).widget()
+                widget3 = self.txGrid.itemAtPosition(i, 3).widget()
+                self.txGrid.removeWidget(widget4)
+                self.txGrid.removeWidget(widget3)
+                widget4.deleteLater()
+                widget3.deleteLater()
             except AttributeError:
-                # If widget has already been deleted
+                # If widgets have already been deleted
                 pass
 
         # For storing the QLineEdits
         self.txQLabel_LineContainer = []  # store QLineEdits here
         key = self.firstTxMessageInfo.currentText()
         row = 1   # counter for adding to txGrid row
-        
         # Add all of the widgets to the transmission QGridLayout
-        for field in self.dataBack.messages[key].fields.keys():
-            newLabel = QtWidgets.QLabel()
-            newLabel.setText(field)
-            newLineEdit = QtWidgets.QLineEdit()
+        try:
+            for field in self.dataBack.messages[key].fields.keys():
+                newLabel = QtWidgets.QLabel()
+                newLabel.setText(field)
+                newLineEdit = QtWidgets.QLineEdit()
 
-            # Append to the following list to access from txActivateHandler.
-            self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
-            self.txGrid.addWidget(newLabel,    row, 3)
-            self.txGrid.addWidget(newLineEdit, row, 4)
-            row += 1
+                # Append to the following list to access from txActivateHandler.
+                self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
+                self.txGrid.addWidget(newLabel,    row, 3)
+                self.txGrid.addWidget(newLineEdit, row, 4)
+                row += 1
 
+        # For one iteration, 'key' will be '', and we want to ignore this error.
+        except KeyError:
+            pass
 
     def txActivateHandler(self):
         if not self.dataBack.alreadyStreaming:

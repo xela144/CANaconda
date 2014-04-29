@@ -2,7 +2,8 @@
 	<messageInfo name = "WSO100" pgn = "130306"> 
 		<desc></desc>
 		<field 
-		name = "airspeed" 
+		name = "airspeed"
+                type = "int"
 		offset = "8" 
 		length = "16" 
 		signed = "no" 
@@ -12,6 +13,7 @@
 		/>
 		<field 
 		name = "wind_dir" 
+                type = "int"
 		offset = "24" 
 		length = "16" 
 		signed = "no" 
@@ -24,6 +26,7 @@
 		<desc></desc>
 		<field
 		name = "Instance"
+                type = "int"
 		offset = "8"
 		length = "6"
 		endian = "little"
@@ -33,6 +36,7 @@
 		/>
 		<field 
 		name = "humidity" 
+                type = "int"
 		offset = "24" 
 		length = "16" 
 		signed = "yes" 
@@ -45,6 +49,7 @@
 		<desc></desc>
 		<field 
 		name = "WaterTemp" 
+                type = "int"
 		offset = "8" 
 		length = "16" 
 		signed = "no" 
@@ -54,6 +59,7 @@
 		/>
 		<field 
 		name = "AmbientAirTemp" 
+                type = "int"
 		offset = "24" 
 		length = "16" 
 		signed = "no" 
@@ -63,6 +69,7 @@
 		/>
 		<field 
 		name = "AtmosphericPressure" 
+                type = "int"
 		offset = "40" 
 		length = "16" 
 		signed = "no" 
@@ -75,6 +82,7 @@
 		<desc></desc>
 		<field 
 		name = "Depth" 
+                type = "int"
 		offset = "8" 
 		length = "16" 
 		signed = "no" 
@@ -84,6 +92,7 @@
 		/>
 		<field 
 		name = "Offset_Depth" 
+                type = "int"
 		offset = "40" 
 		length = "16" 
 		signed = "yes" 
@@ -96,6 +105,7 @@
 		<desc></desc>
 		<field 
 		name = "Speed_waterReferenced" 
+                type = "int"
 		offset = "8" 
 		length = "16" 
 		signed = "no" 
@@ -105,6 +115,7 @@
 		/>
 		<field 
 		name = "Speed_groundReferenced" 
+                type = "int"
 		offset = "24" 
 		length = "16" 
 		signed = "no" 

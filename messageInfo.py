@@ -57,7 +57,10 @@ class MessageInfo():
         self.freq = 0
         # Most of the rest of the data is pulled directly from the XML data.
         self.name = messageInfo.get('name')
-        self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
+        try:
+            self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
+        except TypeError:
+            self.id = None
         self.pgn = messageInfo.get('pgn')
         self.desc = messageInfo.get('desc')
 
