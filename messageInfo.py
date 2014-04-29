@@ -55,17 +55,16 @@ class MessageInfo():
         self.fields = {}
         self.freqQueue = queue.Queue()
         self.freq = 0
-
         # Most of the rest of the data is pulled directly from the XML data.
         self.name = messageInfo.get('name')
-        self.id = messageInfo.get('id')
+        self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
         self.pgn = messageInfo.get('pgn')
         self.desc = messageInfo.get('desc')
 
         # for filtering messages, map id to name
         if self.id is not None:
-            dataBack.IDencodeMap[self.name] = self.id.upper()
-            dataBack.id_to_name[self.id.upper()] = self.name
+            dataBack.IDencodeMap[self.name] = self.id
+            dataBack.id_to_name[self.id] = self.name
 
         # map pgn to name -- this could be wrong!
         dataBack.pgn_to_name[self.pgn] = self.name
@@ -94,7 +93,7 @@ class MessageInfo():
 # This class gets instantiated and added to the fields dictionary
 # of the Filter class.
 class Field():
-    # field an ElementTree object
+    # 'field' is an ElementTree object
     def __init__(self, field):
         # Initialize some fields to default values
         self.header = '' # FIXME: Check that this needs to exist
@@ -122,7 +121,7 @@ class Field():
         self.unitsConversion = None
 
     def __str__(self):
-        return "Field {name: {}, length: {}}".format(self.name, self.length)
+        return "Field {name: {0}, length: {1}}".format(self.name, self.length)
 
     def __iter__(self):
         return iter([self.name, self.header, self.length, self.offset,

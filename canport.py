@@ -237,18 +237,24 @@ def CANacondaMessageParse(self, match, dataBack):
     [pgn, x, y, z] = Iso11783Decode(self.id)
     self.pgn = pgn
 
+    if self.id == 144:
+        from PyQt5.QtCore import pyqtRemoveInputHook
+        import pdb
+
+        #pyqtRemoveInputHook()
+        #pdb.set_trace()
     # Now that we have the current message's ID, raw, and pgn values,
     # find and assign the message's name to self.name
     for key in dataBack.messages.keys():
-        if dataBack.messages[key].pgn == str(self.pgn) or int(dataBack.messages[key].id, 16) == self.id:
+        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.id:
             self.name = dataBack.messages[key].name
-            break
+            #break
     # If self.name is still None, then the  message is not in the xml 
     # file and is not of interest:
     if not self.name:
         return
-
-    # make a pointer to the filter. First, try with filter ID. Then PGN.
+    
+    # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
     try:
         currentMessage = dataBack.messages[dataBack.id_to_name[self.id]]
     except:
@@ -259,7 +265,7 @@ def CANacondaMessageParse(self, match, dataBack):
 
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields:
-        dataFilter = currentMessage.fields[fieldName]
+        dataFilter = currentMessage.fields[fieldName]  # FIXME change name to currentField
         try: # may cause an assertion error that we can ignore
             payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
             self.body[dataFilter.name] = payLoadData
@@ -427,3 +433,4 @@ def getBodyFieldData(dataFilter, currentMessage, match):
     if dataFilter.byValue:
         if value not in dataFilter.byValue:
             value = ''
+    return value

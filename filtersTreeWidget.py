@@ -51,7 +51,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
             if self.messages[messageInfo].pgn:
                 messageName.setText(1, "PGN: " + self.messages[messageInfo].pgn)
             else:
-                messageName.setText(1, "ID: " + self.messages[messageInfo].id)
+                messageName.setText(1, "ID: " + hex(self.messages[messageInfo].id))
             # container will be a map from messageInfo name to its widgetmessageNames.
             self.dataBack.container[messageName.text(0)] = []
             for field in self.messages[messageInfo]:

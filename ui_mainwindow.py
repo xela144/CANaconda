@@ -674,6 +674,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     def debugMode(self):
         pyqtrm()
+        import pdb
         pdb.set_trace()
 
     def setHourGlass(self):
