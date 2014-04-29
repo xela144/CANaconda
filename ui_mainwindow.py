@@ -166,6 +166,7 @@ class Ui_MainWindow(QtCore.QObject):
 
         self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
         self.messagesTextBrowser.setObjectName("messagesTextBrowser")
+        #self.messagesTextBrowswer.set( the flag to be able to delete text!)
         self.verticalLayout_2.addWidget(self.messagesTextBrowser)
 
         if self.dataBack.args.debug:

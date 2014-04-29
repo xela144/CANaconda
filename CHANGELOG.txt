@@ -62,3 +62,5 @@ CHANGED:
  * Added support for bitfield message types
 
  * Removed the flawed logic in outmessage.py, where 'if message.id:' would always be true
+
+ * When cancelling out the xml import window, dialog warning no longer appears

@@ -37,8 +37,6 @@ TO DO:
    info, a lookup table should be used. Otherwise, we duplicating large amounts of data
    and could lead to data corruption later on.
 
- * When cancelling out the xml import, don't pop up a window.
-
  * In ui_mainwindow.py, rename CANacondaMessage so that an instance doesn't have the same
    name as a data type.
 
