@@ -353,10 +353,8 @@ def getPayload(hexData, dataFilter):
     dataset.append(output)
     
     if type == 'bitfield':
-        # Convert the value into a bitfield. The actual type is an 'int'.
-        #value = int(bin(int.from_bytes(dataset, byteorder=endian))[2:])  ## UGLY
-        value = bin(int.from_bytes(dataset, byteorder=endian))  ## UGLY
-
+        # Convert the value into a binary string that shows every bit
+        value = ("{:#0" + str(2 + length) + "b}").format(int.from_bytes(dataset, byteorder=endian))
     #little endian unsigned
     elif endian == "little" and signed == "no":
         value = int.from_bytes(dataset, byteorder='little', signed=False)
