@@ -123,7 +123,7 @@ class CANPort():
             # never check the state of the serial port after initial opening.
             try:
                 character = serialCAN.read()
-            except SerialException:
+            except serial.serialutil.SerialException:
                 return None
             # appends the newly read character to
             # the message being built
