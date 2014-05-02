@@ -6,6 +6,7 @@ abstraction, and Field is contained within.
 
 import xml.etree.ElementTree as ET
 import queue
+import sys
 
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
@@ -51,7 +52,6 @@ def xmlImport(dataBack, fileName):
 class MessageInfo():
     def __init__(self, messageInfo, dataBack):
         # Initialize some base values
-        self.parent = ''
         self.fields = {}
         self.freqQueue = queue.Queue()
         self.freq = 0
@@ -76,7 +76,7 @@ class MessageInfo():
         # get the fields
         for xmlField in newFields:
             name = xmlField.get('name')
-            self.fields[name] = Field(xmlField)
+            self.fields[name] = Field(self.name, xmlField)
 
     # A method used to determine if any of the fields must be
     # displayed by value.
@@ -96,18 +96,23 @@ class MessageInfo():
 # This class gets instantiated and added to the fields dictionary
 # of the Filter class.
 class Field():
+    # 'parent' is a string with the name of the message this field is a member of
     # 'field' is an ElementTree object
-    def __init__(self, field):
+    def __init__(self, parent, field):
         # Initialize some fields to default values
         self.byValue = []
 
         # set the 'field' information based on what's in the xml file.
         # 'field' must be an xml-etree object.
         self.name = field.get('name')
+
+        # If the 'type' for a field is not specified, assume int (as that will be the most common).
+        # This SHOULD be explicitly set by the user, so warn them via stderr.
         self.type = field.get('type')
         if self.type != 'int' and self.type != 'bitfield':
-            print("Type specified was neither int nor bitfield.",
-                  "\nneed to code an error handler for this")
+            print("Specified type for '{}.{}' was not specified, assuming int.".format(parent, self.name), file=sys.stderr)
+            self.type = 'int'
+
         self.length = int(field.get('length'))
         self.offset = int(field.get('offset'))
         self.signed = field.get('signed')
