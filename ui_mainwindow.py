@@ -238,16 +238,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.menuChoose_port = QtWidgets.QMenu(self.menuShow)
         self.menuChoose_port.setObjectName("menuChoose_port")
         mainWindow.setMenuBar(self.menuBar)
-        self.actionBegin_Logging = QtWidgets.QAction(mainWindow)
-        self.actionBegin_Logging.setObjectName("actionBegin_Logging")
-        self.actionEnd_Logging = QtWidgets.QAction(mainWindow)
-        self.actionEnd_Logging.setObjectName("actionEnd_Logging")
-        self.actionCAN_Messages = QtWidgets.QAction(mainWindow)
-        self.actionCAN_Messages.setObjectName("actionCAN_Messages")
-        self.actionCAN_Headers = QtWidgets.QAction(mainWindow)
-        self.actionCAN_Headers.setObjectName("actionCAN_Headers")
-        self.actionCAN_PGNs = QtWidgets.QAction(mainWindow)
-        self.actionCAN_PGNs.setObjectName("actionCAN_PGNs")
         self.actionLoad_filters_from_file = QtWidgets.QAction(mainWindow)
         self.actionLoad_filters_from_file.setObjectName(
                                         "actionLoad_filters_from_file")
@@ -264,10 +254,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionTab1.setObjectName("actionTab1")
         self.actionTab2 = QtWidgets.QAction(mainWindow)
         self.actionTab2.setObjectName("actionTab2")
-        self.menuShow.addAction(self.actionCAN_Messages)
-        self.menuShow.addAction(self.actionCAN_Headers)
-        self.menuShow.addAction(self.actionCAN_PGNs)
-        self.menuShow.addSeparator()
         self.menuShow.addAction(self.actionLoad_filters_from_file)
         self.menuShow.addAction(self.menuChoose_port.menuAction())
         self.menuBar.addAction(self.menuShow.menuAction())
@@ -290,18 +276,8 @@ class Ui_MainWindow(QtCore.QObject):
                                      _translate("MainWindow", "View MetaData"))
         self.menuShow.setTitle(_translate("MainWindow", "&Action"))
         self.menuChoose_port.setTitle(_translate("MainWindow", "&Choose port"))
-        self.actionBegin_Logging.setText(_translate(
-                                                "MainWindow", "Begin Logging"))
-        self.actionEnd_Logging.setText(_translate("MainWindow", "End Logging"))
-        self.actionCAN_Messages.setText(_translate(
-                                            "MainWindow", "Show CAN &Messages"))
-        self.actionCAN_Headers.setText(_translate(
-                                            "MainWindow", "Show CAN &Headers"))
-        self.actionCAN_PGNs.setText(_translate("MainWindow", "Show CAN &PGNs"))
         self.actionLoad_filters_from_file.setText(_translate(
                                     "MainWindow", "Load &Filters from file"))
-        self.actionTab1.setText(_translate("MainWindow", "Tab 1"))
-        self.actionTab2.setText(_translate("MainWindow", "Tab 2"))
 
 
     #
