@@ -7,6 +7,7 @@ abstraction, and Field is contained within.
 import xml.etree.ElementTree as ET
 import queue
 import sys
+from math import ceil
 
 CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
 
@@ -75,7 +76,6 @@ class MessageInfo():
 
         self.desc = messageInfo.get('desc')
 
-
         # for filtering messages, map id to name
         if self.id is not None:
             dataBack.IDencodeMap[self.name] = self.id
@@ -83,10 +83,16 @@ class MessageInfo():
 
         # map pgn to name -- this could be wrong!
         dataBack.pgn_to_name[self.pgn] = self.name
-        newFields = messageInfo.findall('field')
+
+        # Get the payload size
+        try:
+            self.size = int(messageInfo.get('size'))
+        except:
+            self.size = 0
 
         # get the fields
         self.fields = {}
+        newFields = messageInfo.findall('field')
         for xmlField in newFields:
             name = xmlField.get('name')
             self.fields[name] = Field(self.name, xmlField)
