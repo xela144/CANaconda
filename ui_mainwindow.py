@@ -144,13 +144,12 @@ class Ui_MainWindow(QtCore.QObject):
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.label = QtWidgets.QLabel(self.messagesFrame)
         self.label.setObjectName("messageStreamLabel")
-#        self.label.setText("Message Stream")
         self.verticalLayout_2.addWidget(self.label)
 
 
         #### Display Combobox code ####
-        # Choose the format for displaying messages in the Message
-        # Stream frame
+        # Choose the format for displaying messages in the Message Stream frame
+        # When first launching, default display to 'raw hex' and make inactive
         self.displayLayout = QtWidgets.QHBoxLayout()
         self.verticalLayout_2.addLayout(self.displayLayout)
         self.displayLayout.setObjectName("display combobox layout")
@@ -159,9 +158,12 @@ class Ui_MainWindow(QtCore.QObject):
         self.displayCombo = QtWidgets.QComboBox()
         self.displayLayout.addWidget(self.displayLabel)
         self.displayLayout.addWidget(self.displayCombo)
+        
         # Note: displayList must be in order of enum at top of file
         displayList = ["Decoded", "Raw hex", "CSV"]
         self.displayCombo.addItems(displayList)
+        self.displayCombo.setDisabled(True)  # FIXME set enabled when metadata loaded
+        self.displayCombo.setCurrentIndex(RAW_HEX)
         self.displayCombo.currentIndexChanged.connect(self.setOutput)
 
         self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
@@ -397,9 +399,14 @@ class Ui_MainWindow(QtCore.QObject):
         self.updateFileNameQLabel()
         self.filtersTreeWidget.populateTree()
         # Is this still necessary?
-        self.update_messageInfo_to_fields()
+        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
+                                            # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.populateTxMessageInfoCombo()
+        # Enable the combo box that allows user to select message stream format and set to 'decoded'
+        self.displayCombo.setDisabled(False)
+        self.displayCombo.setCurrentIndex(DECODED)
+
 
     def updateFileNameQLabel(self):
         self.fileName = self.fileName.split('/')[-1]
