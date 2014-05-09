@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 import time
 
 # Columns:
-MESSAGE, FIELD, VALUE, BYVALUE, UNITS, RATE = range(6)
+MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(6)
 
 
 class FilterTable(QtWidgets.QWidget):
@@ -63,7 +63,7 @@ class FilterTable(QtWidgets.QWidget):
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
         headerList = ['Message', 'Field', 'Latest value',
-                      'ByValue', 'Units', 'Rate']
+                      'Filter', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         # a map from (filter,field) to row
@@ -73,6 +73,7 @@ class FilterTable(QtWidgets.QWidget):
             ##
             nameItem = QtWidgets.QTableWidgetItem(messageInfoName)
             nameItem.setCheckState(~QtCore.Qt.Unchecked)
+            nameItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             self.tableWidget.setItem(row, MESSAGE, nameItem)
             fieldItem = QtWidgets.QTableWidgetItem(fieldName)
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
@@ -85,11 +86,11 @@ class FilterTable(QtWidgets.QWidget):
             fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
             ##
             if len(fieldData.byValue) == 0:
-                byValueText = 'None'
+                byValueText = ''
             else:
                 byValueText = str(fieldData.byValue)[1:-1]
             byValue = QtWidgets.QTableWidgetItem(byValueText)
-            self.tableWidget.setItem(row, BYVALUE, byValue)
+            self.tableWidget.setItem(row, FILTER, byValue)
             ##
 
             # If there is a valid conversion, its units will show up in 
@@ -198,7 +199,7 @@ class FilterTable(QtWidgets.QWidget):
     # This function needs to be modified so that if an invalid
     # entry occurs, a dialog window warns the user.
     def filterByValue(self, item):
-        if item.column() != BYVALUE:
+        if item.column() != FILTER:
             return
         valueString = item.text()
         currentRow = item.row()
@@ -210,14 +211,14 @@ class FilterTable(QtWidgets.QWidget):
         for value in valueString.split(','):
             try:
                 byValueList.append(float(value))
+                self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.cyan)
             except ValueError:
+                # The filter was a string, in which case the user is notified by seeing
+                # the text change to 'None'
+                # This is also how the user clears a filter. FIXME: add this to a mouseover.
                 self.dataBack.messages[messageInfoName].fields[fieldName].byValue = []
-                self.tableWidget.item(currentRow,BYVALUE).setText('None')
-            #except ValueError:
-            #    pass  
-                # Lets us go from a filterByValue back to 'None'
-                # without an error
-
+                self.tableWidget.item(currentRow, FILTER).setText('None')
+                self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
 
     def pdbset(self):
         pyqtrm()

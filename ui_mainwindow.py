@@ -75,7 +75,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.logLabel.setText("Enter filename:")
         self.buttonLogging = QtWidgets.QPushButton()
         self.buttonLogging.setObjectName("save")
-        self.buttonLogging.setText("Start logging (as CSV???)")
+        self.buttonLogging.setText("Start logging (as CSV???)") #FIXME: grab text from displayCombo
         self.buttonLogging.clicked.connect(self.saveToFile)
         self.logLabel.setBuddy(self.buttonLogging)
         self.fileName = QtWidgets.QLineEdit()
@@ -620,7 +620,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     def saveToFile(self):
         if self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as CSV")
+            self.buttonLogging.setText("Start logging as CSV") #FIXME: grab text from displayCombo
             self.file.write(self.messagesTextBrowser.toPlainText())
             self.file.close()
             self.loggingStatusLabel.setText("Status:  not recording")
