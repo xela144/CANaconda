@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ET
 import queue
 import sys
 
+CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
+
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
 # and initializes the messageInfo objects that are used to parse the incoming 
@@ -49,7 +51,6 @@ def xmlImport(dataBack, fileName):
 class MessageInfo():
     def __init__(self, messageInfo, dataBack):
         # Initialize some base values
-        self.fields = {}
         self.freqQueue = queue.Queue()
         self.freq = 0
         # Most of the rest of the data is pulled directly from the XML data.
@@ -58,8 +59,22 @@ class MessageInfo():
             self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
         except TypeError:
             self.id = None
+
+        # Set the PGN
         self.pgn = messageInfo.get('pgn')
+
+        # Now if a PGN is set, this must be in extended format, so just set that.
+        # But otherwise we need to check for either 'extended' or 'standard'
+        if self.pgn:
+            self.format = CAN_FORMAT_EXTENDED
+        else:
+            if messageInfo.get('format') == 'extended':
+                self.format = CAN_FORMAT_EXTENDED
+            else:
+                self.format = CAN_FORMAT_STANDARD
+
         self.desc = messageInfo.get('desc')
+
 
         # for filtering messages, map id to name
         if self.id is not None:
@@ -71,6 +86,7 @@ class MessageInfo():
         newFields = messageInfo.findall('field')
 
         # get the fields
+        self.fields = {}
         for xmlField in newFields:
             name = xmlField.get('name')
             self.fields[name] = Field(self.name, xmlField)
