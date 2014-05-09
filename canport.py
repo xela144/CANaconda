@@ -104,12 +104,12 @@ class CANPort():
         matchedmsg = self.getMatchObject(serialCAN)
         
         # Once we've parsed out a complete message, actually process the data for display.
-        canacondamessage = CANacondaMessage()
         if matchedmsg:
+            canacondamessage = CANacondaMessage()
+
             CANacondaMessageParse(canacondamessage, matchedmsg, self.dataBack)
 
-        # Finally just print the message since we're running in command line mode already.
-        self.PrintMessage(canacondamessage)
+            self.PrintMessage(canacondamessage)
 
     # Build up a message character by character from the serial stream, and then wrap it
     # in a regex match object.
@@ -119,7 +119,12 @@ class CANPort():
         # Reads in characters from the serial stream until
         # a carriage return is encountered
         while character != (b'\r' or '\r'):
-            character = serialCAN.read()
+            # Wrap the read() call in a try/except to catch possible serial port errors since we 
+            # never check the state of the serial port after initial opening.
+            try:
+                character = serialCAN.read()
+            except serial.serialutil.SerialException:
+                return None
             # appends the newly read character to
             # the message being built
             rawmsg += bytes(character)
@@ -340,13 +345,16 @@ def getPayload(hexData, dataFilter):
         highdata = datasect[-8:]
         datasect = datasect[:-8]
         dataset.append(int(highdata, 2))
-    dataset.append(int(datasect, 2))
+    output = 0
+    try:
+        output = int(datasect, 2)
+    except:
+        pass
+    dataset.append(output)
     
     if type == 'bitfield':
-        # Convert the value into a bitfield. The actual type is an 'int'.
-        #value = int(bin(int.from_bytes(dataset, byteorder=endian))[2:])  ## UGLY
-        value = bin(int.from_bytes(dataset, byteorder=endian))  ## UGLY
-
+        # Convert the value into a binary string that shows every bit
+        value = ("{:#0" + str(2 + length) + "b}").format(int.from_bytes(dataset, byteorder=endian))
     #little endian unsigned
     elif endian == "little" and signed == "no":
         value = int.from_bytes(dataset, byteorder='little', signed=False)
