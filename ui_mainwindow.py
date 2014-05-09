@@ -384,14 +384,15 @@ class Ui_MainWindow(QtCore.QObject):
         if fileName == '':
             # If user canceled loading file, return
             return
-        warn = False
+
+        # Now process our XML file, handling any errors that arise by alerting
+        # the user and returning.
         try:
-            warn = not xmlImport(self.dataBack, fileName)
-        except:
-            warn = True
-        if warn:
-            self.warnFilterImport()
+            xmlImport(self.dataBack, fileName)
+        except Exception as e:
+            self.warnXmlImport(str(e))
             return
+
         # Save the filename for updating the UI
         self.fileName = fileName
 
@@ -661,18 +662,10 @@ class Ui_MainWindow(QtCore.QObject):
     def resetTime(self):
         self.dataBack.CSV_START_TIME = time.time()
 
-    def warnFilterImport(self):
+    def warnXmlImport(self, errorString):
         warn = QtWidgets.QMessageBox()
-        warn.setText("Meta Data File Error")
-        warn.setInformativeText("Check XML file for correct formatting and syntax")
-        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        warn.exec()
-
-
-    def warnPgnId(self):
-        warn = QtWidgets.QMessageBox()
-        warn.setText("Meta Data Error")
-        warn.setInformativeText("You can't have both PGN and ID in one filter in your meta data file")
+        warn.setText("XML import error")
+        warn.setInformativeText(errorString)
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
 
