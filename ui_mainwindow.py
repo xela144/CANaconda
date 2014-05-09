@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QCursor
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-from messageInfo import xmlImport
+from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 import threading
 from serial.tools.list_ports import comports
 from canport import encodePayload
@@ -504,16 +504,24 @@ class Ui_MainWindow(QtCore.QObject):
     # 
     def generateMessage(self, payload, messageName):
         messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
-        hexData = 'T'  # N2K
-        hexData += self.dataBack.IDencodeMap[messageName]  # ID field
-        hexData += '0000'  # dummy time-stamp
-        # later wrap this in a for loop
+
+        formatString = 't{:03x}{:1d}{}\r'
+        if messageInfo.id == CAN_FORMAT_EXTENDED:
+            formatString = 'T{:08x}{:1d}{}\r'
+        
+        id = self.dataBack.IDencodeMap[messageName]  # ID field
+
+        # Pack the payload into a string
+        # FIXME: This doesn't work when multiple fields are in the same byte
+        payloadString = ''
         for field in messageInfo.fields:
-            
             dataFilter = self.dataBack.messages[messageName].fields[field]
-            hexData += encodePayload(payload[field], dataFilter)     # body data
-        hexData += '\r'
-        return hexData
+            payloadString += encodePayload(payload[field], dataFilter)
+
+        # And return the transmit message as a properly formatted message.
+        outStr = formatString.format(id, messageInfo.size, payloadString)
+        print(outStr)
+        return outStr
         
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
