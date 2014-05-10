@@ -136,10 +136,14 @@ class Field():
         self.offset = int(field.get('offset'))
         self.signed = field.get('signed')
         units_ = field.get('units')
-        if units_ == 'm/s':
-            self.units = 'MPS'
-        else:
-            self.units = units_.upper()
+        try:
+            if units_ == 'm/s':
+                self.units = 'MPS'
+            else:
+                self.units = units_.upper()
+        except AttributeError:
+            self.units = ''
+
         scalar = field.get('scaling')
         if scalar is None:
             scalar = 1
