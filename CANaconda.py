@@ -100,6 +100,9 @@ def parserInit(parser):
             help="Give zero-order hold output for CSV mode")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
+    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
+            help="Pre-select a port for GUI")
+
 
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args

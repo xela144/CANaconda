@@ -264,6 +264,13 @@ class Ui_MainWindow(QtCore.QObject):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
 
+        ## Check for command line arguments: --messages or --port
+        if self.dataBack.args.messages != None:
+            self.commandLineLoadFilter()
+
+        if self.dataBack.args.port != None:
+            self.comportSelect()
+
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -299,7 +306,10 @@ class Ui_MainWindow(QtCore.QObject):
 
 
     def comportSelect(self):
-        self.dataBack.comport = self.sender().text()
+        if self.dataBack.args.port != None:
+            self.dataBack.comport = self.dataBack.args.port[0]
+        else:
+            self.dataBack.comport = self.sender().text()
         self.dataBack.comportsFlag = True
 
         # There are a few sequential items of business that need to happen when user
@@ -350,14 +360,19 @@ class Ui_MainWindow(QtCore.QObject):
         else:
             ErrorType = self.serialCAN
             if ErrorType == self.dataBack.canPort.ERROR_NO_DATA:
-                print("ERROR_NO_DATA")
+                ErrorString = 'There is no data on the CAN bus.\nAre CAN nodes connected?'
             elif ErrorType == self.dataBack.canPort.ERROR_NO_CONNECT:
-                print("ERROR_NO_CONNECT")
+                ErrorString = 'Could not connect to port  {}'.format(self.dataBack.comport)
             elif ErrorType == self.dataBack.canPort.ERROR_TIMEOUT:
-                print("ERROR_TIMEOUT")
+                ErrorString = 'Time-out in sending command \'O\'\n to CANusb device.'
             elif ErrorType == self.dataBack.canPort.ERROR_BAUD:
-                print("ERROR_BAUD")
+                ErrorString = 'Could not set the baud rate for CAN bus'
+            self.serialWarn(ErrorString)
             self.removeHourGlass()
+
+            # If an incorrect port was given as a command-line argument, it now
+            # needs to be deleted
+            self.dataBack.args.port = None
             return False
 
     def pyserialRun(self):
@@ -366,10 +381,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.serialThread.start()
 
     def loadFilter(self):
-        #from PyQt5.QtCore import pyqtRemoveInputHook
-        #import pdb
-        #pyqtRemoveInputHook()
-        #pdb.set_trace()
         # These "reset" statements should actually be moved to a
         # reset function that can be called from anywhere in the code.
         self.dataBack.messages = {}
@@ -397,6 +408,29 @@ class Ui_MainWindow(QtCore.QObject):
         self.fileName = fileName
 
 
+        self.updateFileNameQLabel()
+        self.filtersTreeWidget.populateTree()
+        # Is this still necessary?
+        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
+                                            # and may not be necessary here... test this
+        # populate the 'transmission' combobox
+        self.populateTxMessageInfoCombo()
+        # Enable the combo box that allows user to select message stream format and set to 'decoded'
+        self.displayCombo.setDisabled(False)
+        self.displayCombo.setCurrentIndex(DECODED)
+
+
+    # If --messages argument was given, this function loads the metadata file.
+    def commandLineLoadFilter(self):
+        self.dataBack.messageInfoFlag = True
+        fileName = self.dataBack.args.messages
+        try:
+            xmlImport(self.dataBack, fileName)
+        except Exception as e:
+            self.warnXmlImport(str(e))
+            return
+        # Save the filename for updating the UI
+        self.fileName = fileName
         self.updateFileNameQLabel()
         self.filtersTreeWidget.populateTree()
         # Is this still necessary?
@@ -676,6 +710,14 @@ class Ui_MainWindow(QtCore.QObject):
         warn.setInformativeText(errorString)
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
+
+    def serialWarn(self, errorString):
+        warn = QtWidgets.QMessageBox()
+        warn.setText("Serial connection error")
+        warn.setInformativeText(errorString)
+        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        warn.exec()
+        
 
     def warnLogging(self):
         ok = QtWidgets.QMessageBox()
