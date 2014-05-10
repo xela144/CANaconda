@@ -48,7 +48,11 @@ def main():
 
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
-        canacondaNoGuiInit(dataBack)
+        try:
+            canacondaNoGuiInit(dataBack)
+        except Exception as e:
+            print("ERROR: " + str(e))
+            return
         ErrorType = pyserialNoGuiInit(dataBack)
 
         # Make sure the serial port was initialized properly before settings things up to read from

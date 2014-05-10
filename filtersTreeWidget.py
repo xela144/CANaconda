@@ -5,6 +5,8 @@ from PyQt5 import QtCore, QtWidgets
 # from PyQt5.QtWidgets import QMessageBox
 import pdb
 
+from messageInfo import CAN_FORMAT_EXTENDED
+
 
 class FiltersTreeWidget(QtWidgets.QDialog):
     
@@ -49,10 +51,13 @@ class FiltersTreeWidget(QtWidgets.QDialog):
             messageName = QtWidgets.QTreeWidgetItem(self.treeWidget)
             messageName.setText(0, self.messages[messageInfo].name)
             if self.messages[messageInfo].pgn:
-                messageName.setText(1, "PGN: " + self.messages[messageInfo].pgn)
+                messageName.setText(1, "PGN: {}".format(self.messages[messageInfo].pgn))
             else:
-                messageName.setText(1, "ID: " + hex(self.messages[messageInfo].id))
-            # container will be a map from messageInfo name to its widgetmessageNames.
+                if self.messages[messageInfo].format == CAN_FORMAT_EXTENDED:
+                    messageName.setText(1, "ID: 0x{:08X}".format(self.messages[messageInfo].id))
+                else:
+                    messageName.setText(1, "ID: 0x{:03X}".format(self.messages[messageInfo].id))
+    # container will be a map from messageInfo name to its widgetmessageNames.
             self.dataBack.container[messageName.text(0)] = []
             for field in self.messages[messageInfo]:
                 # Create a mid-level node that is checkable and

@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QCursor
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-from messageInfo import xmlImport
+from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 import threading
 from serial.tools.list_ports import comports
 from canport import encodePayload
@@ -384,14 +384,15 @@ class Ui_MainWindow(QtCore.QObject):
         if fileName == '':
             # If user canceled loading file, return
             return
-        warn = False
+
+        # Now process our XML file, handling any errors that arise by alerting
+        # the user and returning.
         try:
-            warn = not xmlImport(self.dataBack, fileName)
-        except:
-            warn = True
-        if warn:
-            self.warnFilterImport()
+            xmlImport(self.dataBack, fileName)
+        except Exception as e:
+            self.warnXmlImport(str(e))
             return
+
         # Save the filename for updating the UI
         self.fileName = fileName
 
@@ -503,16 +504,24 @@ class Ui_MainWindow(QtCore.QObject):
     # 
     def generateMessage(self, payload, messageName):
         messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
-        hexData = 'T'  # N2K
-        hexData += self.dataBack.IDencodeMap[messageName]  # ID field
-        hexData += '0000'  # dummy time-stamp
-        # later wrap this in a for loop
+
+        formatString = 't{:03x}{:1d}{}\r'
+        if messageInfo.id == CAN_FORMAT_EXTENDED:
+            formatString = 'T{:08x}{:1d}{}\r'
+        
+        id = self.dataBack.IDencodeMap[messageName]  # ID field
+
+        # Pack the payload into a string
+        # FIXME: This doesn't work when multiple fields are in the same byte
+        payloadString = ''
         for field in messageInfo.fields:
-            
             dataFilter = self.dataBack.messages[messageName].fields[field]
-            hexData += encodePayload(payload[field], dataFilter)     # body data
-        hexData += '\r'
-        return hexData
+            payloadString += encodePayload(payload[field], dataFilter)
+
+        # And return the transmit message as a properly formatted message.
+        outStr = formatString.format(id, messageInfo.size, payloadString)
+        print(outStr)
+        return outStr
         
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
@@ -661,18 +670,10 @@ class Ui_MainWindow(QtCore.QObject):
     def resetTime(self):
         self.dataBack.CSV_START_TIME = time.time()
 
-    def warnFilterImport(self):
+    def warnXmlImport(self, errorString):
         warn = QtWidgets.QMessageBox()
-        warn.setText("Meta Data File Error")
-        warn.setInformativeText("Check XML file for correct formatting and syntax")
-        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        warn.exec()
-
-
-    def warnPgnId(self):
-        warn = QtWidgets.QMessageBox()
-        warn.setText("Meta Data Error")
-        warn.setInformativeText("You can't have both PGN and ID in one filter in your meta data file")
+        warn.setText("XML import error")
+        warn.setInformativeText(errorString)
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
 

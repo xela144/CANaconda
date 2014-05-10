@@ -7,6 +7,9 @@ abstraction, and Field is contained within.
 import xml.etree.ElementTree as ET
 import queue
 import sys
+from math import ceil
+
+CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
 
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
@@ -14,32 +17,29 @@ import sys
 # serial messages.
 # This function is shared by the command-line and GUI modes.
 def xmlImport(dataBack, fileName):
-    # If there is a problem opening and/or reading from the file, error out.
-    try:
-        xmlFile = open(fileName, 'r')
-        rawXML = xmlFile.read()
-    except:
-        return False
+    messageCount = 0
 
     # Now try and process the XML file.
     try:
-        root = ET.fromstring(rawXML)
+        root = ET.parse(fileName)
         for message in root.findall('messageInfo'):
-            if 'pgn' in message.keys() and 'id' in message.keys():
-                if dataBack.args.nogui:
-                    print("Please specify only one of either: id, PGN.\n",
-                          "Update meta data file and try again.")
-                    return False
             newMessageInfo = MessageInfo(message, dataBack)
+            if newMessageInfo.pgn and newMessageInfo.id:
+                raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
+            if not newMessageInfo.fields:
+                raise Exception("No fields found for message '{}'".format(newMessageInfo.name))
             messageName = newMessageInfo.name
             dataBack.messages[messageName] = newMessageInfo
-    except:
-        if dataBack.args.nogui:
-            print("ERROR: Invalid XML file provided!")
-        return False
+            messageCount += 1
+    except ET.ParseError as e:
+        raise Exception("Parsing failed for XML file '{}'. Check that file exists and is proper XML.".format(fileName))
+    except Exception as e:
+        raise e
 
-    # If we parsed successfully, we can return True
-    return True
+    if not messageCount:
+        raise Exception("No messages found in XML file '{}'".format(fileName))
+
+    return messageCount
 
 
 # This instances of this class are filters created from
@@ -52,7 +52,6 @@ def xmlImport(dataBack, fileName):
 class MessageInfo():
     def __init__(self, messageInfo, dataBack):
         # Initialize some base values
-        self.fields = {}
         self.freqQueue = queue.Queue()
         self.freq = 0
         # Most of the rest of the data is pulled directly from the XML data.
@@ -61,7 +60,20 @@ class MessageInfo():
             self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
         except TypeError:
             self.id = None
+
+        # Set the PGN
         self.pgn = messageInfo.get('pgn')
+
+        # Now if a PGN is set, this must be in extended format, so just set that.
+        # But otherwise we need to check for either 'extended' or 'standard'
+        if self.pgn:
+            self.format = CAN_FORMAT_EXTENDED
+        else:
+            if messageInfo.get('format') == 'extended':
+                self.format = CAN_FORMAT_EXTENDED
+            else:
+                self.format = CAN_FORMAT_STANDARD
+
         self.desc = messageInfo.get('desc')
 
         # for filtering messages, map id to name
@@ -71,9 +83,16 @@ class MessageInfo():
 
         # map pgn to name -- this could be wrong!
         dataBack.pgn_to_name[self.pgn] = self.name
-        newFields = messageInfo.findall('field')
+
+        # Get the payload size
+        try:
+            self.size = int(messageInfo.get('size'))
+        except:
+            self.size = 0
 
         # get the fields
+        self.fields = {}
+        newFields = messageInfo.findall('field')
         for xmlField in newFields:
             name = xmlField.get('name')
             self.fields[name] = Field(self.name, xmlField)
