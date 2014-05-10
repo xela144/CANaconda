@@ -367,6 +367,7 @@ class Ui_MainWindow(QtCore.QObject):
                 ErrorString = 'Time-out in sending command \'O\'\n to CANusb device.'
             elif ErrorType == self.dataBack.canPort.ERROR_BAUD:
                 ErrorString = 'Could not set the baud rate for CAN bus'
+
             self.serialWarn(ErrorString)
             self.removeHourGlass()
 
