@@ -425,10 +425,6 @@ def getBodyFieldData(dataFilter, currentMessage, match):
     # If we have a bitfield for status or error codes, just return the string.
     if dataFilter.type == 'bitfield':
         if dataFilter.byValue:
-            #from PyQt5.QtCore import pyqtRemoveInputHook
-            #import pdb
-            #pyqtRemoveInputHook()
-            #pdb.set_trace()
             if int(value[2:], 2) not in dataFilter.byValue:
                 value = ''
         return value
