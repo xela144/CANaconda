@@ -149,7 +149,6 @@ class FilterTable(QtWidgets.QWidget):
         messageInfoName = self.tableWidget.item(row, MESSAGE).text()
         fieldName = self.tableWidget.item(row, FIELD).text()
         newUnits = text
-        print(newUnits)
         self.dataBack.messages[messageInfoName].fields[fieldName]\
                                               .unitsConversion = newUnits
 

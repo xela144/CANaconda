@@ -136,7 +136,9 @@ def setUnitsConversion(dataBack):
                                                     .unitsConversion = target
                                 break
                             else:
-                                print("Units conversion error: Invalid mapping.\n{} can't be converted to {}".format(fieldUnits, target))
+                                validMapping = backend.conversionMap[fieldUnits].keys()
+                                print("Units conversion error: Invalid mapping.\n{} can't be converted to {}".format(fieldUnits, target),
+                                "Instead use one of: {}.".format([x for x in validMapping]))
                                 return False
     # Now that the flags were extracted,
     # clean up the messageInfo_to_fields:

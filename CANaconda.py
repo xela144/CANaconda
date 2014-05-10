@@ -143,8 +143,7 @@ def canacondaNoGuiInit(dataBack):
         # which interacts with the backend.conversionMap
         # dictionary when a message is being parsed.
         if not setUnitsConversion(dataBack):
-            print("setUnitsConversion failed")
-            return
+            exit()
 
         # If the user has chosen to filter the data
         # by value, this function handles those
