@@ -570,7 +570,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.messageInfo_to_fields = {}
         for row in range(0,self.filterTable.tableWidget.rowCount()):
             if self.filterTable.tableWidget.item(
-                    row, filterTable.MESSAGE).checkState() == QtCore.Qt.Checked:
+                    row, filterTable.CHECKBOX).checkState() == QtCore.Qt.Checked:
                 name = self.filterTable.tableWidget.item(
                                                 row, filterTable.MESSAGE).text()
                 field = self.filterTable.tableWidget.item(

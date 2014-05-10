@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 import time
 
 # Columns:
-MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(6)
+CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
 
 class FilterTable(QtWidgets.QWidget):
@@ -62,7 +62,7 @@ class FilterTable(QtWidgets.QWidget):
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
-        headerList = ['Message', 'Field', 'Latest value',
+        headerList = ['', 'Message', 'Field', 'Latest value',
                       'Filter', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
@@ -70,17 +70,23 @@ class FilterTable(QtWidgets.QWidget):
         self.tableMap = {}
         for row, tuple in enumerate(displayList):
             messageInfoName, fieldName = tuple
+            checkBoxItem = QtWidgets.QTableWidgetItem()
+            checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
+            self.tableWidget.setItem(row, CHECKBOX, checkBoxItem)
             ##
             nameItem = QtWidgets.QTableWidgetItem(messageInfoName)
-            nameItem.setCheckState(~QtCore.Qt.Unchecked)
             nameItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            nameItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, MESSAGE, nameItem)
+            ##
             fieldItem = QtWidgets.QTableWidgetItem(fieldName)
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            fieldItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, FIELD, fieldItem)
             ##
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            valueItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, VALUE, valueItem)
             ##
             fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
@@ -105,6 +111,7 @@ class FilterTable(QtWidgets.QWidget):
             else:
                 _units = QtWidgets.QTableWidgetItem(fieldData.units)
                 _units.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+                _units.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
                 self.tableWidget.setItem(row, UNITS, _units)
                 
             # Update table map dict. This is used to display the latest message
@@ -114,6 +121,7 @@ class FilterTable(QtWidgets.QWidget):
             ## rate column
             rateItem = QtWidgets.QTableWidgetItem()
             rateItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            rateItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, RATE, rateItem)
 
         # Before returning, finish off with signals and table flags/geometry
@@ -141,6 +149,7 @@ class FilterTable(QtWidgets.QWidget):
         messageInfoName = self.tableWidget.item(row, MESSAGE).text()
         fieldName = self.tableWidget.item(row, FIELD).text()
         newUnits = text
+        print(newUnits)
         self.dataBack.messages[messageInfoName].fields[fieldName]\
                                               .unitsConversion = newUnits
 
