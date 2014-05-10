@@ -73,8 +73,10 @@ class MessageInfo():
                 self.format = CAN_FORMAT_EXTENDED
             else:
                 self.format = CAN_FORMAT_STANDARD
-
-        self.desc = messageInfo.get('desc')
+        try:
+            self.desc = messageInfo.find('desc').text
+        except AttributeError:
+            self.desc = ''
 
         # for filtering messages, map id to name
         if self.id is not None:

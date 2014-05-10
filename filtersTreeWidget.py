@@ -38,7 +38,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         # Give the tree headers even if not populated
         self.treeWidget.clear()
         self.treeWidget.setColumnCount(2)
-        self.treeWidget.setHeaderLabels(["Message Name", "ID or PGN"])
+        self.treeWidget.setHeaderLabels(["Message Name", "ID or PGN", "Description"])
         self.treeWidget.setItemsExpandable(True)
 
     def populateTree(self, selectedFilter=None):
@@ -57,14 +57,14 @@ class FiltersTreeWidget(QtWidgets.QDialog):
                     messageName.setText(1, "ID: 0x{:08X}".format(self.messages[messageInfo].id))
                 else:
                     messageName.setText(1, "ID: 0x{:03X}".format(self.messages[messageInfo].id))
+            # Set the description
+            messageName.setText(2, self.messages[messageInfo].desc)
     # container will be a map from messageInfo name to its widgetmessageNames.
             self.dataBack.container[messageName.text(0)] = []
             for field in self.messages[messageInfo]:
-                # Create a mid-level node that is checkable and
-                # expanded.
+                # Create a mid-level node 
                 child = QtWidgets.QTreeWidgetItem(messageName)
                 child.setText(0, field)
-                #child.setCheckState(0, QtCore.Qt.Checked)
                 self.insertFieldAttributes(self.messages[messageInfo].fields[field],
                                                                         child)
                 self.dataBack.container[messageName.text(0)].append(child)
@@ -104,9 +104,9 @@ def main():
     args = parser.parse_args()
     args.nogui = None
     args.fast = None
-    args.debug = False
+    args.debug = True
     dataBack = backend.CanData(args)
-    messageInfo.xmlImport(dataBack, 'exampleMetaData.xml')
+    messageInfo.xmlImport(dataBack, 'AutoboatMessages.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     ui = FiltersTreeWidget()
