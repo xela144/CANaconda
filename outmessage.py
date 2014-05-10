@@ -61,7 +61,12 @@ def noGuiParse(dataBack, message):
                 if field:
                     dataFound = True
                 try:
-                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], dataBack.messages[message.name].fields[field].unitsConversion)  #  .unitsConversion used instead of .units
+                    if dataBack.messages[message.name].fields[field].unitsConversion:
+                        units = dataBack.messages[message.name].fields[field].unitsConversion
+                    else:
+                        units = dataBack.messages[message.name].fields[field].units
+                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], units)
+                        
                                                              #  .units refers to default
                 except:
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
