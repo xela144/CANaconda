@@ -75,19 +75,19 @@ class Ui_MainWindow(QtCore.QObject):
         self.logLabel.setText("Enter filename:")
         self.buttonLogging = QtWidgets.QPushButton()
         self.buttonLogging.setObjectName("save")
-        self.buttonLogging.setText("Start logging (as CSV???)") #FIXME: grab text from displayCombo
+        self.buttonLogging.setText("Start logging") 
         self.buttonLogging.clicked.connect(self.saveToFile)
         self.logLabel.setBuddy(self.buttonLogging)
-        self.fileName = QtWidgets.QLineEdit()
-        self.fileName.setObjectName("fileName")
-        self.fileName.returnPressed.connect(self.saveToFile)
+        self.logFileName = QtWidgets.QLineEdit()
+        self.logFileName.setObjectName("fileName")
+        self.logFileName.returnPressed.connect(self.saveToFile)
         self.loggingStatusLabel = QtWidgets.QLabel()
         self.loggingStatusLabel.setTextFormat(1)
-        self.loggingStatusLabel.setText("Status:  not recording")
+        self.loggingStatusLabel.setText("Status:  <font color=grey><i>not recording</i></font>")
         # Signal handler:
         self.outmsgSignal.connect(self.loggingStatusHandler)
         self.horizontalLayout_2.addWidget(self.logLabel)
-        self.horizontalLayout_2.addWidget(self.fileName)
+        self.horizontalLayout_2.addWidget(self.logFileName)
         self.horizontalLayout_2.addWidget(self.buttonLogging)
         self.horizontalLayout_2.addSpacing(100)
         self.horizontalLayout_2.addWidget(self.loggingStatusLabel)
@@ -105,6 +105,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.txGrid.setColumnStretch(3, 2)
         
         # add a vertical layout to the txFrame and put line edits inside it
+        # FIXME: Eventually all the firstTx stuff will have to go, as more generic code
+        # will have to be written for additional transmission widgets.
         self.txLabel = QtWidgets.QLabel()
         self.txLabel.setText("Transmit Messages")
         self.firstTxMessageInfo = QtWidgets.QComboBox()
@@ -165,6 +167,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.displayCombo.setDisabled(True)  # FIXME set enabled when metadata loaded
         self.displayCombo.setCurrentIndex(RAW_HEX)
         self.displayCombo.currentIndexChanged.connect(self.setOutput)
+        self.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText) 
 
         self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
         self.messagesTextBrowser.setObjectName("messagesTextBrowser")
@@ -444,6 +447,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.displayCombo.setCurrentIndex(DECODED)
 
 
+    # When the metadata file is loaded, the name appears at the upper right corner of UI
+    # updateFileNameQLabel handles this.
     def updateFileNameQLabel(self):
         self.fileName = self.fileName.split('/')[-1]
         text = "MetaData file: <font color=grey><i>  " + self.fileName + "</></font>    "
@@ -533,6 +538,14 @@ class Ui_MainWindow(QtCore.QObject):
                                                  # for all fields in messageInfo
         self.dataBack.asciiBucket = self.generateMessage(payload, messageName)
         self.messageTxInit(freq)
+
+    # Connected with displayCombo's currentIndexChanged signal
+    def updateButtonLoggingText(self):
+        # Before updating the text, make sure we are not currently logging, in which
+        # case the button should read "End Logging", and therefore should not be updated.
+        if not self.dataBack.logflag:
+            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) 
+
 
     # Creates a hex encoded message
     # 'payload' is a dictionary mapping of field names to payload data
@@ -662,26 +675,32 @@ class Ui_MainWindow(QtCore.QObject):
     def clearTextBrowser(self):
         self.messagesTextBrowser.clear()
 
+
+    # This function handles the logging functionality. When the "start logging as..." 
+    # button is pressed, this function is called and all messages that were in the
+    # message browser are erased and subsequent messages get written to a file. When
+    # recording is done, this function is called again to flip the state back to normal.
     def saveToFile(self):
         if self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as CSV") #FIXME: grab text from displayCombo
+            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) #FIXME: grab text from displayCombo
             self.file.write(self.messagesTextBrowser.toPlainText())
             self.file.close()
-            self.loggingStatusLabel.setText("Status:  not recording")
+            # Revert label back to original text
+            self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i><font>")
             self.dataBack.logflag = False
         else:
-            if self.fileName.text() == '':
+            if self.logFileName.text() == '':
                 self.warnLogging()
                 return
-            if os.path.isfile(self.fileName.text()):
+            if os.path.isfile(self.logFileName.text()):
                 overWrite = self.warnOverwrite()
                 if overWrite == 0x400000:  # 'don't overwrite'
                     return
                 elif overWrite == 0x400:   # 'okay to overwrite'
-                   os.remove(self.fileName.text())
+                   os.remove(self.logFileName.text())
             self.clearTextBrowser()
 
-            self.file = open(self.fileName.text(), 'w')
+            self.file = open(self.logFileName.text(), 'w')
             # A header for use with Matlab or other programs:
             if self.dataBack.GUI_CSVflag:
                 header = 'time,' + ','.join(self.dataBack.guiCSVDisplayList)
@@ -695,10 +714,10 @@ class Ui_MainWindow(QtCore.QObject):
     
     def loggingStatusHandler(self):
         if self.dataBack.logflag == False:
-            self.loggingStatusLabel.setText("Status:  not recording")
+            self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i></font>")
             self.messageCount = 0
             return
-        self.statusText = "Status:  <font color=red><b>recording  </b></font><b>" + str(self.messageCount) + "</b>"
+        self.statusText = "Status:  <font color=red><b><i>recording  </i>" + str(self.messageCount) + "</b></font>"
         self.messageCount += 1
         self.loggingStatusLabel.setText(self.statusText)
 
