@@ -6,6 +6,9 @@ This file contains the CanData class, which is implemented as a singleton
 import queue
 import CANaconda
 
+# displayList
+from outmessage import ID, PGN, BODY, RAW
+
 # conversionMap is a mapping of valid base units to converted units.
 # For each base units, a map to the new units will be given by the
 # inner dicionary's tuple as follows:
@@ -127,8 +130,8 @@ class CanData():
         self.latest_frequencies = {}
 
         # defaults to display pgn, ID, body
-        self.displayList = {'pgn': False, 'raw': False,
-                            'ID': False, 'body': False}
+        self.displayList = {PGN: False, RAW:  False,
+                            ID:  False, BODY: False}
 
         # A dictionary mapping for the Display By Value mode
         # not used

@@ -21,6 +21,7 @@ from messageInfo import *
 from backend import *
 from setoptions import *
 import outmessage
+from outmessage import ID, PGN, BODY, RAW
 
 
 
@@ -172,9 +173,9 @@ def canacondaNoGuiInit(dataBack):
         for arg in args.display[0].split(','):
             dataBack.displayList[arg] = True
     else:
-        dataBack.displayList['pgn'] = True
-        dataBack.displayList['ID'] = True
-        dataBack.displayList['body'] = True
+        dataBack.displayList[PGN] = True
+        dataBack.displayList[ID] = True
+        dataBack.displayList[BODY] = True
 
     if noMessagesImported:
         print("Running CANaconda without messages specified,",

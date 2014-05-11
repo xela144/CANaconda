@@ -33,6 +33,9 @@ import time
 import os
 import xml.etree.ElementTree as ET
 
+# displayList
+from outmessage import ID, PGN, BODY, RAW
+
 # Message stream enum
 DECODED, RAW_HEX, CSV = range(3)
 
@@ -161,7 +164,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.displayLayout.addWidget(self.displayLabel)
         self.displayLayout.addWidget(self.displayCombo)
         
-        # Note: displayList must be in order of enum at top of file
+        # Note: displayList must be in order of message stream enum at top of file
         displayList = ["Decoded", "Raw hex", "CSV"]
         self.displayCombo.addItems(displayList)
         self.displayCombo.setDisabled(True)  # FIXME set enabled when metadata loaded
@@ -643,19 +646,19 @@ class Ui_MainWindow(QtCore.QObject):
         elif currentIndex == DECODED:
             self.dataBack.GUI_CSVflag = False
             self.dataBack.GUI_rawFlag = False
-            self.dataBack.displayList['ID'] = True
-            self.dataBack.displayList['pgn'] = True
-            self.dataBack.displayList['body'] = True
-            self.dataBack.displayList['raw'] = False
+            self.dataBack.displayList[ID]   = True
+            self.dataBack.displayList[PGN]  = True
+            self.dataBack.displayList[BODY] = True
+            self.dataBack.displayList[RAW]  = False
             return
             
         elif currentIndex == RAW_HEX:
             self.dataBack.GUI_rawFlag = True
             self.dataBack.GUI_CSVflag = False
-            self.dataBack.displayList['ID'] = False
-            self.dataBack.displayList['pgn'] = False
-            self.dataBack.displayList['body'] = False
-            self.dataBack.displayList['raw'] = True
+            self.dataBack.displayList[ID]   = False
+            self.dataBack.displayList[PGN]  = False
+            self.dataBack.displayList[BODY] = False
+            self.dataBack.displayList[RAW]  = True
             return
 
     # This function is called whenever the filtering is changed 
@@ -682,7 +685,7 @@ class Ui_MainWindow(QtCore.QObject):
     # recording is done, this function is called again to flip the state back to normal.
     def saveToFile(self):
         if self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) #FIXME: grab text from displayCombo
+            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) 
             self.file.write(self.messagesTextBrowser.toPlainText())
             self.file.close()
             # Revert label back to original text

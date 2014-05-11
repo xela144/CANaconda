@@ -8,6 +8,10 @@ For both the console mode and the GUI mode.
 import time
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
+
+# displayList constants
+ID, PGN, BODY, RAW = range(4)
+
 # this is just a copy of the parseMessage function from canpython
 # add boolean checks to match args for correct outmsg format
 # Messages not specified in messages file still have a PGN number,
@@ -36,20 +40,20 @@ def noGuiParse(dataBack, message):
         outmsg += "\n" + message.name
     
     # Then the PGN
-    if dataBack.displayList['pgn']:
+    if dataBack.displayList[PGN]:
         outmsg += "\nPGN: " + str(message.pgn)
     
     # Then the raw bytes of the message
     # Note: This is required for GUI operation and always empty in the command-line interface.
-    if dataBack.displayList['raw']:
+    if dataBack.displayList[RAW]:
         outmsg += " " + str(message)
         dataFound = True
     
     # Now finally pretty-print the internal data if metadata exists for this message
-    if dataBack.displayList['ID']:
+    if dataBack.displayList[ID]:
         outmsg += "\nFilter ID: " + str(message.id)
     # if displayList is empty, display all:
-    if dataBack.displayList['body']:
+    if dataBack.displayList[BODY]:
         for field in message.body:
             # If filtering, and no match, message.body[field] will be '', and we do a hard break.
             if message.body[field] == '':
