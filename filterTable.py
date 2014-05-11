@@ -72,6 +72,7 @@ class FilterTable(QtWidgets.QWidget):
             messageInfoName, fieldName = tuple
             checkBoxItem = QtWidgets.QTableWidgetItem()
             checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
+            checkBoxItem.setToolTip("<font color=black>Check box to display message</font>")
             self.tableWidget.setItem(row, CHECKBOX, checkBoxItem)
             ##
             nameItem = QtWidgets.QTableWidgetItem(messageInfoName)
