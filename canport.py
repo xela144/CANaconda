@@ -27,12 +27,13 @@ from Nmea2000 import Iso11783Decode
 # messages. These messages are then passed to the GUI thread via the
 # CANacondaRxMsg_queue queue where they are added to the GUI
 class CANPort():
-
-    # Error constants to be returned by pyserialInit():
-    # ERROR_NO_DATA    No data being transmitted.
-    # ERROR_NO_CONNECT Could not open serial port
-    # ERROR_TIMEOUT    Timeout in sending the 'O' command to CANusb device
-    # ERROR_BAUD       Could not set the baud rate for CAN bus
+    '''
+    Error constants to be returned by pyserialInit():
+    ERROR_NO_DATA    No data being transmitted.
+    ERROR_NO_CONNECT Could not open serial port
+    ERROR_TIMEOUT    Timeout in sending the 'O' command to CANusb device
+    ERROR_BAUD       Could not set the baud rate for CAN bus
+    '''
     ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
 
     # Set the timeout (in seconds) for connecting to the CANusb hardware.
@@ -267,10 +268,15 @@ def CANacondaMessageParse(self, match, dataBack):
         dataBack.IDencodeMap[self.name] = self.id
 
     # grab the values from the data field(s)
-    for fieldName in currentMessage.fields:
-        dataFilter = currentMessage.fields[fieldName]  # dataFilter is a MessageInfo.Field object. Used for parsing field data.
+    for fieldName in currentMessage.fields: 
+        #dataFilter is a MessageInfo.Field object. Used for parsing field data.
+        dataFilter = currentMessage.fields[fieldName]  
         # The field data may be an int or a bitfield, depending on the type specified in metadata.
-        payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
+        # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
+        # in as a parameter here.
+        # Should be using self.payload anyway.
+        #payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
+        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, self.payload)
 
         self.body[dataFilter.name] = payLoadData
 
@@ -305,11 +311,11 @@ def CANacondaMessageParse(self, match, dataBack):
     # Make the frequency calculation and add to CANacondaMessage object:
     # dataBack.frequencyMap[self.name].qsize()
 
-# Function parameters: hexData is the raw hex value of the message body
-# dataFilter is the CAN message specification given in the meta data by the user.
-# The return value is the CAN message payload, before filtering
+# Function parameters: hexData is the raw hex value of one of the message body fields.
+# dataFilter a messagInfo.Field type, extracted from the meta data given by the user.
+# The return value is the CAN message payload, before filtering/error checking.
 # FIXME: Parse out the data from CanMessage.payload instead
-def getPayload(hexData, dataFilter):
+def getPayload(hexData, dataFilter, payload):
     # Variables used in this function:
     endian = dataFilter.endian
     signed = dataFilter.signed
@@ -322,17 +328,16 @@ def getPayload(hexData, dataFilter):
     while count > 0:
         # this flips the order of all the hex bits to switch from little
         # to big endian
-        dataflipped = dataflipped + hexData[count - 2] + hexData[count - 1]
-        count = count - 2
+        dataflipped = dataflipped + hexData[count-2:count]
+        count -= 2
 
     binaryData = bin(int(dataflipped, 16))  # converts the data to binary
-    binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0'\
-                                                            + binaryData[2:]
-    # This prepends the number of dropped 0's to the front of the binary
+    # Strip the '0b' and pad with leading 0's
+    binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
 
     #shifting indices to the right
     start = len(binaryData) - offset
-    stop = len(binaryData) - (length + offset)
+    stop = len(binaryData) - (length + offset) # could be 'start - length' too.
 
     datasect = binaryData[stop: start]
     # from the offset to the end of size is selected to separate
@@ -390,10 +395,14 @@ def ParseBody(payloadString):
 
     return payload
 
-# yeah so what else needs to happen here???
+
 # Need to check for return value length. Should be same as 'length'
 # specified in metadata. Current code does not handle numbers that are too big.
 def encodePayload(payload, dataFilter):
+    import PyQt5
+    PyQt5.QtCore.pyqtRemoveInputHook()
+    import pdb
+    pdb.set_trace()
     endian = dataFilter.endian
     _signed = dataFilter.signed
     offset = dataFilter.offset
@@ -416,9 +425,9 @@ def encodePayload(payload, dataFilter):
 # Retrieves the data field from the CAN message body and does any units 
 # conversion and/or filtering specified by the user during runtime.
 # FIXME: Don't pull data from `match`, instead pull from self.payload
-def getBodyFieldData(dataFilter, currentMessage, match):
+def getBodyFieldData(dataFilter, currentMessage, match, payload):
     msgBody = match.group(4)
-    value = getPayload(msgBody, dataFilter)
+    value = getPayload(msgBody, dataFilter, payload)
     # Check for invalid data.
     # 0xFFFF is the 'invalid data' code
    

@@ -157,7 +157,7 @@ class Field():
         self.unitsConversion = None
 
     def __str__(self):
-        return "Field {name: {0}, length: {1}}".format(self.name, self.length)
+        return "Field name: {0}, length: {1}".format(self.name, self.length)
 
     def __iter__(self):
         return iter([self.name, self.type, self.length, self.offset,

@@ -527,16 +527,26 @@ class Ui_MainWindow(QtCore.QObject):
             payload[pair[0].text()] = pair[1].text()
         freq = self.firstTxFreq.text()
         for val in payload:
+            # Check that that payload value is valid type
             payload[val] = self.checkTypeAndConvert(payload[val])
-            # Check that that payload value is valid
             if payload[val] == None:
                 self.txTypeError()
                 return
+        # FIXME: will need to check that field has correct length
+
         # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
             self.txTypeError()
             return
+        # For redundancy, insert the values back into the QLineEdits. This is necessary
+        # for when user left the LineEdits blank, which caused a default 0 to be added.
+        #self.debugMode()
+        for pair in self.txQLabel_LineContainer:
+            fieldName = pair[0].text()
+            fieldData = pair[1]
+            fieldData.setText(str(payload[fieldName]))
+
         messageName = self.firstTxMessageInfo.currentText()
         #field = self.firstTxField.currentText()  # later will need to adjust
                                                  # for all fields in messageInfo
@@ -588,6 +598,10 @@ class Ui_MainWindow(QtCore.QObject):
     # Check the type of the payload data. If it is neither int
     # nor float, returns None.
     def checkTypeAndConvert(self, value):
+        # First check if field was left blank. If so, assume it means a 0.
+        if value == '':
+            print("returning 0")
+            return 0
         try:
             value = int(value)
             return value
