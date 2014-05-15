@@ -255,6 +255,7 @@ class Ui_MainWindow(QtCore.QObject):
         # Populate the serial port menu with all the available ports.
         for port in comports():
             _port = QtWidgets.QAction(port[0], mainWindow)
+            _port.setCheckable(True)
             self.menuChoose_port.addAction(_port)
             _port.triggered.connect(self.comportSelect)
         ##########
