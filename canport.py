@@ -399,10 +399,6 @@ def ParseBody(payloadString):
 # Need to check for return value length. Should be same as 'length'
 # specified in metadata. Current code does not handle numbers that are too big.
 def encodePayload(payload, dataFilter):
-    import PyQt5
-    PyQt5.QtCore.pyqtRemoveInputHook()
-    import pdb
-    pdb.set_trace()
     endian = dataFilter.endian
     _signed = dataFilter.signed
     offset = dataFilter.offset

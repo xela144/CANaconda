@@ -278,7 +278,7 @@ class Ui_MainWindow(QtCore.QObject):
         if self.dataBack.args.port != None:
             self.comportSelect()
 
-
+0 90 8f ff ff ff f9 f6 ff ff ff
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
         mainWindow.setWindowTitle(_translate(
@@ -539,9 +539,8 @@ class Ui_MainWindow(QtCore.QObject):
         if freq == None:
             self.txTypeError()
             return
-        # For redundancy, insert the values back into the QLineEdits. This is necessary
-        # for when user left the LineEdits blank, which caused a default 0 to be added.
-        #self.debugMode()
+        # For redundancy, insert the values back into the QLineEdits. Necessary
+        # if user left the LineEdits blank, which caused a default 0 to be added.
         for pair in self.txQLabel_LineContainer:
             fieldName = pair[0].text()
             fieldData = pair[1]
@@ -550,7 +549,12 @@ class Ui_MainWindow(QtCore.QObject):
         messageName = self.firstTxMessageInfo.currentText()
         #field = self.firstTxField.currentText()  # later will need to adjust
                                                  # for all fields in messageInfo
-        self.dataBack.asciiBucket = self.generateMessage(payload, messageName)
+        try:
+            self.dataBack.asciiBucket = self.generateMessage(payload, messageName)
+        except Exception as e:
+            self.transmissionWarn(str(e))
+            return 
+
         self.messageTxInit(freq)
 
     # Connected with displayCombo's currentIndexChanged signal
@@ -578,6 +582,10 @@ class Ui_MainWindow(QtCore.QObject):
         payloadString = ''
         for field in messageInfo.fields:
             dataFilter = self.dataBack.messages[messageName].fields[field]
+            if len(bin(payload[field])) - 2 > dataFilter.length:
+                # Message is too long. Notify user.
+                raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
+                    
             payloadString += encodePayload(payload[field], dataFilter)
 
         # And return the transmit message as a properly formatted message.
@@ -600,7 +608,6 @@ class Ui_MainWindow(QtCore.QObject):
     def checkTypeAndConvert(self, value):
         # First check if field was left blank. If so, assume it means a 0.
         if value == '':
-            print("returning 0")
             return 0
         try:
             value = int(value)
@@ -770,6 +777,14 @@ class Ui_MainWindow(QtCore.QObject):
         warn.setStandardButtons(QtWidgets.QMessageBox.Ok |
                                 QtWidgets.QMessageBox.Cancel)
         return warn.exec()
+
+
+    def transmissionWarn(self, errorString):
+        warn = QtWidgets.QMessageBox()
+        warn.setText("Transmission Error")
+        warn.setInformativeText(errorString)
+        warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        warn.exec()
 
     def debugMode(self):
         pyqtrm()
