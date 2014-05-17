@@ -414,19 +414,13 @@ def encodePayload(payload, dataFilter):
 
     # Initialize an array of zeros with correct length
     fieldData = [0]*length
-    print(length)
 
     for i in range(len(pay)):
-        fieldData[-i-1] = int(pay[i])
-    # byte order still needs to be adjusted.
-    #payload = hex(int(payload/scaling))[2:]
-    #while len(payload) < length//4:
-    #    payload += '0'
-#    if _signed == 'no':
-#        _signed = False
-#    else:
-#        _signed = True
-    # Just return a bit string, no padded 0s.
+        try:
+            fieldData[-i-1] = int(pay[i])
+        except IndexError: #  payload scaled up and has become too big for data type
+            return fieldData
+
     return fieldData
 
     

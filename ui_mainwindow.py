@@ -570,15 +570,13 @@ class Ui_MainWindow(QtCore.QObject):
     # 
     def generateMessage(self, payload, messageName):
         messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
-
-        formatString = 't{:03x}{:1d}{}\r'
+        length = messageInfo.size*2
+        bodyFormatter = "0" + str(length) + "x"
+        formatString = 't{:03x}{:1d}{:' + bodyFormatter +'}\r'
         if messageInfo.id == CAN_FORMAT_EXTENDED:
-            formatString = 'T{:08x}{:1d}{}\r'
+            formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
         
         id = self.dataBack.IDencodeMap[messageName]  # ID field
-
-        # Pack the payload into a string
-        # FIXME: This doesn't work when multiple fields are in the same byte
 
         # Initialize an array of 0's of length equal to number of bits in message body
         payloadArray = [0]*messageInfo.size*8
@@ -587,18 +585,14 @@ class Ui_MainWindow(QtCore.QObject):
             if len(bin(payload[field])) - 2 > dataFilter.length:
                 # If message is too long. Notify user.
                 raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
-                    
             fieldData = encodePayload(payload[field], dataFilter)
-            # Find appropriate string index, and insert fieldData into the payloadArray
-            #print("offset: ", dataFilter.offset, "  length: ", dataFilter.length, "  ", fieldData)
-            payloadArray[dataFilter.offset:dataFilter.offset + dataFilter.length] = fieldData
+            # Find appropriate array indices, and insert fieldData into the payloadArray
+            start = dataFilter.offset
+            stop  = dataFilter.offset + dataFilter.length
+            payloadArray[start:stop] = fieldData
 
-        pyqtrm()
-        import pdb
-        pdb.set_trace()
         # Collapse and stringify
-        payloadString = hex(int(''.join(map(str,payloadArray)), 2))[2:]
-
+        payloadString = int(''.join(map(str,payloadArray)), 2)
 
         # And return the transmit message as a properly formatted message.
         outStr = formatString.format(id, messageInfo.size, payloadString)
