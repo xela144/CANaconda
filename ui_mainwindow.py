@@ -278,7 +278,7 @@ class Ui_MainWindow(QtCore.QObject):
         if self.dataBack.args.port != None:
             self.comportSelect()
 
-0 90 8f ff ff ff f9 f6 ff ff ff
+
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
         mainWindow.setWindowTitle(_translate(
@@ -579,14 +579,26 @@ class Ui_MainWindow(QtCore.QObject):
 
         # Pack the payload into a string
         # FIXME: This doesn't work when multiple fields are in the same byte
-        payloadString = ''
+
+        # Initialize an array of 0's of length equal to number of bits in message body
+        payloadArray = [0]*messageInfo.size*8
         for field in messageInfo.fields:
             dataFilter = self.dataBack.messages[messageName].fields[field]
             if len(bin(payload[field])) - 2 > dataFilter.length:
-                # Message is too long. Notify user.
+                # If message is too long. Notify user.
                 raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
                     
-            payloadString += encodePayload(payload[field], dataFilter)
+            fieldData = encodePayload(payload[field], dataFilter)
+            # Find appropriate string index, and insert fieldData into the payloadArray
+            #print("offset: ", dataFilter.offset, "  length: ", dataFilter.length, "  ", fieldData)
+            payloadArray[dataFilter.offset:dataFilter.offset + dataFilter.length] = fieldData
+
+        pyqtrm()
+        import pdb
+        pdb.set_trace()
+        # Collapse and stringify
+        payloadString = hex(int(''.join(map(str,payloadArray)), 2))[2:]
+
 
         # And return the transmit message as a properly formatted message.
         outStr = formatString.format(id, messageInfo.size, payloadString)
