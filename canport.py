@@ -321,10 +321,6 @@ def CANacondaMessageParse(self, match, dataBack):
 # FIXME: Parse out the data from CanMessage.payload instead
 def getPayload(hexData, dataFilter, payload):
     # Variables used in this function:
-    #from PyQt5.QtCore import pyqtRemoveInputHook
-    #pyqtRemoveInputHook()
-    #import pdb
-    #pdb.set_trace()
     endian = dataFilter.endian
     signed = dataFilter.signed
     offset = dataFilter.offset
@@ -441,12 +437,6 @@ def generateMessage(dataBack, payload, messageName):
         stop  = dataFilter.offset + dataFilter.length
         payloadArray[start:stop] = fieldData
 
-
-    from PyQt5.QtCore import pyqtRemoveInputHook
-    import pdb
-    pyqtRemoveInputHook()
-    pdb.set_trace()
-
     # Collapse 
     payloadString = ''.join(map(str,payloadArray))
     payloadInt = int(payloadString, 2)
@@ -463,11 +453,6 @@ def generateMessage(dataBack, payload, messageName):
     outStr = formatString.format(id, messageInfo.size, dataflipped)
     print(outStr)
 
-    #payloadhexString = hex(int(''.join(map(str,payloadArray)), 2))[2:]
-    #dataflipped = int(flipNibbles(bodylength, payloadhexString), 16)
-    ## And return the transmit message as a properly formatted message.
-    #outStr = formatString.format(id, messageInfo.size, dataflipped)
-    #print(outStr)
     return outStr
 
 
@@ -480,10 +465,6 @@ def encodePayload(payload, dataFilter):
     length = dataFilter.length
     scaling = dataFilter.scaling
     
-    from PyQt5.QtCore import pyqtRemoveInputHook
-    import pdb
-    pyqtRemoveInputHook()
-    pdb.set_trace
     # First convert the payload to a binary string
     pay = bin(int(payload/scaling))[2:]
 
