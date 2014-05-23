@@ -23,7 +23,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 import threading
 from serial.tools.list_ports import comports
-from canport import encodePayload
+from canport import encodePayload, generateMessage
 from backend import *
 import filtersTreeWidget
 import filterTable
@@ -547,7 +547,7 @@ class Ui_MainWindow(QtCore.QObject):
 
         messageName = self.firstTxMessageInfo.currentText()
         try:
-            self.dataBack.asciiBucket = self.generateMessage(payload, messageName)
+            self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
         except Exception as e:
             self.transmissionWarn(str(e))
             return 
@@ -567,40 +567,6 @@ class Ui_MainWindow(QtCore.QObject):
     # 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
     # This function will be refactored so that code is in the 'right' place, i.e. not in ui_mainwindow
     # but instead in a file that is common to both CLI and GUI.
-    def generateMessage(self, payload, messageName):
-        messageInfo = self.dataBack.messages[messageName]  # MessageInfo object
-
-        # Construct a string that we will use to .format() later on. 'formatString' needs to 
-        # adjust itself for any CAN message body length; 'bodyFormatter' does this.
-        bodylength = messageInfo.size*2
-        bodyFormatter = "0" + str(bodylength) + "x"
-        formatString = 't{:03x}{:1d}{:' + bodyFormatter +'}\r'
-        if messageInfo.id == CAN_FORMAT_EXTENDED:
-            formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
-        
-        id = self.dataBack.IDencodeMap[messageName]  
-
-        # Initialize an array of 0's of length equal to number of bits in message body
-        payloadArray = [0]*messageInfo.size*8
-        for field in messageInfo.fields:
-            dataFilter = self.dataBack.messages[messageName].fields[field]
-            if len(bin(payload[field])) - 2 > dataFilter.length:
-                # If user gives a message whose bit-length is longer than specified in medata, barf on user.
-                raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
-            fieldData = encodePayload(payload[field], dataFilter)
-
-            # Find appropriate array indices, and insert fieldData into the payloadArray
-            start = dataFilter.offset
-            stop  = dataFilter.offset + dataFilter.length
-            payloadArray[start:stop] = fieldData
-
-        # Collapse and stringify
-        payloadString = int(''.join(map(str,payloadArray)), 2)
-
-        # And return the transmit message as a properly formatted message.
-        outStr = formatString.format(id, messageInfo.size, payloadString)
-        print(outStr)
-        return outStr
         
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):

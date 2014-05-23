@@ -12,6 +12,7 @@ import re
 import time
 import sys
 from queue import Queue
+from math import ceil
 
 # Other libraries
 import serial
@@ -21,6 +22,9 @@ from CanMessage import *
 from outmessage import *
 from backend import conversionMap
 from Nmea2000 import Iso11783Decode
+
+# Constants
+from messageInfo import CAN_FORMAT_EXTENDED
 
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
@@ -311,12 +315,16 @@ def CANacondaMessageParse(self, match, dataBack):
     # Make the frequency calculation and add to CANacondaMessage object:
     # dataBack.frequencyMap[self.name].qsize()
 
-# Function parameters: hexData is the raw hex value of one of the message body fields.
+# Function parameters: hexData is the raw hex string of one of the message body fields.
 # dataFilter a messagInfo.Field type, extracted from the meta data given by the user.
 # The return value is the CAN message payload, before filtering/error checking.
 # FIXME: Parse out the data from CanMessage.payload instead
 def getPayload(hexData, dataFilter, payload):
     # Variables used in this function:
+    #from PyQt5.QtCore import pyqtRemoveInputHook
+    #pyqtRemoveInputHook()
+    #import pdb
+    #pdb.set_trace()
     endian = dataFilter.endian
     signed = dataFilter.signed
     offset = dataFilter.offset
@@ -345,8 +353,7 @@ def getPayload(hexData, dataFilter, payload):
 
     dataset = []
     while len(datasect) > 8:
-    # This code converts from binary to a set of integers for the
-    # int.from_bytes() function to use
+    # This code converts from binary to a set of integers for int.from_bytes() further down
         highdata = datasect[-8:]
         datasect = datasect[:-8]
         dataset.append(int(highdata, 2))
@@ -381,6 +388,18 @@ def getPayload(hexData, dataFilter, payload):
 
     return value
 
+def flipNibbles(count, hexData):
+    dataflipped = ""
+    i = 0
+    while i < count:
+        # this flips the order of all the hex bits to switch from little
+        # to big endian
+        try:
+            dataflipped += hexData[i+1] + hexData[i]
+        except IndexError:
+            dataflipped += hexData[i]
+        i += 2
+    return dataflipped
 
 def ParseBody(payloadString):
     """Parse out an array of integers from a string of hex chars"""
@@ -396,6 +415,62 @@ def ParseBody(payloadString):
     return payload
 
 
+def generateMessage(dataBack, payload, messageName):
+    messageInfo = dataBack.messages[messageName]  # MessageInfo object
+
+    # Construct a string that we will use to .format() later on. 'formatString' needs to 
+    # adjust itself for any CAN message body length; 'bodyFormatter' does this.
+    bodylength = messageInfo.size*2
+    bodyFormatter = "0" + str(bodylength) + "x"
+    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
+    if messageInfo.id == CAN_FORMAT_EXTENDED:
+        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
+    
+    id = dataBack.IDencodeMap[messageName]  
+
+    # Initialize an array of 0's of length equal to number of bits in message body
+    payloadArray = [0]*messageInfo.size*8
+    for field in messageInfo.fields:
+        dataFilter = dataBack.messages[messageName].fields[field]
+        if len(bin(ceil(payload[field]))) - 2 > dataFilter.length:
+            # If user gives a message whose bit-length is longer than specified in medata, barf on user.
+            raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
+        fieldData = encodePayload(payload[field], dataFilter)
+        # Find appropriate array indices, and insert fieldData into the payloadArray
+        start = dataFilter.offset
+        stop  = dataFilter.offset + dataFilter.length
+        payloadArray[start:stop] = fieldData
+
+
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    import pdb
+    pyqtRemoveInputHook()
+    pdb.set_trace()
+
+    # Collapse 
+    payloadString = ''.join(map(str,payloadArray))
+    payloadInt = int(payloadString, 2)
+    payloadHexString = hex(payloadInt)[2:]
+
+    # Pad the hex string with leading 0's
+    if len(payloadHexString) < bodylength:
+        insertLength = bodylength - len(payloadHexString)
+        payloadHexString = '0'*insertLength + payloadHexString
+
+    dataflipped = int(flipNibbles(bodylength, payloadHexString), 16)
+
+    # And return the transmit message as a properly formatted message.
+    outStr = formatString.format(id, messageInfo.size, dataflipped)
+    print(outStr)
+
+    #payloadhexString = hex(int(''.join(map(str,payloadArray)), 2))[2:]
+    #dataflipped = int(flipNibbles(bodylength, payloadhexString), 16)
+    ## And return the transmit message as a properly formatted message.
+    #outStr = formatString.format(id, messageInfo.size, dataflipped)
+    #print(outStr)
+    return outStr
+
+
 # Need to check for return value length. Should be same as 'length'
 # specified in metadata. Current code does not handle numbers that are too big.
 def encodePayload(payload, dataFilter):
@@ -405,10 +480,10 @@ def encodePayload(payload, dataFilter):
     length = dataFilter.length
     scaling = dataFilter.scaling
     
-    #from PyQt5.QtCore import pyqtRemoveInputHook
-    #import pdb
-    #pyqtRemoveInputHook()
-    #pdb.set_trace
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    import pdb
+    pyqtRemoveInputHook()
+    pdb.set_trace
     # First convert the payload to a binary string
     pay = bin(int(payload/scaling))[2:]
 
@@ -419,6 +494,7 @@ def encodePayload(payload, dataFilter):
         try:
             fieldData[-i-1] = int(pay[i])
         except IndexError: #  payload scaled up and has become too big for data type
+                           # FIXME user should be notified of this
             return fieldData
 
     return fieldData
