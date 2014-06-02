@@ -17,6 +17,10 @@ from math import ceil
 # Other libraries
 import serial
 
+# delete later
+from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+import pdb
+
 # User libraries
 from CanMessage import *
 from outmessage import *
@@ -329,6 +333,8 @@ def getPayload(hexData, dataFilter, payload):
 
     count = len(hexData)
     dataflipped = ""
+   
+
     while count > 0:
         # this flips the order of all the hex bits to switch from little
         # to big endian
@@ -338,7 +344,6 @@ def getPayload(hexData, dataFilter, payload):
     binaryData = bin(int(dataflipped, 16))  # converts the data to binary
     # Strip the '0b' and pad with leading 0's
     binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
-
     #shifting indices to the right
     start = len(binaryData) - offset
     stop = len(binaryData) - (length + offset) # could be 'start - length' too.
@@ -384,12 +389,13 @@ def getPayload(hexData, dataFilter, payload):
 
     return value
 
+# count: size of message body in bytes
+# hexData: message body in hex format
+# return value: string of body data in hex format, with nibbles flipped.
 def flipNibbles(count, hexData):
     dataflipped = ""
     i = 0
     while i < count:
-        # this flips the order of all the hex bits to switch from little
-        # to big endian
         try:
             dataflipped += hexData[i+1] + hexData[i]
         except IndexError:
@@ -431,6 +437,8 @@ def generateMessage(dataBack, payload, messageName):
         if len(bin(ceil(payload[field]))) - 2 > dataFilter.length:
             # If user gives a message whose bit-length is longer than specified in medata, barf on user.
             raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
+        #pyqtrm()
+        #pdb.set_trace()
         fieldData = encodePayload(payload[field], dataFilter)
         # Find appropriate array indices, and insert fieldData into the payloadArray
         start = dataFilter.offset
@@ -447,10 +455,8 @@ def generateMessage(dataBack, payload, messageName):
         insertLength = bodylength - len(payloadHexString)
         payloadHexString = '0'*insertLength + payloadHexString
 
-    dataflipped = int(flipNibbles(bodylength, payloadHexString), 16)
-
     # And return the transmit message as a properly formatted message.
-    outStr = formatString.format(id, messageInfo.size, dataflipped)
+    outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
     print(outStr)
 
     return outStr
@@ -458,22 +464,34 @@ def generateMessage(dataBack, payload, messageName):
 
 # Need to check for return value length. Should be same as 'length'
 # specified in metadata. Current code does not handle numbers that are too big.
+# Returns an array of 0's and 1's, of length 'length'.
 def encodePayload(payload, dataFilter):
     endian = dataFilter.endian
     _signed = dataFilter.signed
     offset = dataFilter.offset
     length = dataFilter.length
     scaling = dataFilter.scaling
+    _type = dataFilter.type
     
+    if _type == 'bitfield':
+        print("this is a bitfield")
+
     # First convert the payload to a binary string
+    #if _type != 'bitfield':
     pay = bin(int(payload/scaling))[2:]
+    #else: # we have a bitfield, so don't convert to binary, because it is already
+    #    pay = payload
+    
 
     # Initialize an array of zeros with correct length
     fieldData = [0]*length
 
     for i in range(len(pay)):
         try:
-            fieldData[-i-1] = int(pay[i])
+            # Fill in fieldData, starting from the right.
+            fieldData[-i-1] = int(pay[-i-1])
+            if dataFilter.name == 'Temp':
+                print(fieldData)
         except IndexError: #  payload scaled up and has become too big for data type
                            # FIXME user should be notified of this
             return fieldData
