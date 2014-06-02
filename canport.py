@@ -321,8 +321,9 @@ def CANacondaMessageParse(self, match, dataBack):
 
 # Function parameters: hexData is the raw hex string of one of the message body fields.
 # dataFilter a messagInfo.Field type, extracted from the meta data given by the user.
-# The return value is the CAN message payload, before filtering/error checking.
+# The return value is a single field payload, before filtering/error checking.
 # FIXME: Parse out the data from CanMessage.payload instead
+# FIXME: Returning a single field item, yet parsing the entire message body with each call
 def getPayload(hexData, dataFilter, payload):
     # Variables used in this function:
     endian = dataFilter.endian
@@ -477,8 +478,13 @@ def encodePayload(payload, dataFilter):
         print("this is a bitfield")
 
     # First convert the payload to a binary string
-    #if _type != 'bitfield':
-    pay = bin(int(payload/scaling))[2:]
+    if _signed == 'yes' and payload < 0:
+        # There is an extra array index because of the negative sign
+        pay = bin(int(payload/scaling))[3:]
+    elif _signed == 'no' and payload < 0:
+        raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
+    else:
+        pay = bin(int(payload/scaling))[2:]
     #else: # we have a bitfield, so don't convert to binary, because it is already
     #    pay = payload
     
@@ -490,10 +496,10 @@ def encodePayload(payload, dataFilter):
         try:
             # Fill in fieldData, starting from the right.
             fieldData[-i-1] = int(pay[-i-1])
-            if dataFilter.name == 'Temp':
-                print(fieldData)
         except IndexError: #  payload scaled up and has become too big for data type
-                           # FIXME user should be notified of this
+                  
+            raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
+       # FIXME user should be notified of this
             return fieldData
 
     return fieldData
