@@ -17,9 +17,6 @@ from math import ceil
 # Other libraries
 import serial
 
-# delete later
-from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-import pdb
 
 # User libraries
 from CanMessage import *
@@ -435,11 +432,9 @@ def generateMessage(dataBack, payload, messageName):
     payloadArray = [0]*messageInfo.size*8
     for field in messageInfo.fields:
         dataFilter = dataBack.messages[messageName].fields[field]
-        if len(bin(ceil(payload[field]))) - 2 > dataFilter.length:
+        if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
             # If user gives a message whose bit-length is longer than specified in medata, barf on user.
             raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
-        #pyqtrm()
-        #pdb.set_trace()
         fieldData = encodePayload(payload[field], dataFilter)
         # Find appropriate array indices, and insert fieldData into the payloadArray
         start = dataFilter.offset
@@ -451,10 +446,9 @@ def generateMessage(dataBack, payload, messageName):
     payloadInt = int(payloadString, 2)
     payloadHexString = hex(payloadInt)[2:]
 
-    # Pad the hex string with leading 0's
+    # Pad the hex string with leading zeros, using zfill().
     if len(payloadHexString) < bodylength:
-        insertLength = bodylength - len(payloadHexString)
-        payloadHexString = '0'*insertLength + payloadHexString
+        payloadHexString.zfill(bodylength)
 
     # And return the transmit message as a properly formatted message.
     outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
@@ -468,40 +462,45 @@ def generateMessage(dataBack, payload, messageName):
 # Returns an array of 0's and 1's, of length 'length'.
 def encodePayload(payload, dataFilter):
     endian = dataFilter.endian
-    _signed = dataFilter.signed
+    _signed = dataFilter.signed == 'yes'
     offset = dataFilter.offset
     length = dataFilter.length
     scaling = dataFilter.scaling
     _type = dataFilter.type
-    
-    if _type == 'bitfield':
-        print("this is a bitfield")
 
-    # First convert the payload to a binary string
-    if _signed == 'yes' and payload < 0:
-        # There is an extra array index because of the negative sign
-        pay = bin(int(payload/scaling))[3:]
-    elif _signed == 'no' and payload < 0:
+    # First check for proper length of signed fields
+    if _signed:
+        if payload < -2**(length-1)  or payload > 2**(length-1)-1:
+            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
+
+    # If the payload is signed, handle this correctly.
+    NEGATIVE = False
+    if _signed and payload < 0:
+        payload = -payload
+        NEGATIVE = True
+    # If the user has entered a negative number for an unsigned field, error out.    
+    elif not _signed and payload < 0:
         raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
+
+    # Convert the payload to a binary string
+    if NEGATIVE:
+        pay = bin(int(-payload/scaling) % (1<<length))[2:]
     else:
         pay = bin(int(payload/scaling))[2:]
-    #else: # we have a bitfield, so don't convert to binary, because it is already
-    #    pay = payload
-    
 
     # Initialize an array of zeros with correct length
     fieldData = [0]*length
+
 
     for i in range(len(pay)):
         try:
             # Fill in fieldData, starting from the right.
             fieldData[-i-1] = int(pay[-i-1])
         except IndexError: #  payload scaled up and has become too big for data type
-                  
             raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
-       # FIXME user should be notified of this
-            return fieldData
 
+    if dataFilter.name == 'Temp':
+        print(fieldData)
     return fieldData
 
     
@@ -550,10 +549,9 @@ def getBodyFieldData(dataFilter, currentMessage, match, payload):
             value = ''
     return value
 
-def getBitfield(dataFilter, currentMessage, payload, match):
+def getBitfield():
     from PyQt5.QtCore import pyqtRemoveInputHook
     pyqtRemoveInputHook()
     import pdb
     pdb.set_trace()
-    msgBody = payload
     
