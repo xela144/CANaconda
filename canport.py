@@ -417,7 +417,6 @@ def ParseBody(payloadString):
 
 def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
-
     # Construct a string that we will use to .format() later on. 'formatString' needs to 
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
     bodylength = messageInfo.size*2
@@ -425,7 +424,8 @@ def generateMessage(dataBack, payload, messageName):
     formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
     if messageInfo.id == CAN_FORMAT_EXTENDED:
         formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
-    
+    # FIXME: This will work only if the node is connected and broadcasting.
+    # If we want this to work otherwise, we need to include an ID in the metadata.
     id = dataBack.IDencodeMap[messageName]  
 
     # Initialize an array of 0's of length equal to number of bits in message body
@@ -467,7 +467,6 @@ def encodePayload(payload, dataFilter):
     length = dataFilter.length
     scaling = dataFilter.scaling
     _type = dataFilter.type
-
     # First check for proper length of signed fields
     if _signed:
         if payload < -2**(length-1)  or payload > 2**(length-1)-1:
@@ -478,19 +477,19 @@ def encodePayload(payload, dataFilter):
     if _signed and payload < 0:
         payload = -payload
         NEGATIVE = True
+
     # If the user has entered a negative number for an unsigned field, error out.    
     elif not _signed and payload < 0:
         raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
 
     # Convert the payload to a binary string
     if NEGATIVE:
-        pay = bin(int(-payload/scaling) % (1<<length))[2:]
+        pay = bin(int(-payload/scaling) % (1<<length))[2:]  # two's complement
     else:
         pay = bin(int(payload/scaling))[2:]
 
     # Initialize an array of zeros with correct length
     fieldData = [0]*length
-
 
     for i in range(len(pay)):
         try:
@@ -498,9 +497,6 @@ def encodePayload(payload, dataFilter):
             fieldData[-i-1] = int(pay[-i-1])
         except IndexError: #  payload scaled up and has become too big for data type
             raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
-
-    if dataFilter.name == 'Temp':
-        print(fieldData)
     return fieldData
 
     
