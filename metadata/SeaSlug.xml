@@ -1,0 +1,53 @@
+<metaData>
+    <messageInfo name = "status" id = "0x90" size="8"> 
+        <desc>The heartbeat status message for CANodes on the Autoboat.</desc>
+        <field 
+        name = "node ID" 
+	type = "bitfield"
+        offset = "0" 
+        length = "8" 
+        signed = "no" 
+        />
+        <field 
+        name = "CPU load"
+	type = "int" 
+        offset = "8" 
+        length = "8" 
+        signed = "no" 
+        units = "%" 
+        />
+        <field 
+        name = "Temp"
+	type = "int" 
+        offset = "16" 
+        length = "8" 
+        signed = "yes" 
+        units = "Cel" 
+        />
+        <field 
+        name = "Voltage"
+	type = "int" 
+        offset = "24" 
+        length = "8" 
+        signed = "no"
+        scaling = "0.1"
+        units = "V" 
+        />
+        <field 
+        name = "Status"
+        type = "bitfield"
+        offset = "32" 
+        length = "16" 
+        signed = "no" 
+        units = "n/a" 
+        />
+        <field 
+        name = "Errors"
+	type = "bitfield" 
+        offset = "48" 
+        length = "16" 
+        signed = "no" 
+        units = "n/a" 
+        />
+    </messageInfo>
+</metaData>

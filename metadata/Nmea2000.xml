@@ -1,5 +1,5 @@
 <metaData>
-	<messageInfo name = "WSO100" pgn = "130306" size = ""> 
+	<messageInfo name = "WSO100" pgn = "130306" size = "6"> 
 		<desc></desc>
 		<field 
 		name = "airspeed"
@@ -22,7 +22,7 @@
 		endian = "little"
 		/>
 	</messageInfo>
-	<messageInfo name = "FilterAirTemp"  pgn = "130311">
+	<messageInfo name = "FilterAirTemp"  pgn = "130311" size = "8">
 		<desc></desc>
 		<field
 		name = "Instance"

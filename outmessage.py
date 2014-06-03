@@ -51,7 +51,7 @@ def noGuiParse(dataBack, message):
     
     # Now finally pretty-print the internal data if metadata exists for this message
     if dataBack.displayList[ID]:
-        outmsg += "\nFilter ID: " + str(message.id)
+        outmsg += "\nFilter ID: " + hex(message.id)
     # if displayList is empty, display all:
     if dataBack.displayList[BODY]:
         for field in message.body:

@@ -130,6 +130,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxFreq = QtWidgets.QLineEdit()
         self.firstTxFreq.setDisabled(True)
         self.firstTxFreq.setMaximumWidth(40)
+        self.firstTxFreq.setToolTip("<font color=black>For a single-shot timer, use \"0\"</font>")
         self.firstTxButton = QtWidgets.QPushButton()
         self.firstTxButton.setText("Activate")
         self.firstTxButton.setDisabled(True)
@@ -551,8 +552,12 @@ class Ui_MainWindow(QtCore.QObject):
         except Exception as e:
             self.transmissionWarn(str(e))
             return 
+        if freq == 0:
+            # Broadcase message only once. Skip messagTxInit step and directly push to queue
+            self.pushToTransmitQueue()
 
-        self.messageTxInit(freq)
+        else:
+            self.messageTxInit(freq)
 
     # Connected with displayCombo's currentIndexChanged signal
     def updateButtonLoggingText(self):
@@ -570,8 +575,15 @@ class Ui_MainWindow(QtCore.QObject):
         
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
+        # If no timer has been used, create one. Otherwise, re-start it, 
+        # but first disconnect from signals.
+        try:
+            self.TxTimer.timeout.disconnect()
+            
+        except AttributeError:
+            self.TxTimer = QtCore.QTimer()
+
         freq = freq * 1000  # use milliseconds
-        self.TxTimer = QtCore.QTimer()
         self.TxTimer.timeout.connect(self.pushToTransmitQueue)
         self.TxTimer.start(freq)
 

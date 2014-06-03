@@ -419,7 +419,6 @@ def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
     # Construct a string that we will use to .format() later on. 'formatString' needs to 
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
-    #getBitfield()
     bodylength = messageInfo.size*2
     bodyFormatter = "0" + str(bodylength) + "x"
     formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
@@ -550,7 +549,7 @@ def getBodyFieldData(dataFilter, currentMessage, match, payload):
             value = ''
     return value
 
-def getBitfield():
+def debugMode():
     from PyQt5.QtCore import pyqtRemoveInputHook
     pyqtRemoveInputHook()
     import pdb
