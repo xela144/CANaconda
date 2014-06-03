@@ -7,6 +7,7 @@ abstraction, and Field is contained within.
 import xml.etree.ElementTree as ET
 import queue
 import sys
+from Nmea2000 import Iso11783Encode
 from math import ceil
 
 CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
@@ -18,7 +19,6 @@ CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
 # This function is shared by the command-line and GUI modes.
 def xmlImport(dataBack, fileName):
     messageCount = 0
-
     # Now try and process the XML file.
     try:
         root = ET.parse(fileName)
@@ -59,7 +59,18 @@ class MessageInfo():
         try:
             self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
         except TypeError:
+            # If there is no id, then there is a PGN
+            # Decode the id using the PGN, 0 as source, 0 as destination, 111 as priorty
+            # Also assume a 29-bit id.
             self.id = None
+            pgn = int(messageInfo.get('pgn'))
+            src = 0
+            dest = 0
+            pri = 7
+            # So as not to disrupt the current flow of code, we are going to use
+            # a fakeID, not a real one. The real one is now 'None'. fakeID will
+            # be used to transmit only.
+            self.fakeID = Iso11783Encode(pgn, src, dest, pri)
 
         # Set the PGN
         self.pgn = messageInfo.get('pgn')
@@ -83,10 +94,10 @@ class MessageInfo():
             dataBack.IDencodeMap[self.name] = self.id
             dataBack.id_to_name[self.id] = self.name
 
-        # map pgn to name -- this could be wrong!
         dataBack.pgn_to_name[self.pgn] = self.name
 
-        # Get the payload size
+        # Get the payload size, in bytes. This is useful for transmission, since
+        # the code will then know how to fill in the message body array.
         try:
             self.size = int(messageInfo.get('size'))
         except:

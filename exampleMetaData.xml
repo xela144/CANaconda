@@ -1,5 +1,5 @@
 <metaData>
-	<messageInfo name = "WSO100" pgn = "130306"> 
+	<messageInfo name = "WSO100" pgn = "130306" size = ""> 
 		<desc></desc>
 		<field 
 		name = "airspeed"
@@ -45,7 +45,7 @@
 		endian = "little"
 		/>
 	</messageInfo>
-	<messageInfo name = "DST200_EnvParam" id = "15FD0601" >
+	<messageInfo name = "DST200_EnvParam" id = "15FD0601" size = "7" >
 		<desc></desc>
 		<field 
 		name = "WaterTemp" 
@@ -78,7 +78,7 @@
 		endian = "little"
 		/>
 	</messageInfo>
-	<messageInfo name = "DST200_WaterDepth" pgn = "128267" >
+	<messageInfo name = "DST200_WaterDepth" pgn = "128267" size = "7" >
 		<desc></desc>
 		<field 
 		name = "Depth" 

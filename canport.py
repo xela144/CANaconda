@@ -419,14 +419,19 @@ def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
     # Construct a string that we will use to .format() later on. 'formatString' needs to 
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
+    #getBitfield()
     bodylength = messageInfo.size*2
     bodyFormatter = "0" + str(bodylength) + "x"
     formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
-    if messageInfo.id == CAN_FORMAT_EXTENDED:
+    if messageInfo.format == CAN_FORMAT_EXTENDED:
         formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
-    # FIXME: This will work only if the node is connected and broadcasting.
-    # If we want this to work otherwise, we need to include an ID in the metadata.
-    id = dataBack.IDencodeMap[messageName]  
+    try:
+        # This will work only if the node is connected and broadcasting.
+        id = dataBack.IDencodeMap[messageName]  
+    except KeyError:
+        # We assumed the node was connected and broadcasting but it was not.
+        # Need to use the Nmea11783Encode version of the ID instead.
+        id = dataBack.messages[messageInfo.name].fakeID
 
     # Initialize an array of 0's of length equal to number of bits in message body
     payloadArray = [0]*messageInfo.size*8
@@ -473,17 +478,17 @@ def encodePayload(payload, dataFilter):
             raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
 
     # If the payload is signed, handle this correctly.
-    NEGATIVE = False
+    Negative = False
     if _signed and payload < 0:
         payload = -payload
-        NEGATIVE = True
+        Negative = True
 
     # If the user has entered a negative number for an unsigned field, error out.    
     elif not _signed and payload < 0:
         raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
 
     # Convert the payload to a binary string
-    if NEGATIVE:
+    if Negative:
         pay = bin(int(-payload/scaling) % (1<<length))[2:]  # two's complement
     else:
         pay = bin(int(payload/scaling))[2:]
