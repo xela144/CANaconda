@@ -3,7 +3,7 @@
         <desc>The heartbeat status message for CANodes on the Autoboat.</desc>
         <field 
         name = "node ID" 
-	type = "bitfield"
+	type = "int"
         offset = "0" 
         length = "8" 
         signed = "no" 

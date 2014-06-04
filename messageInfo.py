@@ -21,10 +21,6 @@ def xmlImport(dataBack, fileName):
     messageCount = 0
     # Now try and process the XML file.
     try:
-        #from PyQt5.QtCore import pyqtRemoveInputHook
-        #import pdb
-        #pyqtRemoveInputHook()
-        #pdb.set_trace()
         root = ET.parse(fileName)
         for message in root.findall('messageInfo'):
             newMessageInfo = MessageInfo(message, dataBack)
