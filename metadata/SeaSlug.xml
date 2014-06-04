@@ -1,4 +1,74 @@
 <metaData>
+    <include file = "Nmea2000.xml" />
+    <messageInfo name = "Rudder" id = "0x80" size="7"> 
+        <desc>The SeaSlug rudder node</desc>
+        <field 
+        name = "Potentiometer Value" 
+	type = "int"
+        offset = "0" 
+        length = "12" 
+        signed = "no" 
+        />
+        <field 
+        name = "Port Pot Value"
+	type = "int" 
+        offset = "16" 
+        length = "12" 
+        signed = "no" 
+        />
+        <field 
+        name = "Starboard Pot Value"
+	type = "int" 
+        offset = "32" 
+        length = "12" 
+        signed = "no" 
+        />
+        <field 
+        name = "Limits"
+	type = "bitfield" 
+        offset = "48" 
+        length = "3" 
+        signed = "no"
+        />
+        <field 
+        name = "Error Code"
+        type = "bitfield"
+        offset = "51" 
+        length = "2" 
+        signed = "no" 
+        />
+        <field 
+        name = "State"
+	type = "bitfield" 
+        offset = "53" 
+        length = "3" 
+        signed = "no" 
+        />
+    </messageInfo>
+    <messageInfo name = "Set Status" id = "0x81" size="1"> 
+        <desc>The SeaSlug rudder node</desc>
+        <field 
+        name = "Calibrate" 
+	type = "int"
+        offset = "0" 
+        length = "1" 
+        signed = "no" 
+        />
+        <field 
+        name = "Reset"
+	type = "int" 
+        offset = "1" 
+        length = "1" 
+        signed = "no" 
+        />
+        <field 
+        name = "Enable/Disable"
+	type = "int" 
+        offset = "2" 
+        length = "1" 
+        signed = "no" 
+        />
+    </messageInfo>
     <messageInfo name = "status" id = "0x90" size="8"> 
         <desc>The heartbeat status message for CANodes on the Autoboat.</desc>
         <field 
