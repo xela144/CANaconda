@@ -1,0 +1,4 @@
+<metadata>
+    <include file="SeaSlug.xml" />
+    <include file="Nmea2000.xml" />
+</metadata>
