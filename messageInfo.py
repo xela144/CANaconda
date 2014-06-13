@@ -24,17 +24,11 @@ def xmlImport(dataBack, fileName):
         root = ET.parse(fileName)
 
         # A file can be included in the metadata. First, we have to scale down the function stack
-        lim = sys.getrecursionlimit()
-        sys.setrecursionlimit(10)  # Python has a default function stack size of 1000.
-        try:
-            for includeFile in root.findall('include'):
-                filename_rec = 'metadata/' + includeFile.get('file')
-                xmlImport(dataBack, filename_rec)  
-        except RuntimeError:  # Circular reference
-            pass 
+        for includeFile in root.findall('include'):
+            filename_ = 'metadata/' + includeFile.get('file')
+            xmlImport(dataBack, filename_)  
 
         # Now set the function stack size to what it was when we started.
-        sys.setrecursionlimit(lim)
 
         for message in root.findall('messageInfo'):
             newMessageInfo = MessageInfo(message, dataBack)
@@ -49,11 +43,9 @@ def xmlImport(dataBack, fileName):
         raise Exception("Parsing failed for XML file '{}'. Check that file exists and is proper XML.".format(fileName))
     except Exception as e:
         raise e
-
-    if not messageCount:
-        raise Exception("No messages found in XML file '{}'".format(fileName))
-
-    return messageCount
+    
+    if messageCount:
+        dataBack.messageInfoFlag = True
 
 
 # This instances of this class are filters created from

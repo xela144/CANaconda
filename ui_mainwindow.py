@@ -397,7 +397,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.dataBack.messagesSeenSoFar = {}
         self.dataBack.id_to_name = {}
         self.dataBack.pgn_to_name = {}
-        self.dataBack.messageInfoFlag = True
+        self.dataBack.messageInfoFlag = False
         fileName = None
         while fileName is None:
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
@@ -409,6 +409,7 @@ class Ui_MainWindow(QtCore.QObject):
         # the user and returning.
         try:
             xmlImport(self.dataBack, fileName)
+            # self.dataBack.messageInfoFlag set to true in xmlImport
         except Exception as e:
             self.warnXmlImport(str(e))
             return

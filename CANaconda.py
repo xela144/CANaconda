@@ -120,7 +120,7 @@ def canacondaNoGuiInit(dataBack):
 
     # import filters, and return a boolean value as 'filtersNotImpoted'
     fileName = dataBack.args.messages
-    noMessagesImported = not xmlImport(dataBack, fileName)
+    xmlImport(dataBack, fileName)
 
     # a typical usage might be something like:
     # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
@@ -177,6 +177,7 @@ def canacondaNoGuiInit(dataBack):
         dataBack.displayList[ID] = True
         dataBack.displayList[BODY] = True
 
+    noMessagesImported = not dataBack.messageInfoFlag
     if noMessagesImported:
         print("Running CANaconda without messages specified,",
             "for raw message viewing")
