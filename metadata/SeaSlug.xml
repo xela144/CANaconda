@@ -1,5 +1,4 @@
 <metaData>
-    <include file = "Nmea2000.xml" />
     <messageInfo name = "Rudder" id = "0x80" size="7"> 
         <desc>The SeaSlug rudder node</desc>
         <field 

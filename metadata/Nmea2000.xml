@@ -1,5 +1,4 @@
 <metaData>
-        <include file = "SeaSlug.xml"/>
 	<messageInfo name = "System Time" pgn = "126992" size = "8"> 
 		<desc></desc>
 		<field 
