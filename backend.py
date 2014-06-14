@@ -64,8 +64,11 @@ class CanData():
         # Populated with messageInfo objects
         self.messages = {}
 
-        # Multithreading queue for receiving messages from the bus
+        # Multithreading queue for passing decoded CAN messages
         self.CANacondaRxMsg_queue = queue.Queue()
+
+        # Multithreading queue for receiving messages from the serial port
+        self.CANacondaRx_TranscodeQueue = queue.Queue()
 
         # Multithreading queue for transmitting messages tot he bus
         self.CANacondaTxMsg_queue = queue.Queue()

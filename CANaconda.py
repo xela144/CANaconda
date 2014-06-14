@@ -25,19 +25,6 @@ from outmessage import ID, PGN, BODY, RAW
 
 
 
-###########################
-# format we want:
-# pyserial.init()
-# pyserial.run()
-# canaconda.init(pyserial)
-# canaconda.run()
-# if gui:
-#    import PyQt
-#    gui.init()
-#    gui.run(canaconda)
-# else:
-#    cancaconda.push(config)
-############################
 def main():
     
     parser = argparse.ArgumentParser()
@@ -213,18 +200,19 @@ def pyserialNoGuiInit(dataBack):
     # start up a thread for processing messages
     if type(serialCAN) != int:
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages, args=(serialCAN,))
-    
+    from CanDataTranscoder import CanTranscoderCLI
+    canTranscoder = CanTranscoderCLI(dataBack)
+    dataBack.transcoderThread = threading.Thread(target=canTranscoder.CanTranscoderRun)
+
     # Just pass through the return value from pyserialInit()
+    # FIXME: find a way to intercept KeyBoardInterrupt exception when quitting
     return serialCAN
-    
-    # find a way to intercept KeyBoardInterrupt exception
-    # when quitting
 
 def pyserialNoGuiRun(dataBack):
-    if dataBack.args.slow: # a debug mode -- cause program to halt
-        return
     try:
+        dataBack.transcoderThread.start()
         dataBack.serialThread.start()
+
     # This is the error thrown if serialThread did not initialize
     except AttributeError:
         pass
