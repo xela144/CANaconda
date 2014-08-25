@@ -117,45 +117,56 @@ Serial data will be available at /dev/ttyUSB0. However, access to /dev/ttyUSB0 i
 
 To make changes active, log out, closing session completely, and log back in.
 
-To install Qt: 
-[From http://qt-project.org/wiki/Qt5_dependencies]
+To install Qt:
+Although we can't use apt-get to install Qt5, there are good instructions found at https://qt-project.org/wiki/Install_Qt_5_on_Ubuntu. To do an online install of Qt5.3.1, follow these steps.
 
-To get Qt 5 working here you’ll first need build-essentials, which will give you the compilers you’ll need(g++). Following that Qt 5 will need some graphics library stuff. Type the following code in the terminal to get the required dependencies respectively:
+>wget http://download.qt-project.org/official_releases/online_installers/qt-opensource-linux-x64-1.6.0-4-online.run
+
+Make the file executable and then run it:
+
+>chmod +x qt-opensource-linux-x64-1.6.0-4-online.run 
+>./qt-opensource-linux-x64-1.6.0-4-online.run 
+
+This is for installing g++:
 
 >sudo apt-get install build-essential
 
-By default, Qt also expects XCB and OpenGL drivers to be installed. Usually, many modern distros already do have those packages included by default. If you don’t have other OpenGL drivers (supplied by graphics vendor, for example), you can use the mesa package:
+Install the OpenGL libraries:
 
->sudo apt-get install libx11-xcb-dev libglu1-mesa-dev
+>sudo apt-get install mesa-common-dev libglu1-mesa-dev
 
+The latter package is for more recent Ubuntu versions. See link above for details.
 
-From Qt downloads page, download qt-linux-opensource-5.2.0-x86-offline.run. Then type:
+PyQt depends on Sip, which is found at www.riverbankcomputing.com. Download and unzip, then run
 
-> chmod u+x qt-linux-opensource-5.2.0-x86-offline.run
-> ./qt-linux-opensource-5.2.0-x86-offline.run 
+>python3 configure.py
+>make
+>make install
 
+If you get an error that "python.h" is not found, it's because python3-dev is not installed.
 
-To install PyQt5:
- * If 'qmake' is not in your python path, add it to your .bashrc (or appropriate) file:
+To install PyQt5, run the configure.py script:
+>python3 configure.py 
+If the program can't find the right version of qmake, use option -q along with the path.
+>python3 configure.py -q  ~/Qt/5.3/gcc_64/bin/qmake
  
-```
-  export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.2/site-packages  // <-- change when necessary
-```
- * Likewise for the gcc compiler included in the Qt download:
+Then build and install. (Bro tip: use the -j option for multicore processors)
+
+>make
+>sudo make install
+
+Finally, export the PyQt directory to the PYTHONPATH variable
+>export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.4/site-packages/
+
+Make sure this is the correct path.
+
+Finally, open up a python3 interactive session, and run
+>import PyQt5
+
+to make sure that installation was successful.
+
 
 ```
-  export PATH=$PATH:/opt/Qt5.2.0/5.2.0/gcc/bin/gcc  // <-- change when necessary
-```
-
-
-PyQt depends on Sip, which is found at www.riverbankcomputing.com. Download and follow installation directions there.
-
-Now in the PyQt-gpl-5.0 folder you can run the command
-
-> python3 configure.py
-
-If the configure script fails, rerun with the --verbose option. If an error is generated that says python.h is not found, install python3.X-dev (where 'X' is the minor version you of Python 3 which you are using). 
-
 
 
 #Contributors
