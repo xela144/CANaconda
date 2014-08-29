@@ -1,6 +1,16 @@
-
 '''
-For adding the data to the CANacondaMessage object.
+This script is responsible for decoding CAN messages as they are received over the CANtoUSB device, and also for encoding as they are being transmitted.
+
+CLI mode: When the threading object is created in CANaconda.py, the target function is CanTranscoderRun().
+
+GUI mode: When the threading object is created in ui_mainwindow.py, the target function is Can
+
+This function waits for raw CAN messages to be pushed to the CanacondaRx_Transcode_queue. Once
+a raw message is popped it gets decoded with CANacondaMessageParse() and then printed from here.
+
+
+Notes:
+
 CANacondaMessageParse -- main parser
 hexToVal --------------- converts the payload data
 
@@ -10,9 +20,6 @@ Example parsed message:
 parsedmsg.groups() will give:
      (1)               (2)            (3)          (4)       (5)
 header for 't'    header for 'T'     length        body      junk
-
-
-Note that the 'id' tag is sometimes referred to as 'header'
 '''
 from backend import conversionMap
 from Nmea2000 import Iso11783Decode
@@ -40,98 +47,43 @@ class CanTranscoder():
         while True:
             msg = self.CanacondaRx_TranscodeQueue.get()
             newCanMessage = CANacondaMessage()
-            self.CANacondaMessageParse(msg, newCanMessage, self.metaData, self.dataBack)
-            # Will this be used for the GUI version? Or will a different super-class
-            # method take us to a different point in the code...
-            # self.CanacondaRxMsg_queue.put(newCanMessage)
+            CANacondaMessageParse(msg, newCanMessage, self.metaData, self.dataBack)
+            # Pretty-print the message to the terminal. Note that this is used only in the command-line version
             self.PrintMessage(newCanMessage)
 
-    # The goal here is to fill in all of the following:
-    # name, pgn, id, body (aka 'payload'), raw
-    # FIXME: Make this a series of smaller function calls so that it is more readable
-    def CANacondaMessageParse(self, match, newMsg, metaData, dataBack):
-        # Parse out the ID from the regex Match object. Keep it an integer!
-        if match.group(1):
-            newMsg.id = int(match.group(1), 16)
-        elif match.group(2):
-            newMsg.id = int(match.group(2), 16)
 
-        payloadSize = int(match.group(3))
+try:
+    from PyQt5.QtCore import pyqtSignal, QObject
 
-        payloadString = match.group(4)
-        if payloadSize * 2 != len(payloadString):
-            payloadString = payloadString[0:2 * payloadSize]
+    class CanTranscoderGUI(QObject):
+        parsedMsgPut = pyqtSignal()
+        newMessageUp = pyqtSignal()
 
-        #FIXME: From here on, we should no longer use the regex match object.
-        newMsg.payload = ParseBody(payloadString)
+        def __init__(self, dataBack):
+            CanTranscoder.__init__(self, dataBack)
+            QObject.__init__(self)
 
-        # Now grab a PGN value if one's found
-        [pgn, x, y, z] = Iso11783Decode(newMsg.id)
-        newMsg.pgn = pgn
+        # Continuously pop from the transcode queue, parse, and put to the 'RxMsg_queue' 
+        # for access to the CANacondaMessage objects from within the GUI thread.
+        # This queue separates the serial layer from the rest of the program.
+        def CanTranscoderRun(self):
+            while True:
+                msg = self.CanacondaRx_TranscodeQueue.get()
+                newCanMessage = CANacondaMessage()
+                CANacondaMessageParse(msg, newCanMessage, self.dataBack.messages, self.dataBack) #FIXME: make parameter names consistent with function
+                self.dataBack.CANacondaRxMsg_queue.put(newCanMessage)
+                self.parsedMsgPut.emit()
+                # If not present already, add the message's messageInfo
+                # and field name to the dataBack.messagesSeenSoFar dict,
+                # and emit a signal for redrawing the messages table
+                if newCanMessage.name not in self.dataBack.messagesSeenSoFar and newCanMessage.name is not '':
+                    self.dataBack.messagesSeenSoFar[newCanMessage.name] = []
+                    for field in newCanMessage.body:
+                        self.dataBack.messagesSeenSoFar[newCanMessage.name].append(field)
+                        self.newMessageUp.emit()
 
-        # Now that we have the current message's ID, raw, and pgn values,
-        # find and assign the message's name to newMsg.name
-        for key in metaData.keys():
-            if metaData[key].pgn == str(newMsg.pgn) or metaData[key].id == newMsg.id:
-                newMsg.name = metaData[key].name
-                break
-        # If newMsg.name is still None, then the  message is not in the xml 
-        # file and is not of interest:
-        if not newMsg.name:
-            return
-        
-        # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
-        try:
-            currentMessage = metaData[dataBack.id_to_name[newMsg.id]]
-        except:
-            currentMessage = metaData[dataBack.pgn_to_name[str(newMsg.pgn)]]
-
-        if newMsg.id not in dataBack.IDencodeMap:
-            dataBack.IDencodeMap[newMsg.name] = newMsg.id
-
-        # grab the values from the data field(s)
-        for fieldName in currentMessage.fields: 
-            #dataFilter is a MessageInfo.Field object. Used for parsing field data.
-            dataFilter = currentMessage.fields[fieldName]  
-            # The field data may be an int or a bitfield, depending on the type specified in metadata.
-            # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
-            # in as a parameter here.
-            # Should be using newMsg.payload anyway.
-            #payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
-            payLoadData = getBodyFieldData(dataFilter, currentMessage, match, newMsg.payload)
-
-            newMsg.body[dataFilter.name] = payLoadData
-
-        # Now to calculate message frequency:
-        if newMsg.name not in dataBack.frequencyMap:
-            dataBack.frequencyMap[newMsg.name] = Queue()
-        else:
-            dataBack.frequencyMap[newMsg.name].put(time.time())
-
-        # If the first element(s) in the queue is/are older than 5 seconds, remove:
-        if dataBack.frequencyMap[newMsg.name].qsize() > 0:
-            while time.time() - dataBack.frequencyMap[newMsg.name].queue[0] > 5.0:
-                null = dataBack.frequencyMap[newMsg.name].get()
-                if dataBack.frequencyMap[newMsg.name].empty():
-                    break
-        # Division by 5 now gives us a running average
-        newMsg.freq = dataBack.frequencyMap[newMsg.name].qsize()/5.0
-
-        # The CANacondaMessage has now been created.
-
-    ########### GUI related #################################
-        # Add data to the headers and messages sets
-        dataBack.headers.add(newMsg.id)
-        dataBack.pgnSeenSoFar.add(newMsg.pgn)
-
-        # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
-        dataBack.latest_CANacondaMessages[newMsg.name] = newMsg.body
-
-        # Add the frequency to the 'latest_frequencies' dictionary:
-        dataBack.latest_frequencies[newMsg.name] = newMsg.freq
-        
-        # Make the frequency calculation and add to CANacondaMessage object:
-        # dataBack.frequencyMap[newMsg.name].qsize()
+except ImportError:
+    pass
 
 
 class CanTranscoderCLI(CanTranscoder):
@@ -174,6 +126,94 @@ class CanTranscoderCLI(CanTranscoder):
         if outmsg:
             print(outmsg)
             sys.stdout.flush()
+
+
+# The goal here is to fill in all of the following:
+# name, pgn, id, body (aka 'payload'), raw
+# FIXME: Make this a series of smaller function calls so that it is more readable
+def CANacondaMessageParse(match, newMsg, metaData, dataBack):
+    # Parse out the ID from the regex Match object. Keep it an integer!
+    if match.group(1):
+        newMsg.id = int(match.group(1), 16)
+    elif match.group(2):
+        newMsg.id = int(match.group(2), 16)
+
+    payloadSize = int(match.group(3))
+
+    payloadString = match.group(4)
+    if payloadSize * 2 != len(payloadString):
+        payloadString = payloadString[0:2 * payloadSize]
+
+    #FIXME: From here on, we should no longer use the regex match object.
+    newMsg.payload = ParseBody(payloadString)
+
+    # Now grab a PGN value if one's found
+    [pgn, x, y, z] = Iso11783Decode(newMsg.id)
+    newMsg.pgn = pgn
+
+    # Now that we have the current message's ID, raw, and pgn values,
+    # find and assign the message's name to newMsg.name
+    for key in metaData.keys():
+        if metaData[key].pgn == str(newMsg.pgn) or metaData[key].id == newMsg.id:
+            newMsg.name = metaData[key].name
+            break
+    # If newMsg.name is still None, then the  message is not in the xml 
+    # file and is not of interest:
+    if not newMsg.name:
+        return
+    
+    # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
+    try:
+        currentMessage = metaData[dataBack.id_to_name[newMsg.id]]
+    except:
+        currentMessage = metaData[dataBack.pgn_to_name[str(newMsg.pgn)]]
+
+    if newMsg.id not in dataBack.IDencodeMap:
+        dataBack.IDencodeMap[newMsg.name] = newMsg.id
+
+    # grab the values from the data field(s)
+    for fieldName in currentMessage.fields: 
+        #dataFilter is a MessageInfo.Field object. Used for parsing field data.
+        dataFilter = currentMessage.fields[fieldName]  
+        # The field data may be an int or a bitfield, depending on the type specified in metadata.
+        # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
+        # in as a parameter here.
+        # Should be using newMsg.payload anyway.
+        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, newMsg.payload)
+
+        newMsg.body[dataFilter.name] = payLoadData
+
+    # Now to calculate message frequency:
+    if newMsg.name not in dataBack.frequencyMap:
+        dataBack.frequencyMap[newMsg.name] = Queue()
+    else:
+        dataBack.frequencyMap[newMsg.name].put(time.time())
+
+    # If the first element(s) in the queue is/are older than 5 seconds, remove:
+    # FIXME: This is a hacked circular buffer. Do a real one.
+    if dataBack.frequencyMap[newMsg.name].qsize() > 0:
+        while time.time() - dataBack.frequencyMap[newMsg.name].queue[0] > 5.0:
+            null = dataBack.frequencyMap[newMsg.name].get()
+            if dataBack.frequencyMap[newMsg.name].empty():
+                break
+    # Division by 5 now gives us a running average
+    newMsg.freq = dataBack.frequencyMap[newMsg.name].qsize()/5.0
+
+    # The CANacondaMessage has now been created.
+
+########### GUI related #################################
+    # Add data to the headers and messages sets
+    dataBack.headers.add(newMsg.id)
+    dataBack.pgnSeenSoFar.add(newMsg.pgn)
+
+    # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
+    dataBack.latest_CANacondaMessages[newMsg.name] = newMsg.body
+
+    # Add the frequency to the 'latest_frequencies' dictionary:
+    dataBack.latest_frequencies[newMsg.name] = newMsg.freq
+    
+    # Make the frequency calculation and add to CANacondaMessage object:
+    # dataBack.frequencyMap[newMsg.name].qsize()
 
 
 # Function parameters: hexData is the raw hex string of one of the message body fields.
@@ -274,7 +314,9 @@ def ParseBody(payloadString):
 
     return payload
 
-
+# generateMessage: Creates a hex encoded message
+# 'payload' is a dictionary mapping of field names to payload data
+# 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
 def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
     # Construct a string that we will use to .format() later on. 'formatString' needs to 

@@ -2,10 +2,7 @@
 
 '''
 This file is the top level implementation of the canpython script.
-Under development:
-    console mode
-    GUI mode -> pyqt5 filters tree file
-
+Both the CLI and GUI versions are launched from within this script.
 '''
 
 # Commandline mode
@@ -33,7 +30,6 @@ def main():
 
     # Create the dataBack singleton
     dataBack = CanData(args)
-
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         try:
@@ -187,10 +183,9 @@ def canacondaNoGuiInit(dataBack):
     # Otherwise, start streaming messages.
 
 
-# 
 def pyserialNoGuiInit(dataBack):
     from canport import CANPortCLI
-    # create the threading object
+    # Create a threading object that communicates with the serial bus
     dataBack.canPort = CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
     # and report any errors
@@ -200,11 +195,13 @@ def pyserialNoGuiInit(dataBack):
     # start up a thread for processing messages
     if type(serialCAN) != int:
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages, args=(serialCAN,))
+
+    # Create another threading object that will encode and decode CAN messages
     from CanDataTranscoder import CanTranscoderCLI
     canTranscoder = CanTranscoderCLI(dataBack)
     dataBack.transcoderThread = threading.Thread(target=canTranscoder.CanTranscoderRun)
 
-    # Just pass through the return value from pyserialInit()
+    # Pass through the return value from pyserialInit()
     # FIXME: find a way to intercept KeyBoardInterrupt exception when quitting
     return serialCAN
 
@@ -217,12 +214,17 @@ def pyserialNoGuiRun(dataBack):
     except AttributeError:
         pass
 
-# Create the serial 
+# Create the serial thread. Don't call .start() yet, since this 
+# must be done after the GUI thread has started and user input
+# is obtained for certain parameters.
 def pyserialGuiInit(dataBack):
     # create the threading object
     from canport import CANPortGUI
     dataBack.canPort = CANPortGUI(dataBack)
     dataBack.noGui = bool(dataBack.args.nogui)  # aka FALSE
+
+    from CanDataTranscoder import CanTranscoderGUI
+    dataBack.canTranscoderGUI = CanTranscoderGUI(dataBack)
 
 def canacondaGuiRun(dataBack):
     # Qt imports

@@ -2,9 +2,11 @@
 This file includes the code for the CanPort class, which is run from the
 recieveMessage_helper function from canpython.py
 
-The CanPort deal with the serial data from the CAN to USB node.
-Once a message has been received, a Message object is created and
-the serial data is no longer dealt with for that message.
+The CanPort deals with the serial data from the CAN to USB node.
+Once a message has been received, a regex match object is created and
+the serial data is discarded.
+
+
 '''
 
 # Standard libraries
@@ -19,7 +21,7 @@ import serial
 
 
 # User libraries
-#from CanMessage import *
+from CanMessage import *
 #from CanDataTranscoder import *
 from outmessage import *
 from backend import conversionMap
@@ -30,8 +32,8 @@ from messageInfo import CAN_FORMAT_EXTENDED
 
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
-# messages. These messages are then passed to the GUI thread via the
-# CANacondaRxMsg_queue queue where they are added to the GUI
+# messages. These messages are then passed to the CanTranscoder thread for parsing
+# into CANacondaMessage objects.
 class CANPort():
     '''
     Error constants to be returned by pyserialInit():
@@ -146,43 +148,9 @@ class CANPortCLI(CANPort):
         """Initialization only requires initializing the parent class, which really does all the work."""
         super(CANPortCLI, self).__init__(dataBack)
 
-    def PrintMessage(self, canacondamessage):
-        """Print the given message to stdout. It accounts for some program settings regarding how the output should look."""
-        outmsg = ''
-
-        if self.args.csv:
-            # If specified, do zero-order hold on output CSV data.
-            if self.args.zero:
-                outmsg = noGuiParseCSV_zero(
-                               self.dataBack, canacondamessage)
-            # If CSV mode is specified, print data comma-separated.
-            else:
-                outmsg = noGuiParseCSV(self.dataBack,
-                                       canacondamessage)
-        else:
-            # If we have metadata for messages, pretty-print using it.
-            if self.args.messages is not None:
-                outmsg = noGuiParse(self.dataBack,
-                                    canacondamessage)
-            # Otherwise just print out the raw message data
-            else:
-                # Prepend timestamp to millisecond precision if the user requested it.
-                if self.args.time:
-                    outmsg = "{0:0.3f} ".format(time.time())
-                
-                # And then output the raw message data.
-                outmsg += str(canacondamessage)
-
-        # Finally print the message data. We call flush here to speed up the output.
-        # This allows the CSV output to be used as input for pipePlotter and render
-        # in real-time.
-        if outmsg:
-            print(outmsg)
-            sys.stdout.flush()
 
 try:
     from PyQt5.QtCore import pyqtSignal, QObject
-    from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
     class CANPortGUI(CANPort, QObject):
 
@@ -197,10 +165,8 @@ try:
             dataBack = self.dataBack
             matchedmsg = self.getMatchObject(serialCAN)
             newCANacondaMessage = CANacondaMessage()
-            if matchedmsg:
-                CANacondaMessageParse(newCANacondaMessage, matchedmsg, dataBack)
-                # use dataBack.nogui?
-                self.dataBack.CANacondaRxMsg_queue.put(newCANacondaMessage)
+            if matchedmsg: 
+                self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
                 self.parsedMsgPut.emit()
 
                 # If not present already, add the message's messageInfo
