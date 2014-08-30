@@ -269,7 +269,7 @@ def getPayload(hexData, dataFilter, payload):
 
     dataset = []
     while len(datasect) > 8:
-    # This code converts from binary to a set of integers for int.from_bytes() further down
+    # This code converts from binary to a set of integers for int.from_bytes() further down.
         highdata = datasect[-8:]
         datasect = datasect[:-8]
         dataset.append(int(highdata, 2))
