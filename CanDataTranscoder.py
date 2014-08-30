@@ -131,12 +131,12 @@ class CanTranscoderCLI(CanTranscoder):
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
 # FIXME: Make this a series of smaller function calls so that it is more readable
-def CANacondaMessageParse(match, newMsg, metaData, dataBack):
+def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
-        newMsg.id = int(match.group(1), 16)
+        newCanMessage.id = int(match.group(1), 16)
     elif match.group(2):
-        newMsg.id = int(match.group(2), 16)
+        newCanMessage.id = int(match.group(2), 16)
 
     payloadSize = int(match.group(3))
 
@@ -145,31 +145,31 @@ def CANacondaMessageParse(match, newMsg, metaData, dataBack):
         payloadString = payloadString[0:2 * payloadSize]
 
     #FIXME: From here on, we should no longer use the regex match object.
-    newMsg.payload = ParseBody(payloadString)
+    newCanMessage.payload = ParseBody(payloadString)
 
     # Now grab a PGN value if one's found
-    [pgn, x, y, z] = Iso11783Decode(newMsg.id)
-    newMsg.pgn = pgn
+    [pgn, x, y, z] = Iso11783Decode(newCanMessage.id)
+    newCanMessage.pgn = pgn
 
     # Now that we have the current message's ID, raw, and pgn values,
-    # find and assign the message's name to newMsg.name
+    # find and assign the message's name to newCanMessage.name
     for key in metaData.keys():
-        if metaData[key].pgn == str(newMsg.pgn) or metaData[key].id == newMsg.id:
-            newMsg.name = metaData[key].name
+        if metaData[key].pgn == str(newCanMessage.pgn) or metaData[key].id == newCanMessage.id:
+            newCanMessage.name = metaData[key].name
             break
-    # If newMsg.name is still None, then the  message is not in the xml 
+    # If newCanMessage.name is still None, then the  message is not in the xml 
     # file and is not of interest:
-    if not newMsg.name:
+    if not newCanMessage.name:
         return
     
     # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
     try:
-        currentMessage = metaData[dataBack.id_to_name[newMsg.id]]
+        currentMessage = metaData[dataBack.id_to_name[newCanMessage.id]]
     except:
-        currentMessage = metaData[dataBack.pgn_to_name[str(newMsg.pgn)]]
+        currentMessage = metaData[dataBack.pgn_to_name[str(newCanMessage.pgn)]]
 
-    if newMsg.id not in dataBack.IDencodeMap:
-        dataBack.IDencodeMap[newMsg.name] = newMsg.id
+    if newCanMessage.id not in dataBack.IDencodeMap:
+        dataBack.IDencodeMap[newCanMessage.name] = newCanMessage.id
 
     # grab the values from the data field(s)
     for fieldName in currentMessage.fields: 
@@ -178,42 +178,67 @@ def CANacondaMessageParse(match, newMsg, metaData, dataBack):
         # The field data may be an int or a bitfield, depending on the type specified in metadata.
         # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
         # in as a parameter here.
-        # Should be using newMsg.payload anyway.
-        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, newMsg.payload)
+        # Should be using newCanMessage.payload anyway.
+        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, newCanMessage.payload)
 
-        newMsg.body[dataFilter.name] = payLoadData
+        newCanMessage.body[dataFilter.name] = payLoadData
 
     # Now to calculate message frequency:
-    if newMsg.name not in dataBack.frequencyMap:
-        dataBack.frequencyMap[newMsg.name] = Queue()
+    if newCanMessage.name not in dataBack.frequencyMap:
+        dataBack.frequencyMap[newCanMessage.name] = Queue()
     else:
-        dataBack.frequencyMap[newMsg.name].put(time.time())
+        dataBack.frequencyMap[newCanMessage.name].put(time.time())
 
     # If the first element(s) in the queue is/are older than 5 seconds, remove:
     # FIXME: This is a hacked circular buffer. Do a real one.
-    if dataBack.frequencyMap[newMsg.name].qsize() > 0:
-        while time.time() - dataBack.frequencyMap[newMsg.name].queue[0] > 5.0:
-            null = dataBack.frequencyMap[newMsg.name].get()
-            if dataBack.frequencyMap[newMsg.name].empty():
+    if dataBack.frequencyMap[newCanMessage.name].qsize() > 0:
+        while time.time() - dataBack.frequencyMap[newCanMessage.name].queue[0] > 5.0:
+            null = dataBack.frequencyMap[newCanMessage.name].get()
+            if dataBack.frequencyMap[newCanMessage.name].empty():
                 break
     # Division by 5 now gives us a running average
-    newMsg.freq = dataBack.frequencyMap[newMsg.name].qsize()/5.0
+    newCanMessage.freq = dataBack.frequencyMap[newCanMessage.name].qsize()/5.0
 
     # The CANacondaMessage has now been created.
 
 ########### GUI related #################################
     # Add data to the headers and messages sets
-    dataBack.headers.add(newMsg.id)
-    dataBack.pgnSeenSoFar.add(newMsg.pgn)
+    dataBack.headers.add(newCanMessage.id)
+    dataBack.pgnSeenSoFar.add(newCanMessage.pgn)
 
     # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
-    dataBack.latest_CANacondaMessages[newMsg.name] = newMsg.body
+    dataBack.latest_CANacondaMessages[newCanMessage.name] = newCanMessage.body
 
     # Add the frequency to the 'latest_frequencies' dictionary:
-    dataBack.latest_frequencies[newMsg.name] = newMsg.freq
+    dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
     
     # Make the frequency calculation and add to CANacondaMessage object:
-    # dataBack.frequencyMap[newMsg.name].qsize()
+    # dataBack.frequencyMap[newCanMessage.name].qsize()
+
+
+# For messages coming in from the 
+def formatPayloadFromInts(payload):
+    newPayload = payload[::-1] # reverse the list without modifying it like .reverse() does
+    for a, int_ in enumerate(newPayload):
+        if int_ == 0:
+            newPayload[a] = '00'
+            continue
+        if len(hex(int_)) == 3:
+            newPayload[a] = ('0' + hex(int_)[2])
+        else:
+            newPayload[a] = (hex(int_)[2:4])
+    return "".join(newPayload)
+
+def formatPayloadFromHexData(hexData):
+    count = len(hexData)
+    dataflipped = ""
+    while count > 0:
+        # this flips the order of all the hex bits to switch from little
+        # to big endian
+        dataflipped = dataflipped + hexData[count-2:count]
+        count -= 2
+    return dataflipped
+
 
 
 # Function parameters: hexData is the raw hex string of one of the message body fields.
@@ -229,15 +254,7 @@ def getPayload(hexData, dataFilter, payload):
     length = dataFilter.length
     type   = dataFilter.type
 
-    count = len(hexData)
-    dataflipped = ""
-   
-
-    while count > 0:
-        # this flips the order of all the hex bits to switch from little
-        # to big endian
-        dataflipped = dataflipped + hexData[count-2:count]
-        count -= 2
+    dataflipped = formatPayloadFromInts(payload) 
 
     binaryData = bin(int(dataflipped, 16))  # converts the data to binary
     # Strip the '0b' and pad with leading 0's
