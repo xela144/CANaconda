@@ -23,7 +23,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 import threading
 from serial.tools.list_ports import comports
-from canport import encodePayload, generateMessage
+from CanDataTranscoder import encodePayload, generateMessage
 from backend import *
 import filtersTreeWidget
 import filterTable
@@ -49,8 +49,6 @@ class Ui_MainWindow(QtCore.QObject):
 ## Layout code
 #############################
         mainWindow.setObjectName("mainindow")
-        #mainWindow.resize(659, 565)
-        #mainWindow.setWindowTitle("CAN Message Viewer")
         self.centralWidget = QtWidgets.QWidget(mainWindow)
         self.centralWidget.setObjectName("centralWidget")
         self.verticalLayout_top = QtWidgets.QVBoxLayout(self.centralWidget)
@@ -121,7 +119,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxLabelField.setText("Field:")
         self.firstTxField1 = QtWidgets.QLabel()
         self.firstTxField1.setText(' ...')
-        #self.firstTxField1.setMinimumWidth(90)
         self.firstTxBody1 = QtWidgets.QLineEdit()
         self.firstTxBody1.setPlaceholderText('payload data')
         self.firstTxBody1.setDisabled(True)
@@ -175,7 +172,7 @@ class Ui_MainWindow(QtCore.QObject):
 
         self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
         self.messagesTextBrowser.setObjectName("messagesTextBrowser")
-        #self.messagesTextBrowswer.set( the flag to be able to delete text!)
+        #FIXME: set the flag to be able to delete text in the text browser
         self.verticalLayout_2.addWidget(self.messagesTextBrowser)
 
         if self.dataBack.args.debug:
@@ -198,8 +195,6 @@ class Ui_MainWindow(QtCore.QObject):
 
 
         ##### Right side #####
-        
-
         self.verticalLayout = QtWidgets.QVBoxLayout(self.visualizeFrame)
         self.verticalLayout.setObjectName("verticalLayout")
 
@@ -209,7 +204,6 @@ class Ui_MainWindow(QtCore.QObject):
 
         self.label_2 = QtWidgets.QLabel(self.visualizeFrame)
         self.label_2.setObjectName("label_2")
-#        self.label_2.setText("Metadata and Filtering")
         self.topRightLabels.addWidget(self.label_2)
 
         self.fileNameLabel = QtWidgets.QLabel()
@@ -356,10 +350,10 @@ class Ui_MainWindow(QtCore.QObject):
 
         # The serialCAN thread was initialized without error
         if type(self.serialCAN) != int:
-            self.dataBack.canPort.parsedMsgPut.connect(self.updateUi)
-            self.dataBack.canPort.parsedMsgPut.connect(
+            self.dataBack.canTranscoderGUI.parsedMsgPut.connect(self.updateUi)
+            self.dataBack.canTranscoderGUI.parsedMsgPut.connect(
                                                self.filterTable.updateValueInTable)
-            self.dataBack.canPort.newMessageUp.connect(self.filterTable.populateTable)
+            self.dataBack.canTranscoderGUI.newMessageUp.connect(self.filterTable.populateTable)
             self.removeHourGlass()
             self.setStreamingFlag()
             return True
@@ -388,6 +382,9 @@ class Ui_MainWindow(QtCore.QObject):
         self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
         self.serialThread.daemon = True
         self.serialThread.start()
+        self.transcoderThread = threading.Thread(target=self.dataBack.canTranscoderGUI.CanTranscoderRun)
+        self.transcoderThread.daemon = True
+        self.transcoderThread.start()
 
     def loadFilter(self):
         # These "reset" statements should actually be moved to a
@@ -420,7 +417,6 @@ class Ui_MainWindow(QtCore.QObject):
 
         self.updateFileNameQLabel()
         self.filtersTreeWidget.populateTree()
-        # Is this still necessary?
         self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
@@ -443,7 +439,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.fileName = fileName
         self.updateFileNameQLabel()
         self.filtersTreeWidget.populateTree()
-        # Is this still necessary?
         self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox

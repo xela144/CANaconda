@@ -2,10 +2,7 @@
 
 '''
 This file is the top level implementation of the canpython script.
-Under development:
-    console mode
-    GUI mode -> pyqt5 filters tree file
-
+Both the CLI and GUI versions are launched from within this script.
 '''
 
 # Commandline mode
@@ -25,19 +22,6 @@ from outmessage import ID, PGN, BODY, RAW
 
 
 
-###########################
-# format we want:
-# pyserial.init()
-# pyserial.run()
-# canaconda.init(pyserial)
-# canaconda.run()
-# if gui:
-#    import PyQt
-#    gui.init()
-#    gui.run(canaconda)
-# else:
-#    cancaconda.push(config)
-############################
 def main():
     
     parser = argparse.ArgumentParser()
@@ -46,7 +30,6 @@ def main():
 
     # Create the dataBack singleton
     dataBack = CanData(args)
-
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         try:
@@ -200,10 +183,9 @@ def canacondaNoGuiInit(dataBack):
     # Otherwise, start streaming messages.
 
 
-# 
 def pyserialNoGuiInit(dataBack):
     from canport import CANPortCLI
-    # create the threading object
+    # Create a threading object that communicates with the serial bus
     dataBack.canPort = CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
     # and report any errors
@@ -213,28 +195,36 @@ def pyserialNoGuiInit(dataBack):
     # start up a thread for processing messages
     if type(serialCAN) != int:
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages, args=(serialCAN,))
-    
-    # Just pass through the return value from pyserialInit()
+
+    # Create another threading object that will encode and decode CAN messages
+    from CanDataTranscoder import CanTranscoderCLI
+    canTranscoder = CanTranscoderCLI(dataBack)
+    dataBack.transcoderThread = threading.Thread(target=canTranscoder.CanTranscoderRun)
+
+    # Pass through the return value from pyserialInit()
+    # FIXME: find a way to intercept KeyBoardInterrupt exception when quitting
     return serialCAN
-    
-    # find a way to intercept KeyBoardInterrupt exception
-    # when quitting
 
 def pyserialNoGuiRun(dataBack):
-    if dataBack.args.slow: # a debug mode -- cause program to halt
-        return
     try:
+        dataBack.transcoderThread.start()
         dataBack.serialThread.start()
+
     # This is the error thrown if serialThread did not initialize
     except AttributeError:
         pass
 
-# Create the serial 
+# Create the serial thread. Don't call .start() yet, since this 
+# must be done after the GUI thread has started and user input
+# is obtained for certain parameters.
 def pyserialGuiInit(dataBack):
     # create the threading object
     from canport import CANPortGUI
     dataBack.canPort = CANPortGUI(dataBack)
     dataBack.noGui = bool(dataBack.args.nogui)  # aka FALSE
+
+    from CanDataTranscoder import CanTranscoderGUI
+    dataBack.canTranscoderGUI = CanTranscoderGUI(dataBack)
 
 def canacondaGuiRun(dataBack):
     # Qt imports
