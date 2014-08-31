@@ -144,8 +144,11 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     if payloadSize * 2 != len(payloadString):
         payloadString = payloadString[0:2 * payloadSize]
 
-    #FIXME: From here on, we should no longer use the regex match object.
     newCanMessage.payload = ParseBody(payloadString)
+
+    # This bit string is a big-endian representation of the above.
+    # Do this here once rather than each time a payload field is parsed below
+    newCanMessage.payloadBitstring = ParseBodyBits(payloadString)
 
     # Now grab a PGN value if one's found
     [pgn, x, y, z] = Iso11783Decode(newCanMessage.id)
@@ -164,24 +167,20 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     
     # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
     try:
-        currentMessage = metaData[dataBack.id_to_name[newCanMessage.id]]
+        currentMessageInfo = metaData[dataBack.id_to_name[newCanMessage.id]]
     except:
-        currentMessage = metaData[dataBack.pgn_to_name[str(newCanMessage.pgn)]]
+        currentMessageInfo = metaData[dataBack.pgn_to_name[str(newCanMessage.pgn)]]
 
     if newCanMessage.id not in dataBack.IDencodeMap:
         dataBack.IDencodeMap[newCanMessage.name] = newCanMessage.id
-
     # grab the values from the data field(s)
-    for fieldName in currentMessage.fields: 
+    for fieldName in currentMessageInfo.fields: 
         #dataFilter is a MessageInfo.Field object. Used for parsing field data.
-        dataFilter = currentMessage.fields[fieldName]  
+        dataFilter = currentMessageInfo.fields[fieldName]  
         # The field data may be an int or a bitfield, depending on the type specified in metadata.
-        # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
-        # in as a parameter here.
-        # Should be using newCanMessage.payload anyway.
-        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, newCanMessage.payload)
+        payloadData = getBodyFieldData(dataFilter, newCanMessage)
 
-        newCanMessage.body[dataFilter.name] = payLoadData
+        newCanMessage.body[dataFilter.name] = payloadData
 
     # Now to calculate message frequency:
     if newCanMessage.name not in dataBack.frequencyMap:
@@ -216,7 +215,9 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     # dataBack.frequencyMap[newCanMessage.name].qsize()
 
 
-# For messages coming in from the 
+# formatPayloadFromInts
+# Takes a message.payload array and returns a byte string after reversal
+# haha, deprecated
 def formatPayloadFromInts(payload):
     newPayload = payload[::-1] # reverse the list without modifying it like .reverse() does
     for a, int_ in enumerate(newPayload):
@@ -229,7 +230,10 @@ def formatPayloadFromInts(payload):
             newPayload[a] = (hex(int_)[2:4])
     return "".join(newPayload)
 
-def formatPayloadFromHexData(hexData):
+# ParseBodyBits
+# 'hexData' is the string of bytes that represent the message body. This function 
+# changes the endianness of this hex string and changes its representation to bits.
+def ParseBodyBits(hexData):
     count = len(hexData)
     dataflipped = ""
     while count > 0:
@@ -237,72 +241,73 @@ def formatPayloadFromHexData(hexData):
         # to big endian
         dataflipped = dataflipped + hexData[count-2:count]
         count -= 2
-    return dataflipped
-
-
-
-# Function parameters: hexData is the raw hex string of one of the message body fields.
-# dataFilter a messagInfo.Field type, extracted from the meta data given by the user.
-# The return value is a single field payload, before filtering/error checking.
-# FIXME: Parse out the data from CanMessage.payload instead
-# FIXME: Returning a single field item, yet parsing the entire message body with each call
-def getPayload(hexData, dataFilter, payload):
-    # Variables used in this function:
-    endian = dataFilter.endian
-    signed = dataFilter.signed
-    offset = dataFilter.offset
-    length = dataFilter.length
-    type   = dataFilter.type
-
-    dataflipped = formatPayloadFromInts(payload) 
-
     binaryData = bin(int(dataflipped, 16))  # converts the data to binary
     # Strip the '0b' and pad with leading 0's
     binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
-    #shifting indices to the right
-    start = len(binaryData) - offset
-    stop = len(binaryData) - (length + offset) # could be 'start - length' too.
+    return binaryData
 
-    datasect = binaryData[stop: start]
-    # from the offset to the end of size is selected to separate
-    # the relevant data
 
-    dataset = []
-    while len(datasect) > 8:
-    # This code converts from binary to a set of integers for int.from_bytes() further down.
-        highdata = datasect[-8:]
-        datasect = datasect[:-8]
-        dataset.append(int(highdata, 2))
-    output = 0
-    try:
-        output = int(datasect, 2)
-    except:
-        pass
-    dataset.append(output)
-    
-    if type == 'bitfield':
-        # Convert the value into a binary string that shows every bit
-        value = ("{:#0" + str(2 + length) + "b}").format(int.from_bytes(dataset, byteorder=endian))
+
+# Function parameters:
+# 'endian' and 'signed' are from the metadata provided by the user, via messageInfo objects.
+# 'byteArray' is an array of ints that represent bytes, which is the type of parameter
+# that the function 'int.from_bytes' needs
+# The return value is the integer value of the payload, before unit/scaling conversion
+def payloadSwitch(endian, signed, byteArray):
+
     #little endian unsigned
-    elif endian == "little" and signed == "no":
-        value = int.from_bytes(dataset, byteorder='little', signed=False)
+    if endian == "little" and signed == "no":
+        pay = int.from_bytes(byteArray, byteorder='little', signed=False)
 
     #little endian signed
     elif endian == "little" and signed == "yes":
-        value = int.from_bytes(dataset, byteorder='little', signed=True)
+        pay = int.from_bytes(byteArray, byteorder='little', signed=True)
 
     #big endian signed
     elif endian == "big" and signed == "yes":
-        value = int.from_bytes(dataset, byteorder='big', signed=True)
+        pay = int.from_bytes(byteArray, byteorder='big', signed=True)
 
     #big endian unsigned
     elif endian == "big" and signed == "no":
-        value = int.from_bytes(dataset, byteorder='big', signed=False)
+        pay = int.from_bytes(byteArray, byteorder='big', signed=False)
 
-    else:
-        print("not valid")
+    return pay
 
-    return value
+
+# getByteArray: Before using the int.from_bytes function, we must format the data
+# into this array. 
+# parameters:
+#    offset and length are from the messageInfo field objects for the current field
+#    payloadBits is the bit array for the current CanMessage object. It is a string.
+# return value:
+# 'byteArray' is an array of int, where each int represents a byte of data
+def getByteArray(offset, length, payloadBits):
+
+    # Define the start:stop indices used to slice the payload bits
+    start = len(payloadBits) - offset
+    stop = start - length
+
+    # This is the subset payloadBits that are relevant to the current field
+    payloadSlice = payloadBits[stop: start]
+
+    # Next create an array of bytes that will be used to convert with int.from_bytes()
+    byteArray = []
+    while len(payloadSlice) > 8:
+        # Store the lowest 8 bits
+        highdata = payloadSlice[-8:]
+        # Convert the stored bits to an int, and append to byteArray array
+        byteArray.append(int(highdata, 2))
+        # and then chop them off from bitstring
+        payloadSlice = payloadSlice[:-8]
+    # For the left-over bits, convert them to int and append
+    try:
+        if payloadSlice:
+            output = int(payloadSlice, 2)
+            byteArray.append(output)
+    except: # FIXME: find out what this error was
+        pass
+    return byteArray
+
 
 # count: size of message body in bytes
 # hexData: message body in hex format
@@ -330,6 +335,7 @@ def ParseBody(payloadString):
         payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
 
     return payload
+
 
 # generateMessage: Creates a hex encoded message
 # 'payload' is a dictionary mapping of field names to payload data
@@ -427,50 +433,68 @@ def encodePayload(payload, dataFilter):
 
 # Retrieves the data field from the CAN message body and does any units 
 # conversion and/or filtering specified by the user during runtime.
-# FIXME: Don't pull data from `match`, instead pull from self.payload
-def getBodyFieldData(dataFilter, currentMessage, match, payload):
-    msgBody = match.group(4)
-    value = getPayload(msgBody, dataFilter, payload)
+def getBodyFieldData(dataFilter, newCanMessage):
+    payloadBits = newCanMessage.payloadBitstring
+    type_   = dataFilter.type
+    byteArray = getByteArray(dataFilter.offset, dataFilter.length, payloadBits)
+
+    # 'type_' refers to the type of message. Could be 'int' or 'bitfield'
+    # If it is a bitfield, just return the bits as a string.
+    if type_ == 'bitfield':
+        if dataFilter.byValue:
+            # If the user is doing 'byValue' filtering (GUI), then adjust accordingly
+            if int(payloadData[2:], 2) not in dataFilter.byValue:
+                payloadData = ''
+        # Convert the payloadData into a binary string that shows every bit
+        else:
+            payloadData = ("{:#0" + str(2 + dataFilter.length) + "b}").format(int.from_bytes(byteArray, byteorder=dataFilter.endian))
+        return payloadData
+    # The payload data is an int
+    else:
+        payloadData = payloadSwitch(dataFilter.endian, dataFilter.signed, byteArray)
     # Check for invalid data.
     # 0xFFFF is the 'invalid data' code
-   
-    # If we have a bitfield for status or error codes, just return the string.
-    if dataFilter.type == 'bitfield':
-        if dataFilter.byValue:
-            if int(value[2:], 2) not in dataFilter.byValue:
-                value = ''
-        return value
 
     # If it is an N2K FFFF, return Not A Number.
-    if value == 65535:
-        value = 'NaN'
+    if payloadData == 65535:
+        payloadData = 'NaN'
 
     # Otherwise continue processing the int with scalar, converting to float.
     else:
-        value *= dataFilter.scaling
+        payloadData *= dataFilter.scaling
         if dataFilter.unitsConversion:
             try:
             # Data conversion done by adding, multiplying, then
             # adding the tuple entries found in the conversion map
             # in backend.py
-                value += float(conversionMap[dataFilter.units][
+                payloadData += float(conversionMap[dataFilter.units][
                                         dataFilter.unitsConversion][1])
-                value *= float(conversionMap[dataFilter.units][
+                payloadData *= float(conversionMap[dataFilter.units][
                                         dataFilter.unitsConversion][0])
-                value += float(conversionMap[dataFilter.units][
+                payloadData += float(conversionMap[dataFilter.units][
                                         dataFilter.unitsConversion][2])
             except KeyError:
                 pass
 
     # Last but not least, if we are doing a 'filterByValue':
     if dataFilter.byValue:
-        if value not in dataFilter.byValue:
-            value = ''
-    return value
+        if payloadData not in dataFilter.byValue:
+            payloadData = ''
+    return payloadData
 
 def debugMode():
     from PyQt5.QtCore import pyqtRemoveInputHook
     pyqtRemoveInputHook()
     import pdb
     pdb.set_trace()
-    
+   
+
+
+## For the left-over dangling bits, convert them to int and append
+#  output = 0
+#  try:
+#      output = int(payloadSlice, 2)
+#  except:
+#      pass
+#  dataset.append(output)
+
