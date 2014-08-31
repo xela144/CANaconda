@@ -215,222 +215,6 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     # dataBack.frequencyMap[newCanMessage.name].qsize()
 
 
-# formatPayloadFromInts
-# Takes a message.payload array and returns a byte string after reversal
-# haha, deprecated
-def formatPayloadFromInts(payload):
-    newPayload = payload[::-1] # reverse the list without modifying it like .reverse() does
-    for a, int_ in enumerate(newPayload):
-        if int_ == 0:
-            newPayload[a] = '00'
-            continue
-        if len(hex(int_)) == 3:
-            newPayload[a] = ('0' + hex(int_)[2])
-        else:
-            newPayload[a] = (hex(int_)[2:4])
-    return "".join(newPayload)
-
-# ParseBodyBits
-# 'hexData' is the string of bytes that represent the message body. This function 
-# changes the endianness of this hex string and changes its representation to bits.
-def ParseBodyBits(hexData):
-    count = len(hexData)
-    dataflipped = ""
-    while count > 0:
-        # this flips the order of all the hex bits to switch from little
-        # to big endian
-        dataflipped = dataflipped + hexData[count-2:count]
-        count -= 2
-    binaryData = bin(int(dataflipped, 16))  # converts the data to binary
-    # Strip the '0b' and pad with leading 0's
-    binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
-    return binaryData
-
-
-
-# Function parameters:
-# 'endian' and 'signed' are from the metadata provided by the user, via messageInfo objects.
-# 'byteArray' is an array of ints that represent bytes, which is the type of parameter
-# that the function 'int.from_bytes' needs
-# The return value is the integer value of the payload, before unit/scaling conversion
-def payloadSwitch(endian, signed, byteArray):
-
-    #little endian unsigned
-    if endian == "little" and signed == "no":
-        pay = int.from_bytes(byteArray, byteorder='little', signed=False)
-
-    #little endian signed
-    elif endian == "little" and signed == "yes":
-        pay = int.from_bytes(byteArray, byteorder='little', signed=True)
-
-    #big endian signed
-    elif endian == "big" and signed == "yes":
-        pay = int.from_bytes(byteArray, byteorder='big', signed=True)
-
-    #big endian unsigned
-    elif endian == "big" and signed == "no":
-        pay = int.from_bytes(byteArray, byteorder='big', signed=False)
-
-    return pay
-
-
-# getByteArray: Before using the int.from_bytes function, we must format the data
-# into this array. 
-# parameters:
-#    offset and length are from the messageInfo field objects for the current field
-#    payloadBits is the bit array for the current CanMessage object. It is a string.
-# return value:
-# 'byteArray' is an array of int, where each int represents a byte of data
-def getByteArray(offset, length, payloadBits):
-
-    # Define the start:stop indices used to slice the payload bits
-    start = len(payloadBits) - offset
-    stop = start - length
-
-    # This is the subset payloadBits that are relevant to the current field
-    payloadSlice = payloadBits[stop: start]
-
-    # Next create an array of bytes that will be used to convert with int.from_bytes()
-    byteArray = []
-    while len(payloadSlice) > 8:
-        # Store the lowest 8 bits
-        highdata = payloadSlice[-8:]
-        # Convert the stored bits to an int, and append to byteArray array
-        byteArray.append(int(highdata, 2))
-        # and then chop them off from bitstring
-        payloadSlice = payloadSlice[:-8]
-    # For the left-over bits, convert them to int and append
-    try:
-        if payloadSlice:
-            output = int(payloadSlice, 2)
-            byteArray.append(output)
-    except: # FIXME: find out what this error was
-        pass
-    return byteArray
-
-
-# count: size of message body in bytes
-# hexData: message body in hex format
-# return value: string of body data in hex format, with nibbles flipped.
-def flipNibbles(count, hexData):
-    dataflipped = ""
-    i = 0
-    while i < count:
-        try:
-            dataflipped += hexData[i+1] + hexData[i]
-        except IndexError:
-            dataflipped += hexData[i]
-        i += 2
-    return dataflipped
-
-def ParseBody(payloadString):
-    """Parse out an array of integers from a string of hex chars"""
-    # Set the size of the output array
-    payloadSize = len(payloadString) // 2
-
-    # Parse out each byte from the payload string into an integer array
-    payload = [None] * payloadSize 
-    for i in range(payloadSize):
-        charIndex = 2 * i
-        payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
-
-    return payload
-
-
-# generateMessage: Creates a hex encoded message
-# 'payload' is a dictionary mapping of field names to payload data
-# 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
-def generateMessage(dataBack, payload, messageName):
-    messageInfo = dataBack.messages[messageName]  # MessageInfo object
-    # Construct a string that we will use to .format() later on. 'formatString' needs to 
-    # adjust itself for any CAN message body length; 'bodyFormatter' does this.
-    bodylength = messageInfo.size*2
-    bodyFormatter = "0" + str(bodylength) + "x"
-    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
-    if messageInfo.format == CAN_FORMAT_EXTENDED:
-        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
-    try:
-        # This will work only if the node is connected and broadcasting.
-        id = dataBack.IDencodeMap[messageName]  
-    except KeyError:
-        # We assumed the node was connected and broadcasting but it was not.
-        # Need to use the Nmea11783Encode version of the ID instead.
-        id = dataBack.messages[messageInfo.name].fakeID
-
-    # Initialize an array of 0's of length equal to number of bits in message body
-    payloadArray = [0]*messageInfo.size*8
-    for field in messageInfo.fields:
-        dataFilter = dataBack.messages[messageName].fields[field]
-        if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
-            # If user gives a message whose bit-length is longer than specified in medata, barf on user.
-            raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
-        fieldData = encodePayload(payload[field], dataFilter)
-        # Find appropriate array indices, and insert fieldData into the payloadArray
-        start = dataFilter.offset
-        stop  = dataFilter.offset + dataFilter.length
-        payloadArray[start:stop] = fieldData
-
-    # Collapse 
-    payloadString = ''.join(map(str,payloadArray))
-    payloadInt = int(payloadString, 2)
-    payloadHexString = hex(payloadInt)[2:]
-
-    # Pad the hex string with leading zeros, using zfill().
-    if len(payloadHexString) < bodylength:
-        payloadHexString.zfill(bodylength)
-
-    # And return the transmit message as a properly formatted message.
-    outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
-    print(outStr)
-
-    return outStr
-
-
-# Need to check for return value length. Should be same as 'length'
-# specified in metadata. Current code does not handle numbers that are too big.
-# Returns an array of 0's and 1's, of length 'length'.
-def encodePayload(payload, dataFilter):
-    endian = dataFilter.endian
-    _signed = dataFilter.signed == 'yes'
-    offset = dataFilter.offset
-    length = dataFilter.length
-    scaling = dataFilter.scaling
-    _type = dataFilter.type
-    # First check for proper length of signed fields
-    if _signed:
-        if payload < -2**(length-1)  or payload > 2**(length-1)-1:
-            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
-
-    # If the payload is signed, handle this correctly.
-    Negative = False
-    if _signed and payload < 0:
-        payload = -payload
-        Negative = True
-
-    # If the user has entered a negative number for an unsigned field, error out.    
-    elif not _signed and payload < 0:
-        raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
-
-    # Convert the payload to a binary string
-    if Negative:
-        pay = bin(int(-payload/scaling) % (1<<length))[2:]  # two's complement
-    else:
-        pay = bin(int(payload/scaling))[2:]
-
-    # Initialize an array of zeros with correct length
-    fieldData = [0]*length
-
-    for i in range(len(pay)):
-        try:
-            # Fill in fieldData, starting from the right.
-            fieldData[-i-1] = int(pay[-i-1])
-        except IndexError: #  payload scaled up and has become too big for data type
-            raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
-    return fieldData
-
-    
-
-
 # Retrieves the data field from the CAN message body and does any units 
 # conversion and/or filtering specified by the user during runtime.
 def getBodyFieldData(dataFilter, newCanMessage):
@@ -481,6 +265,221 @@ def getBodyFieldData(dataFilter, newCanMessage):
         if payloadData not in dataFilter.byValue:
             payloadData = ''
     return payloadData
+
+
+# formatPayloadFromInts
+# Takes a message.payload array and returns a byte string after reversal
+# haha, deprecated
+def formatPayloadFromInts(payload):
+    newPayload = payload[::-1] # reverse the list without modifying it like .reverse() does
+    for a, int_ in enumerate(newPayload):
+        if int_ == 0:
+            newPayload[a] = '00'
+            continue
+        if len(hex(int_)) == 3:
+            newPayload[a] = ('0' + hex(int_)[2])
+        else:
+            newPayload[a] = (hex(int_)[2:4])
+    return "".join(newPayload)
+
+
+def ParseBody(payloadString):
+    """Parse out an array of integers from a string of hex chars"""
+    # Set the size of the output array
+    payloadSize = len(payloadString) // 2
+
+    # Parse out each byte from the payload string into an integer array
+    payload = [None] * payloadSize 
+    for i in range(payloadSize):
+        charIndex = 2 * i
+        payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
+
+    return payload
+
+
+# ParseBodyBits
+# 'hexData' is the string of bytes that represent the message body. This function 
+# changes the endianness of this hex string and changes its representation to bits.
+def ParseBodyBits(hexData):
+    count = len(hexData)
+    dataflipped = ""
+    while count > 0:
+        # this flips the order of all the hex bits to switch from little
+        # to big endian
+        dataflipped = dataflipped + hexData[count-2:count]
+        count -= 2
+    binaryData = bin(int(dataflipped, 16))  # converts the data to binary
+    # Strip the '0b' and pad with leading 0's
+    binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
+    return binaryData
+
+
+# getByteArray: Before using the int.from_bytes function, we must format the data
+# into this array. 
+# parameters:
+#    offset and length are from the messageInfo field objects for the current field
+#    payloadBits is the bit array for the current CanMessage object. It is a string.
+# return value:
+# 'byteArray' is an array of int, where each int represents a byte of data
+def getByteArray(offset, length, payloadBits):
+
+    # Define the start:stop indices used to slice the payload bits
+    start = len(payloadBits) - offset
+    stop = start - length
+
+    # This is the subset payloadBits that are relevant to the current field
+    payloadSlice = payloadBits[stop: start]
+
+    # Next create an array of bytes that will be used to convert with int.from_bytes()
+    byteArray = []
+    while len(payloadSlice) > 8:
+        # Store the lowest 8 bits
+        highdata = payloadSlice[-8:]
+        # Convert the stored bits to an int, and append to byteArray array
+        byteArray.append(int(highdata, 2))
+        # and then chop them off from bitstring
+        payloadSlice = payloadSlice[:-8]
+    # For the left-over bits, convert them to int and append
+    try:
+        if payloadSlice:
+            output = int(payloadSlice, 2)
+            byteArray.append(output)
+    except: # FIXME: find out what this error was
+        pass
+    return byteArray
+
+
+# Function parameters:
+# 'endian' and 'signed' are from the metadata provided by the user, via messageInfo objects.
+# 'byteArray' is an array of ints that represent bytes, which is the type of parameter
+# that the function 'int.from_bytes' needs
+# The return value is the integer value of the payload, before unit/scaling conversion
+def payloadSwitch(endian, signed, byteArray):
+
+    #little endian unsigned
+    if endian == "little" and signed == "no":
+        pay = int.from_bytes(byteArray, byteorder='little', signed=False)
+
+    #little endian signed
+    elif endian == "little" and signed == "yes":
+        pay = int.from_bytes(byteArray, byteorder='little', signed=True)
+
+    #big endian signed
+    elif endian == "big" and signed == "yes":
+        pay = int.from_bytes(byteArray, byteorder='big', signed=True)
+
+    #big endian unsigned
+    elif endian == "big" and signed == "no":
+        pay = int.from_bytes(byteArray, byteorder='big', signed=False)
+
+    return pay
+
+
+# count: size of message body in bytes
+# hexData: message body in hex format
+# return value: string of body data in hex format, with nibbles flipped.
+def flipNibbles(count, hexData):
+    dataflipped = ""
+    i = 0
+    while i < count:
+        try:
+            dataflipped += hexData[i+1] + hexData[i]
+        except IndexError:
+            dataflipped += hexData[i]
+        i += 2
+    return dataflipped
+
+
+# generateMessage: Creates a hex encoded message
+# 'payload' is a dictionary mapping of field names to payload data
+# 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
+def generateMessage(dataBack, payload, messageName):
+    messageInfo = dataBack.messages[messageName]  # MessageInfo object
+    # Construct a string that we will use to .format() later on. 'formatString' needs to 
+    # adjust itself for any CAN message body length; 'bodyFormatter' does this.
+    bodylength = messageInfo.size*2
+    bodyFormatter = "0" + str(bodylength) + "x"
+    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
+    if messageInfo.format == CAN_FORMAT_EXTENDED:
+        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
+    try:
+        # This will work only if the node is connected and broadcasting.
+        id = dataBack.IDencodeMap[messageName]  
+    except KeyError:
+        # We assumed the node was connected and broadcasting but it was not.
+        # Need to use the Nmea11783Encode version of the ID instead.
+        id = dataBack.messages[messageInfo.name].fakeID
+
+    # Initialize an array of 0's of length equal to number of bits in message body
+    payloadArray = [0]*messageInfo.size*8
+    for field in messageInfo.fields:
+        dataFilter = dataBack.messages[messageName].fields[field]
+        if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
+            # If user gives a message whose bit-length is longer than specified in medata, barf on user.
+            raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
+        fieldData = encodePayload(payload[field], dataFilter)
+        # Find appropriate array indices, and insert fieldData into the payloadArray
+        start = dataFilter.offset
+        stop  = dataFilter.offset + dataFilter.length
+        payloadArray[start:stop] = fieldData
+
+    # Collapse 
+    payloadString = ''.join(map(str,payloadArray))
+    payloadInt = int(payloadString, 2)
+    payloadHexString = hex(payloadInt)[2:]
+
+    # Pad the hex string with leading zeros, using zfill().
+    if len(payloadHexString) < bodylength:
+        payloadHexString.zfill(bodylength)
+
+    # And return the transmit message as a properly formatted message.
+    outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
+
+    return outStr
+
+
+# Need to check for return value length. Should be same as 'length'
+# specified in metadata. Current code does not handle numbers that are too big.
+# Returns an array of 0's and 1's, of length 'length'.
+def encodePayload(payload, dataFilter):
+    endian = dataFilter.endian
+    _signed = dataFilter.signed == 'yes'
+    offset = dataFilter.offset
+    length = dataFilter.length
+    scaling = dataFilter.scaling
+    _type = dataFilter.type
+    # First check for proper length of signed fields
+    if _signed:
+        if payload < -2**(length-1)  or payload > 2**(length-1)-1:
+            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
+
+    # If the payload is signed, handle this correctly.
+    Negative = False
+    if _signed and payload < 0:
+        payload = -payload
+        Negative = True
+
+    # If the user has entered a negative number for an unsigned field, error out.    
+    elif not _signed and payload < 0:
+        raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
+
+    # Convert the payload to a binary string
+    if Negative:
+        pay = bin(int(-payload/scaling) % (1<<length))[2:]  # two's complement
+    else:
+        pay = bin(int(payload/scaling))[2:]
+
+    # Initialize an array of zeros with correct length
+    fieldData = [0]*length
+
+    for i in range(len(pay)):
+        try:
+            # Fill in fieldData, starting from the right.
+            fieldData[-i-1] = int(pay[-i-1])
+        except IndexError: #  payload scaled up and has become too big for data type
+            raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
+    return fieldData
+
 
 def debugMode():
     from PyQt5.QtCore import pyqtRemoveInputHook
