@@ -40,10 +40,6 @@ class CanData():
     def __init__(self, args):
         # Store args from argparse:
         self.args = args
-        #Headers is the set of all CAN IDs that have been seen
-        self.headers = set()
-        #pgn is the set of all PGNs that have been seen
-        self.pgnSeenSoFar = set()
         # An array which contains all of the most recent messages for
         # each type seen so far
         self.messagesSeenSoFar = {}

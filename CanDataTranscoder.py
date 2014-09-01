@@ -165,24 +165,107 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     if not newCanMessage.name:
         return
     
-    # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
+    # In order to continue assigning values to newCanMessage, we need access to the
+    # corresponding MessageInfo object. First, try with filter ID. Then PGN.
     try:
         currentMessageInfo = metaData[dataBack.id_to_name[newCanMessage.id]]
     except:
         currentMessageInfo = metaData[dataBack.pgn_to_name[str(newCanMessage.pgn)]]
-
-    if newCanMessage.id not in dataBack.IDencodeMap:
+    if newCanMessage.id not in dataBack.IDencodeMap.values():
         dataBack.IDencodeMap[newCanMessage.name] = newCanMessage.id
     # grab the values from the data field(s)
     for fieldName in currentMessageInfo.fields: 
         #dataFilter is a MessageInfo.Field object. Used for parsing field data.
         dataFilter = currentMessageInfo.fields[fieldName]  
-        # The field data may be an int or a bitfield, depending on the type specified in metadata.
+
+        # The field data may be an int or a bitfield, depending on the type 
+        # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
+        if dataFilter.type == 'bitfield':
+            newCanMessage.body[dataFilter.name] = payloadData
+        else:
+            newCanMessage.body[dataFilter.name] = assignPayload(dataFilter, newCanMessage, payloadData)
 
-        newCanMessage.body[dataFilter.name] = payloadData
+    if not dataBack.nogui:
+        # Now to calculate message frequency:
+        calcFrequency(newCanMessage, dataBack)
 
-    # Now to calculate message frequency:
+        # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
+        dataBack.latest_CANacondaMessages[newCanMessage.name] = newCanMessage.body
+
+        # Add the frequency to the 'latest_frequencies' dictionary:
+        dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
+
+
+# A helper function that further parses the payloadData for the newCanacondaMessage
+def assignPayload(dataFilter, newCanMessage, payloadData):
+    # If it is an N2K FFFF, return Not A Number.
+    # FIXME: Make this a mask instead
+    if payloadData == 65535:
+        return 'NaN'
+
+    payloadData *= dataFilter.scaling
+
+    # Check to see of user has changed units
+    if dataFilter.unitsConversion:
+        payloadData = convertUnits(payloadData, dataFilter)
+
+    # Last but not least, if we are doing a 'filterByValue':
+    if dataFilter.byValue:
+        if payloadData not in dataFilter.byValue:
+            payloadData = ''
+
+    return payloadData
+
+
+# Retrieves the data field from the CAN message body and does any units 
+# conversion and/or filtering specified by the user during runtime.
+def getBodyFieldData(dataFilter, newCanMessage):
+    payloadBits = newCanMessage.payloadBitstring
+
+    # To convert the payload to a human-readable form, we use 'int.from_bytes()', which
+    # needs an array of bytes. See Python documentation.
+    byteArray = getByteArray(dataFilter.offset, dataFilter.length, payloadBits)
+
+    # 'type_' refers to the type of message. Could be 'int' or 'bitfield'
+    type_   = dataFilter.type
+
+    # If it is a bitfield, just return the bits as a string.
+    if type_ == 'bitfield':
+        if dataFilter.byValue:
+            # If the user is doing 'byValue' filtering (GUI), then adjust accordingly
+            if int(payloadData[2:], 2) not in dataFilter.byValue:
+                payloadData = ''
+        # Convert the payloadData into a binary string that shows every bit
+        else:
+            payloadData = ("{:#0" + str(2 + dataFilter.length) + "b}").format(int.from_bytes(byteArray, byteorder=dataFilter.endian))
+        return payloadData
+
+    # The payload data is an int
+    else:
+        # Assign the payload value using the int.from_bytes in this switch statement
+        return payloadSwitch(dataFilter.endian, dataFilter.signed, byteArray)
+
+# Convert units as input by the user, i.e. from degrees Celsius Fahrenheit
+def convertUnits(payloadData, dataFilter):
+    try:
+    # Data conversion done by adding, multiplying, then
+    # adding the tuple entries found in the conversion map
+    # in backend.py
+    # FIXME: the conversion relation is linear in two variables, not three
+        payloadData += float(conversionMap[dataFilter.units][
+                                dataFilter.unitsConversion][1])
+        payloadData *= float(conversionMap[dataFilter.units][
+                                dataFilter.unitsConversion][0])
+        payloadData += float(conversionMap[dataFilter.units][
+                                dataFilter.unitsConversion][2])
+    except KeyError:
+        pass
+    return payloadData
+
+
+# Calculate the frequeny at which the message is being broadcast. Useful for GUI mode only
+def calcFrequency(newCanMessage, dataBack):
     if newCanMessage.name not in dataBack.frequencyMap:
         dataBack.frequencyMap[newCanMessage.name] = Queue()
     else:
@@ -198,73 +281,40 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
     # Division by 5 now gives us a running average
     newCanMessage.freq = dataBack.frequencyMap[newCanMessage.name].qsize()/5.0
 
-    # The CANacondaMessage has now been created.
 
-########### GUI related #################################
-    # Add data to the headers and messages sets
-    dataBack.headers.add(newCanMessage.id)
-    dataBack.pgnSeenSoFar.add(newCanMessage.pgn)
+# getByteArray: Before using the int.from_bytes function, we must format the data
+# into this array. 
+# parameters:
+#    offset and length are from the messageInfo field objects for the current field
+#    payloadBits is the bit array for the current CanMessage object. It is a string.
+# return value:
+# 'byteArray' is an array of int, where each int represents a byte of data
+def getByteArray(offset, length, payloadBits):
 
-    # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
-    dataBack.latest_CANacondaMessages[newCanMessage.name] = newCanMessage.body
+    # Define the start:stop indices used to slice the payload bits
+    start = len(payloadBits) - offset
+    stop = start - length
 
-    # Add the frequency to the 'latest_frequencies' dictionary:
-    dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
-    
-    # Make the frequency calculation and add to CANacondaMessage object:
-    # dataBack.frequencyMap[newCanMessage.name].qsize()
+    # This is the subset payloadBits that are relevant to the current field
+    payloadSlice = payloadBits[stop: start]
 
-
-# Retrieves the data field from the CAN message body and does any units 
-# conversion and/or filtering specified by the user during runtime.
-def getBodyFieldData(dataFilter, newCanMessage):
-    payloadBits = newCanMessage.payloadBitstring
-    type_   = dataFilter.type
-    byteArray = getByteArray(dataFilter.offset, dataFilter.length, payloadBits)
-
-    # 'type_' refers to the type of message. Could be 'int' or 'bitfield'
-    # If it is a bitfield, just return the bits as a string.
-    if type_ == 'bitfield':
-        if dataFilter.byValue:
-            # If the user is doing 'byValue' filtering (GUI), then adjust accordingly
-            if int(payloadData[2:], 2) not in dataFilter.byValue:
-                payloadData = ''
-        # Convert the payloadData into a binary string that shows every bit
-        else:
-            payloadData = ("{:#0" + str(2 + dataFilter.length) + "b}").format(int.from_bytes(byteArray, byteorder=dataFilter.endian))
-        return payloadData
-    # The payload data is an int
-    else:
-        payloadData = payloadSwitch(dataFilter.endian, dataFilter.signed, byteArray)
-    # Check for invalid data.
-    # 0xFFFF is the 'invalid data' code
-
-    # If it is an N2K FFFF, return Not A Number.
-    if payloadData == 65535:
-        payloadData = 'NaN'
-
-    # Otherwise continue processing the int with scalar, converting to float.
-    else:
-        payloadData *= dataFilter.scaling
-        if dataFilter.unitsConversion:
-            try:
-            # Data conversion done by adding, multiplying, then
-            # adding the tuple entries found in the conversion map
-            # in backend.py
-                payloadData += float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][1])
-                payloadData *= float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][0])
-                payloadData += float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][2])
-            except KeyError:
-                pass
-
-    # Last but not least, if we are doing a 'filterByValue':
-    if dataFilter.byValue:
-        if payloadData not in dataFilter.byValue:
-            payloadData = ''
-    return payloadData
+    # Next create an array of bytes that will be used to convert with int.from_bytes()
+    byteArray = []
+    while len(payloadSlice) > 8:
+        # Store the lowest 8 bits
+        highdata = payloadSlice[-8:]
+        # Convert the stored bits to an int, and append to byteArray array
+        byteArray.append(int(highdata, 2))
+        # and then chop them off from bitstring
+        payloadSlice = payloadSlice[:-8]
+    # For the left-over bits, convert them to int and append
+    try:
+        if payloadSlice:
+            output = int(payloadSlice, 2)
+            byteArray.append(output)
+    except: # FIXME: find out what this error was
+        pass
+    return byteArray
 
 
 # formatPayloadFromInts
@@ -312,41 +362,6 @@ def ParseBodyBits(hexData):
     # Strip the '0b' and pad with leading 0's
     binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
     return binaryData
-
-
-# getByteArray: Before using the int.from_bytes function, we must format the data
-# into this array. 
-# parameters:
-#    offset and length are from the messageInfo field objects for the current field
-#    payloadBits is the bit array for the current CanMessage object. It is a string.
-# return value:
-# 'byteArray' is an array of int, where each int represents a byte of data
-def getByteArray(offset, length, payloadBits):
-
-    # Define the start:stop indices used to slice the payload bits
-    start = len(payloadBits) - offset
-    stop = start - length
-
-    # This is the subset payloadBits that are relevant to the current field
-    payloadSlice = payloadBits[stop: start]
-
-    # Next create an array of bytes that will be used to convert with int.from_bytes()
-    byteArray = []
-    while len(payloadSlice) > 8:
-        # Store the lowest 8 bits
-        highdata = payloadSlice[-8:]
-        # Convert the stored bits to an int, and append to byteArray array
-        byteArray.append(int(highdata, 2))
-        # and then chop them off from bitstring
-        payloadSlice = payloadSlice[:-8]
-    # For the left-over bits, convert them to int and append
-    try:
-        if payloadSlice:
-            output = int(payloadSlice, 2)
-            byteArray.append(output)
-    except: # FIXME: find out what this error was
-        pass
-    return byteArray
 
 
 # Function parameters:
