@@ -61,27 +61,22 @@ def main():
 
 
 def parserInit(parser):
-    # firt the development options --- remove later
-    parser.add_argument('--fast', action="store_true",
-            help="Load xmltest.txt and choose /dev/ttyUSB0 as port")
-    parser.add_argument('--slow', action="store_true",
-            help="Don't start the stream thread (nogui mode)")
     # for noGUI mode:
     parser.add_argument('--nogui', nargs=1, metavar='PORT',
             help="No GUI mode. Positional argument: port")
     parser.add_argument('-m', '--messages', metavar="File",
             help="Specify the messages file")
     parser.add_argument('--filter', metavar="FilterID", nargs=1,
-            help="Comma-separated list, eg --filter='WSO100{airspeed[mph],\
+            help="Comma-separated list (CLI), eg --filter='WSO100{airspeed[mph],\
                     wind_dir},DST800' float values must match precision")
     parser.add_argument('--display', nargs=1,
             help="Comma-separated list, eg: --display=ID,pgn,raw,body")
     parser.add_argument('--csv', action="store_true",
-            help="Gives output in CSV format")
+            help="Gives output in CSV format (CLI)")
     parser.add_argument('--time', action="store_true",
-            help="Time stamped output for CSV mode")
+            help="Time stamped output for CSV mode (CLI)")
     parser.add_argument('--zero', action="store_true",
-            help="Give zero-order hold output for CSV mode")
+            help="Give zero-order hold output for CSV mode (CLI)")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
     parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
@@ -90,10 +85,6 @@ def parserInit(parser):
 
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args
-    # Debug print statements
-    if args.fast:
-        print("Fast debug mode")
-
     # '--filter' option must come with '--messages'
     if args.filter and not args.messages:
         print("\nYou are selectively displaying messages",

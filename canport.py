@@ -14,7 +14,6 @@ import re
 import time
 import sys
 from queue import Queue
-from math import ceil
 
 # Other libraries
 import serial

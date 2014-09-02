@@ -427,10 +427,17 @@ def generateMessage(dataBack, payload, messageName):
 
     # Initialize an array of 0's of length equal to number of bits in message body
     payloadArray = [0]*messageInfo.size*8
+
+    # For each of the fields, populate the corresponding entries in payloadArray with
+    # the bits that are obtained from 'encodePayload'
     for field in messageInfo.fields:
         dataFilter = dataBack.messages[messageName].fields[field]
+
         if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
-            # If user gives a message whose bit-length is longer than specified in medata, barf on user.
+            # The length of the stringified binary represenation of the number, after
+            # the ceiling function is applied (rounding up to nearest integer). The '- 2'
+            # accounts for the '0b' at the beginning of the string. This must be longer than
+            # the length specified in the metaData.
             raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
         fieldData = encodePayload(payload[field], dataFilter)
         # Find appropriate array indices, and insert fieldData into the payloadArray
@@ -445,11 +452,11 @@ def generateMessage(dataBack, payload, messageName):
 
     # Pad the hex string with leading zeros, using zfill().
     if len(payloadHexString) < bodylength:
-        payloadHexString.zfill(bodylength)
+        payloadHexString = payloadHexString.zfill(bodylength)
 
     # And return the transmit message as a properly formatted message.
     outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
-
+    print(outStr)
     return outStr
 
 

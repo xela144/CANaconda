@@ -53,8 +53,6 @@ class CanData():
             self.comport = args.nogui[0]
         else:
             self.comport = None
-        if args.fast:
-            self.comport = '/dev/ttyUSB0'
 
         # All of the current messages applied by the user.
         # Populated with messageInfo objects

@@ -516,25 +516,35 @@ class Ui_MainWindow(QtCore.QObject):
             pass
 
     def txActivateHandler(self):
+        # We shouldn't transmit anything if we are not streaming yet.
         if not self.dataBack.alreadyStreaming:
             self.notStreamingWarn()
             return
+
+        # A dictionary for payload fields and values
         payload = {}
+
+        # Cycle through all the current payload QLineEdits, and extract the values
         for pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
             payload[pair[0].text()] = pair[1].text()
+
+        # The tranmission frequency as entered by the user
         freq = self.firstTxFreq.text()
-        for val in payload:
-            # Check that that payload value is valid type
-            payload[val] = self.checkTypeAndConvert(payload[val])
-            if payload[val] == None:
-                self.txTypeError()
-                return
 
         # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
             self.txTypeError()
             return
+
+        # Check that the value entered by the user is valid. Replace '' with '0'
+        # where appropriate
+        for val in payload:
+            payload[val] = self.checkTypeAndConvert(payload[val])
+            if payload[val] == None:
+                self.txTypeError()
+                return
+
         # For redundancy, insert the values back into the QLineEdits. Necessary
         # if user left the LineEdits blank, which caused a default 0 to be added.
         for pair in self.txQLabel_LineContainer:
