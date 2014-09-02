@@ -28,6 +28,9 @@ from CanMessage import *
 from outmessage import *
 import time
 import sys
+from math import ceil
+
+from messageInfo import CAN_FORMAT_EXTENDED
 
 class CanTranscoder():
     def __init__(self, dataBack):
@@ -413,12 +416,13 @@ def generateMessage(dataBack, payload, messageName):
     # Construct a string that we will use to .format() later on. 'formatString' needs to 
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
     bodylength = messageInfo.size*2
-    bodyFormatter = "0" + str(bodylength) + "x"
+    bodyFormatter = "0" + str(bodylength) + "X"
     formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
     if messageInfo.format == CAN_FORMAT_EXTENDED:
         formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
+
+    # This will work only if the node is connected and broadcasting.
     try:
-        # This will work only if the node is connected and broadcasting.
         id = dataBack.IDencodeMap[messageName]  
     except KeyError:
         # We assumed the node was connected and broadcasting but it was not.

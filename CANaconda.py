@@ -94,10 +94,11 @@ def canacondaNoGuiInit(dataBack):
 
     # import filters, and return a boolean value as 'filtersNotImpoted'
     fileName = dataBack.args.messages
-    xmlImport(dataBack, fileName)
+    if fileName is not None:
+        xmlImport(dataBack, fileName)
 
     # a typical usage might be something like:
-    # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
+    # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}'
 
     if args.filter:
         filterString = args.filter[0]
@@ -169,10 +170,7 @@ def canacondaNoGuiInit(dataBack):
             setDisplayCSVmode(dataBack)
     else:
         print("Opening connection to", dataBack.comport)
-
-    # If --slow was given, halt program here.
-    # Otherwise, start streaming messages.
-
+  
 
 def pyserialNoGuiInit(dataBack):
     from canport import CANPortCLI
