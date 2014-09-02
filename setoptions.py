@@ -193,7 +193,7 @@ def setDisplayCSVmode(dataBack):
             for _messageInfo in dataBack.messages:
                 if _messageInfo == messageInfo:
                     for field in dataBack.messages[_messageInfo]:
-                        dataBack.csvDisplayList[field] = messageInfo + field
+                        dataBack.csvDisplayList[field] = messageInfo + '.' + field.replace(' ', '_')
                         dataBack.fieldList_CSV[field] = 0
 
     # Print a column heading list for CSV formatting.

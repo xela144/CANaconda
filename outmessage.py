@@ -8,6 +8,7 @@ For both the console mode and the GUI mode.
 import time
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
+from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
 
 # displayList constants
 ID, PGN, BODY, RAW = range(4)
@@ -39,8 +40,13 @@ def noGuiParse(dataBack, message):
     if message.name:
         outmsg += "\n" + message.name
     
-    # Then the PGN
-    if dataBack.displayList[PGN]:
+    # Then the PGN, if format is extended. First check format.
+    Extended = dataBack.messages[message.name].format == CAN_FORMAT_EXTENDED
+#    from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
+#    pyqtrm()
+#    import pdb
+#    pdb.set_trace()
+    if dataBack.displayList[PGN] and Extended:
         outmsg += "\nPGN: " + str(message.pgn)
     
     # Then the raw bytes of the message
@@ -51,7 +57,7 @@ def noGuiParse(dataBack, message):
     
     # Now finally pretty-print the internal data if metadata exists for this message
     if dataBack.displayList[ID]:
-        outmsg += "\nFilter ID: " + hex(message.id)
+        outmsg += "\nID: " + hex(message.id)
     # if displayList is empty, display all:
     if dataBack.displayList[BODY]:
         for field in message.body:

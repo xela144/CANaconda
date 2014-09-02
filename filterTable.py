@@ -97,6 +97,7 @@ class FilterTable(QtWidgets.QWidget):
             else:
                 byValueText = str(fieldData.byValue)[1:-1]
             byValue = QtWidgets.QTableWidgetItem(byValueText)
+            byValue.setToolTip("<font color=black>Enter a value to match, or choose an inequality with &lt; or &gt;.</font>")
             self.tableWidget.setItem(row, FILTER, byValue)
             ##
 
@@ -140,6 +141,7 @@ class FilterTable(QtWidgets.QWidget):
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  
+
 
     # Change units based on comboBox widget and update dataBack
     def changeUnits(self, text):
@@ -209,6 +211,13 @@ class FilterTable(QtWidgets.QWidget):
     # entry occurs, a dialog window warns the user.
     def filterByValue(self, item):
         if item.column() != FILTER:
+            return
+        if self.dataBack.logflag:
+            # FIXME
+            # This prevents the user from editing the 'byValue' filter while logging
+            # is happening, but it doesn't have the intended effect of disabling the
+            # entire tableWidget.
+            self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
             return
         valueString = item.text()
         currentRow = item.row()

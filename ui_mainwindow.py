@@ -570,7 +570,9 @@ class Ui_MainWindow(QtCore.QObject):
         # Before updating the text, make sure we are not currently logging, in which
         # case the button should read "End Logging", and therefore should not be updated.
         if not self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) 
+            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText())
+            # Also, re-enable the DisplayAs combobox
+
 
 
     # generateMessage: Creates a hex encoded message
@@ -650,6 +652,8 @@ class Ui_MainWindow(QtCore.QObject):
     # For creating the outmessage.
     # recall: DECODED, RAW_HEX, CSV = range(3)
     def setOutput(self):
+        if self.dataBack.logflag:
+            return
         currentIndex = self.displayCombo.currentIndex()
         # Python switch?
         if currentIndex == CSV:
@@ -686,7 +690,7 @@ class Ui_MainWindow(QtCore.QObject):
         i = 1
         for item in map:
             for field in item[1]:
-                self.dataBack.guiCSVDisplayList.append(item[0]+'_'+field)
+                self.dataBack.guiCSVDisplayList.append(item[0]+'.'+field.replace(' ', '_'))
                 self.dataBack.fieldIndices[field] = i
                 i += 1
 
@@ -706,6 +710,9 @@ class Ui_MainWindow(QtCore.QObject):
             # Revert label back to original text
             self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i><font>")
             self.dataBack.logflag = False
+            # Disable the display combo box so that the user doesn't change anything 
+            # by mistake while logging
+            self.displayCombo.setDisabled(True)
         else:
             if self.logFileName.text() == '':
                 self.warnLogging()
@@ -716,8 +723,11 @@ class Ui_MainWindow(QtCore.QObject):
                     return
                 elif overWrite == 0x400:   # 'okay to overwrite'
                    os.remove(self.logFileName.text())
-            self.clearTextBrowser()
 
+            # OK to log. Clear text browser, disable the display combo box, and open a file
+            # for writing.
+            self.clearTextBrowser()
+            self.displayCombo.setDisabled(True)
             self.file = open(self.logFileName.text(), 'w')
             # A header for use with Matlab or other programs:
             if self.dataBack.GUI_CSVflag:
@@ -731,10 +741,13 @@ class Ui_MainWindow(QtCore.QObject):
             self.dataBack.logflag = True
     
     def loggingStatusHandler(self):
+        # If we are not logging, then the accompanying text should say so
         if self.dataBack.logflag == False:
             self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i></font>")
             self.messageCount = 0
             return
+
+        # Otherwise, change the text and update the messageCount
         self.statusText = "Status:  <font color=red><b><i>recording  </i>" + str(self.messageCount) + "</b></font>"
         self.messageCount += 1
         self.loggingStatusLabel.setText(self.statusText)

@@ -38,7 +38,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         # Give the tree headers even if not populated
         self.treeWidget.clear()
         self.treeWidget.setColumnCount(2)
-        self.treeWidget.setHeaderLabels(["Message Name", "ID or PGN", "Description"])
+        self.treeWidget.setHeaderLabels(["Message Name", "ID/PGN", "Payload size (bytes)", "Description"])
         self.treeWidget.setItemsExpandable(True)
 
     def populateTree(self, selectedFilter=None):
@@ -57,8 +57,10 @@ class FiltersTreeWidget(QtWidgets.QDialog):
                     messageName.setText(1, "ID: 0x{:08X}".format(self.messages[messageInfo].id))
                 else:
                     messageName.setText(1, "ID: 0x{:03X}".format(self.messages[messageInfo].id))
+            # Include the size of the payload, in bytes
+            messageName.setText(2, str(self.messages[messageInfo].size))
             # Set the description
-            messageName.setText(2, self.messages[messageInfo].desc)
+            messageName.setText(3, self.messages[messageInfo].desc)
     # container will be a map from messageInfo name to its widgetmessageNames.
             self.dataBack.container[messageName.text(0)] = []
             for field in self.messages[messageInfo]:
@@ -106,7 +108,7 @@ def main():
     args.fast = None
     args.debug = True
     dataBack = backend.CanData(args)
-    messageInfo.xmlImport(dataBack, 'AutoboatMessages.xml')
+    messageInfo.xmlImport(dataBack, './metadata/SeaSlug.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     ui = FiltersTreeWidget()
