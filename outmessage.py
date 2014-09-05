@@ -6,7 +6,6 @@ For both the console mode and the GUI mode.
 '''
 
 import time
-from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
 from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
 
@@ -42,10 +41,6 @@ def noGuiParse(dataBack, message):
     
     # Then the PGN, if format is extended. First check format.
     Extended = dataBack.messages[message.name].format == CAN_FORMAT_EXTENDED
-#    from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-#    pyqtrm()
-#    import pdb
-#    pdb.set_trace()
     if dataBack.displayList[PGN] and Extended:
         outmsg += "\nPGN: " + str(message.pgn)
     

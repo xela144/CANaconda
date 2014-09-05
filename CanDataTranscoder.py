@@ -71,9 +71,9 @@ try:
         # This queue separates the serial layer from the rest of the program.
         def CanTranscoderRun(self):
             while True:
-                msg = self.CanacondaRx_TranscodeQueue.get()
+                matchedMsg = self.CanacondaRx_TranscodeQueue.get()
                 newCanMessage = CANacondaMessage()
-                CANacondaMessageParse(msg, newCanMessage, self.dataBack.messages, self.dataBack) #FIXME: make parameter names consistent with function
+                CANacondaMessageParse(matchedMsg, newCanMessage, self.dataBack)
                 self.dataBack.CANacondaRxMsg_queue.put(newCanMessage)
                 self.parsedMsgPut.emit()
                 # If not present already, add the message's messageInfo
@@ -133,8 +133,8 @@ class CanTranscoderCLI(CanTranscoder):
 
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
-# FIXME: Make this a series of smaller function calls so that it is more readable
-def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
+def CANacondaMessageParse(match, newCanMessage, dataBack):
+    metaData = dataBack.messages
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
         newCanMessage.id = int(match.group(1), 16)
@@ -187,7 +187,7 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
         if dataFilter.type == 'bitfield':
             newCanMessage.body[dataFilter.name] = payloadData
         else:
-            newCanMessage.body[dataFilter.name] = assignPayload(dataFilter, newCanMessage, payloadData)
+            newCanMessage.body[dataFilter.name] = scale_filter_convert(dataFilter, newCanMessage, payloadData)
 
     if not dataBack.nogui:
         # Now to calculate message frequency:
@@ -201,7 +201,7 @@ def CANacondaMessageParse(match, newCanMessage, metaData, dataBack):
 
 
 # A helper function that further parses the payloadData for the newCanacondaMessage
-def assignPayload(dataFilter, newCanMessage, payloadData):
+def scale_filter_convert(dataFilter, newCanMessage, payloadData):
     # If it is an N2K FFFF, return Not A Number.
     # FIXME: Make this a mask instead
     if payloadData == 65535:
@@ -228,7 +228,7 @@ def getBodyFieldData(dataFilter, newCanMessage):
 
     # To convert the payload to a human-readable form, we use 'int.from_bytes()', which
     # needs an array of bytes. See Python documentation.
-    byteArray = getByteArray(dataFilter.offset, dataFilter.length, payloadBits)
+    byteArray = getByteSubArray(dataFilter.offset, dataFilter.length, payloadBits)
 
     # 'type_' refers to the type of message. Could be 'int' or 'bitfield'
     type_   = dataFilter.type
@@ -286,14 +286,14 @@ def calcFrequency(newCanMessage, dataBack):
     newCanMessage.freq = dataBack.frequencyMap[newCanMessage.name].qsize()/5.0
 
 
-# getByteArray: Before using the int.from_bytes function, we must format the data
+# getByteSubArray: Before using the int.from_bytes function, we must format the data
 # into this array. 
 # parameters:
 #    offset and length are from the messageInfo field objects for the current field
 #    payloadBits is the bit array for the current CanMessage object. It is a string.
 # return value:
 # 'byteArray' is an array of int, where each int represents a byte of data
-def getByteArray(offset, length, payloadBits):
+def getByteSubArray(offset, length, payloadBits):
 
     # Define the start:stop indices used to slice the payload bits
     start = len(payloadBits) - offset
