@@ -31,7 +31,7 @@ def xmlImport(dataBack, fileName):
         # Now set the function stack size to what it was when we started.
 
         for message in root.findall('messageInfo'):
-            newMessageInfo = MessageInfo(message, dataBack)
+            newMessageInfo = MessageInfo(message, dataBack, fileName)
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -41,6 +41,7 @@ def xmlImport(dataBack, fileName):
             messageCount += 1
     except ET.ParseError as e:
         raise Exception("Parsing failed for XML file '{}'. Check that file exists and is proper XML.".format(fileName))
+    # FIXME what is this?
     except Exception as e:
         raise e
     
@@ -56,12 +57,13 @@ def xmlImport(dataBack, fileName):
 # dataBack.messages dictionary.
 ##
 class MessageInfo():
-    def __init__(self, messageInfo, dataBack):
+    def __init__(self, messageInfo, dataBack, fileName):
         # Initialize some base values
         self.freqQueue = queue.Queue()
         self.freq = 0
         # Most of the rest of the data is pulled directly from the XML data.
         self.name = messageInfo.get('name')
+        self.checkFormat(self.name, fileName)
         try:
             self.id = int(messageInfo.get('id'), 16)  # Assumes a hex value from metadata
         except TypeError:
@@ -114,7 +116,11 @@ class MessageInfo():
         newFields = messageInfo.findall('field')
         for xmlField in newFields:
             name = xmlField.get('name')
-            self.fields[name] = Field(self.name, xmlField)
+            self.fields[name] = Field(self.name, xmlField, fileName)
+
+    def checkFormat(self, string, fileName):
+        if string[0] == ' ' or string[-1] == ' ':
+            raise Exception("Parsing failed for XML file '{}'. '{}' has leading or trailing space character".format(fileName, string))
 
     # A method used to determine if any of the fields must be
     # displayed by value.
@@ -136,13 +142,14 @@ class MessageInfo():
 class Field():
     # 'parent' is a string with the name of the message this field is a member of
     # 'field' is an ElementTree object
-    def __init__(self, parent, field):
+    def __init__(self, parent, field, fileName):
         # Initialize some fields to default values
         self.byValue = []
 
         # set the 'field' information based on what's in the xml file.
         # 'field' must be an xml-etree object.
         self.name = field.get('name')
+        self.checkFormat(self.name, fileName)
 
         # If the 'type' for a field is not specified, assume int (as that will be the most common).
         # This SHOULD be explicitly set by the user, so warn them via stderr.
@@ -172,6 +179,11 @@ class Field():
             endian = 'little'
         self.endian = endian
         self.unitsConversion = None
+
+    def checkFormat(self, string, fileName):
+        if string[0] == ' ' or string[-1] == ' ':
+            raise Exception("Parsing failed for XML file '{}'. '{}' has leading or trailing space character".format(fileName, string))
+
 
     def __str__(self):
         return "Field name: {0}, length: {1}".format(self.name, self.length)
