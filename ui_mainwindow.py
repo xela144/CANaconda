@@ -655,7 +655,6 @@ class Ui_MainWindow(QtCore.QObject):
         if self.dataBack.logflag:
             return
         currentIndex = self.displayCombo.currentIndex()
-        # Python switch?
         if currentIndex == CSV:
             self.dataBack.GUI_CSVflag = True
             self.dataBack.GUI_rawFlag = False
@@ -713,6 +712,7 @@ class Ui_MainWindow(QtCore.QObject):
             # Disable the display combo box so that the user doesn't change anything 
             # by mistake while logging
             self.displayCombo.setDisabled(True)
+            self.filterTable.enableItemsAfterLogging()
         else:
             if self.logFileName.text() == '':
                 self.warnLogging()
@@ -728,6 +728,7 @@ class Ui_MainWindow(QtCore.QObject):
             # for writing.
             self.clearTextBrowser()
             self.displayCombo.setDisabled(True)
+            self.filterTable.disableItemsForLogging()
             self.file = open(self.logFileName.text(), 'w')
             # A header for use with Matlab or other programs:
             if self.dataBack.GUI_CSVflag:
@@ -761,6 +762,7 @@ class Ui_MainWindow(QtCore.QObject):
         warn.setInformativeText(errorString)
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
+
 
     def serialWarn(self, errorString):
         warn = QtWidgets.QMessageBox()

@@ -238,6 +238,45 @@ class FilterTable(QtWidgets.QWidget):
                 self.tableWidget.item(currentRow, FILTER).setText('None')
                 self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
 
+    # Disable items that are normally editable in the tableWidget. 
+    def enableItemsAfterLogging(self):
+        i = 0
+        count = self.tableWidget.rowCount()
+        while i < count:
+            # First make a QtWidgetItem.flags() object.
+            currentFilterFlags = self.tableWidget.item(i,FILTER).flags()
+            # Mask the flag object and set the item to 'uneditable'
+            self.tableWidget.item(i,FILTER).setFlags(currentFilterFlags | QtCore.Qt.ItemIsEnabled)
+
+            currentCheckboxFlags = self.tableWidget.item(i,CHECKBOX)
+            self.tableWidget.item(i,CHECKBOX).setFlags(currentFilterFlags | QtCore.Qt.ItemIsEnabled)
+
+            # Note that for the Units column, there are no flags for the items
+            # there, since we have used 'setCellWidget' and inserted a combobox
+            # there.
+            # FIXME: won't work. self.tableWidget.itemAt(i,UNITS).setDisabled(True)
+            i += 1
+
+    # Disable items that are normally editable in the tableWidget. 
+    def disableItemsForLogging(self):
+        i = 0
+        count = self.tableWidget.rowCount()
+        while i < count:
+            # First make a QtWidgetItem.flags() object.
+            currentFilterFlags = self.tableWidget.item(i,FILTER).flags()
+            # Mask the flag object and set the item to 'uneditable'
+            self.tableWidget.item(i,FILTER).setFlags(currentFilterFlags & ~QtCore.Qt.ItemIsEnabled)
+
+            currentCheckboxFlags = self.tableWidget.item(i,CHECKBOX)
+            self.tableWidget.item(i,CHECKBOX).setFlags(currentFilterFlags & ~QtCore.Qt.ItemIsEnabled)
+
+            # Note that for the Units column, there are no flags for the items
+            # there, since we have used 'setCellWidget' and inserted a combobox
+            # there.
+            # FIXME: won't work. self.tableWidget.itemAt(i,UNITS).setDisabled(True)
+            i += 1
+
+
     def pdbset(self):
         pyqtrm()
         pdb.set_trace()

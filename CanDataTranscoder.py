@@ -235,6 +235,7 @@ def getBodyFieldData(dataFilter, newCanMessage):
 
     # If it is a bitfield, just return the bits as a string.
     if type_ == 'bitfield':
+        #FIXME: there is a bug here when the filtering by value in the GUI
         if dataFilter.byValue:
             # If the user is doing 'byValue' filtering (GUI), then adjust accordingly
             if int(payloadData[2:], 2) not in dataFilter.byValue:
