@@ -30,7 +30,7 @@ import time
 import sys
 from math import ceil
 
-from messageInfo import CAN_FORMAT_EXTENDED
+from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT
 
 class CanTranscoder():
     def __init__(self, dataBack):
@@ -50,7 +50,7 @@ class CanTranscoder():
         while True:
             msg = self.CanacondaRx_TranscodeQueue.get()
             newCanMessage = CANacondaMessage()
-            CANacondaMessageParse(msg, newCanMessage, self.metaData, self.dataBack)
+            CANacondaMessageParse(msg, newCanMessage, self.dataBack)
             # Pretty-print the message to the terminal. Note that this is used only in the command-line version
             self.PrintMessage(newCanMessage)
 
@@ -185,6 +185,9 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
         if dataFilter.type == 'bitfield':
+            if dataFilter.byValue[ACTIVE]:
+                # is this a string here?
+                debugMode()
             newCanMessage.body[dataFilter.name] = payloadData
         else:
             newCanMessage.body[dataFilter.name] = scale_filter_convert(dataFilter, newCanMessage, payloadData)
@@ -214,11 +217,29 @@ def scale_filter_convert(dataFilter, newCanMessage, payloadData):
         payloadData = convertUnits(payloadData, dataFilter)
 
     # Last but not least, if we are doing a 'filterByValue':
-    if dataFilter.byValue:
-        if payloadData not in dataFilter.byValue:
-            payloadData = ''
+    if dataFilter.byValue[ACTIVE]:
+        payloadData = filterPayloadByValue(payloadData, dataFilter)
+        #if payloadData not in dataFilter.byValue:
+        #    payloadData = ''
 
     return payloadData
+
+
+# If the user wants to see data based on equality or inequality of a certain
+# value, then the data must pass through this switch
+def filterPayloadByValue(payloadData, dataFilter):
+    if dataFilter.byValue[EQUAL]:
+        for equality in dataFilter.byValue[EQUAL]:
+            if payloadData == equality:
+                return payloadData
+    elif dataFilter.byValue[LT]:
+        if payloadData < dataFilter.byValue[LT]:
+            return payloadData
+    elif dataFilter.byValue[GT]:
+        if payloadData > dataFilter.byValue[GT]:
+            return payloadData
+    else:
+        return None
 
 
 # Retrieves the data field from the CAN message body and does any units 
@@ -235,14 +256,7 @@ def getBodyFieldData(dataFilter, newCanMessage):
 
     # If it is a bitfield, just return the bits as a string.
     if type_ == 'bitfield':
-        #FIXME: there is a bug here when the filtering by value in the GUI
-        if dataFilter.byValue:
-            # If the user is doing 'byValue' filtering (GUI), then adjust accordingly
-            if int(payloadData[2:], 2) not in dataFilter.byValue:
-                payloadData = ''
-        # Convert the payloadData into a binary string that shows every bit
-        else:
-            payloadData = ("{:#0" + str(2 + dataFilter.length) + "b}").format(int.from_bytes(byteArray, byteorder=dataFilter.endian))
+        payloadData = ("{:#0" + str(2 + dataFilter.length) + "b}").format(int.from_bytes(byteArray, byteorder=dataFilter.endian))
         return payloadData
 
     # The payload data is an int

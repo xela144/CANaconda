@@ -254,7 +254,6 @@ class FilterTable(QtWidgets.QWidget):
             # Note that for the Units column, there are no flags for the items
             # there, since we have used 'setCellWidget' and inserted a combobox
             # there.
-            # FIXME: won't work. self.tableWidget.itemAt(i,UNITS).setDisabled(True)
             i += 1
 
     # Disable items that are normally editable in the tableWidget. 

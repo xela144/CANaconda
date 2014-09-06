@@ -6,8 +6,7 @@ argparse module.
 '''
 
 import backend
-import pdb
-
+from messageInfo import ACTIVE, EQUAL, LT, GT
 
 # create the display modifiers, if filters were specified.
 # for NOGUI mode
@@ -76,37 +75,73 @@ def setFieldsFilterFieldDict(dataBack):
 
 # Set the filter-by-value functionality
 def setFilterByValue(dataBack):
-    for key in dataBack.messageInfo_to_fields:
-        for fieldString in dataBack.messageInfo_to_fields[key]:
-            if fieldString.find('=') > 0:
-                tuple = fieldString.partition('=')
-                if tuple[0] not in dataBack.messages[key].fields:
-                    print("\nWARNING, '" + tuple[0] + "' not found in '"\
-                            + key + "' metadata.\n")
+    for messageInfoName in dataBack.messageInfo_to_fields:
+        for fieldString in dataBack.messageInfo_to_fields[messageInfoName]:
+            if fieldString.find(':') > 0:
+                tuple = fieldString.partition(':')
+                fieldName = tuple[0]
+                if fieldName not in dataBack.messages[messageInfoName].fields:
+                    print("\nWARNING, '" + fieldName  + "' not found in '"\
+                            + messageInfoName + "' metadata.\n")
                     return
-                dataBack.messages[key].fields[tuple[0]].byValue.append(
-                                                            float(tuple[2]))
+                byValueString = tuple[2]
 
-    # Remove later
+                setHelper(byValueString, dataBack, messageInfoName, fieldName)
+
+    # Tell the user which messages will be shown
     for messageInfo in dataBack.messages:
         for field in dataBack.messages[messageInfo].fields:
-            if dataBack.messages[messageInfo].fields[field].byValue:
+            if dataBack.messages[messageInfo].fields[field].byValue[ACTIVE]:
                 byValue = dataBack.messages[messageInfo].fields[field].byValue
-                print(field, byValue)
+                print('Setoptions.py: setFilterByValue:',field, byValue)
 
     # Now that the flags were extracted,
     # clean up the messageInfo_to_fields:
-    for key in dataBack.messageInfo_to_fields:
+    for messageInfoName in dataBack.messageInfo_to_fields:
         newFields = []
-        for field in dataBack.messageInfo_to_fields[key]:
-            tuple = field.partition('=')
+        for field in dataBack.messageInfo_to_fields[messageInfoName]:
+            tuple = field.partition(':')
             if tuple[0] in newFields:
                 pass
             else:
                 newFields.append(tuple[0])
-        dataBack.messageInfo_to_fields[key] = newFields
+        dataBack.messageInfo_to_fields[messageInfoName] = newFields
 
 
+# A helper function to 'byValue' filter setting
+def setHelper(string, dataBack, messageInfoName, fieldName):
+    # The simple case - there is only one filtering value
+    if string.find(',') < 0:
+        setHelperHelper(string, dataBack, messageInfoName, fieldName)
+
+    # The other case - more than one filtering value
+    else:
+        split = string.split(',')
+        for a in split:
+            setHelperHelper(a, dataBack, messageInfoName, fieldName)
+
+
+# A helper to the helper function above
+def setHelperHelper(string, dataBack, messageInfoName, fieldName):
+    pivot = int(string[1:])
+
+    if string[0] == '<':
+        dataBack.messages[messageInfoName].fields[fieldName].byValue[LT] = pivot
+        
+    if string[0] == '>':
+        dataBack.messages[messageInfoName].fields[fieldName].byValue[GT] = pivot
+
+    # Since a user can potentially give more than one equality value, we use a list
+    # This wouldn't make sense for less-than or greater-than, as above.
+    if string[0] == '=':
+        try:
+            dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL].append(pivot)
+        except AttributeError:
+            dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL] = [pivot]
+
+    dataBack.messages[messageInfoName].fields[fieldName].byValue[ACTIVE] = True
+    
+        
 def setUnitsConversion(dataBack):
     # dataBack.messageInfo_to_fields has items that were set
     # in the previous function, and now they to be cleaned

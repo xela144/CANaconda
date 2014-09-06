@@ -12,6 +12,8 @@ from math import ceil
 
 CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
 
+ACTIVE, EQUAL, LT, GT = range(4)
+
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
 # and initializes the messageInfo objects that are used to parse the incoming 
@@ -144,7 +146,9 @@ class Field():
     # 'field' is an ElementTree object
     def __init__(self, parent, field, fileName):
         # Initialize some fields to default values
-        self.byValue = []
+
+        # The 'byValue' dictionary will have three entries:
+        self.byValue = {ACTIVE:False, EQUAL:None, LT:None, GT:None}
 
         # set the 'field' information based on what's in the xml file.
         # 'field' must be an xml-etree object.

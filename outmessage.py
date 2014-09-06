@@ -56,8 +56,8 @@ def noGuiParse(dataBack, message):
     # if displayList is empty, display all:
     if dataBack.displayList[BODY]:
         for field in message.body:
-            # If filtering, and no match, message.body[field] will be '', and we do a hard break.
-            if message.body[field] == '':
+            # If filtering, and no match, message.body[field] will be None, and we do a hard break.
+            if message.body[field] == None:
                 dataFound = False
                 return
 
