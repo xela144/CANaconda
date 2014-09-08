@@ -187,7 +187,6 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         if dataFilter.type == 'bitfield':
             if dataFilter.byValue[ACTIVE]:
                 # is this a string here?
-                debugMode()
             newCanMessage.body[dataFilter.name] = payloadData
         else:
             newCanMessage.body[dataFilter.name] = scale_filter_convert(dataFilter, newCanMessage, payloadData)
@@ -219,27 +218,27 @@ def scale_filter_convert(dataFilter, newCanMessage, payloadData):
     # Last but not least, if we are doing a 'filterByValue':
     if dataFilter.byValue[ACTIVE]:
         payloadData = filterPayloadByValue(payloadData, dataFilter)
-        #if payloadData not in dataFilter.byValue:
-        #    payloadData = ''
 
     return payloadData
 
 
 # If the user wants to see data based on equality or inequality of a certain
-# value, then the data must pass through this switch
+# value, then the data must pass through this sieve
+# 'byValue' is a dictionary: {ACTIVE:True?False, EQUAL:[x, ..], LT:x, GT:x}
 def filterPayloadByValue(payloadData, dataFilter):
+    filteredPayload = None
     if dataFilter.byValue[EQUAL]:
         for equality in dataFilter.byValue[EQUAL]:
             if payloadData == equality:
-                return payloadData
-    elif dataFilter.byValue[LT]:
+                filteredPayload = payloadData
+    if dataFilter.byValue[LT]:
         if payloadData < dataFilter.byValue[LT]:
-            return payloadData
-    elif dataFilter.byValue[GT]:
+            filteredPayload = payloadData
+    if dataFilter.byValue[GT]:
         if payloadData > dataFilter.byValue[GT]:
-            return payloadData
-    else:
-        return None
+            filteredPayload = payloadData
+    return filteredPayload
+        
 
 
 # Retrieves the data field from the CAN message body and does any units 
