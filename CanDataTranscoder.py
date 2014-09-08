@@ -185,7 +185,6 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
         if dataFilter.type == 'bitfield':
-            if dataFilter.byValue[ACTIVE]:
                 # is this a string here?
             newCanMessage.body[dataFilter.name] = payloadData
         else:
