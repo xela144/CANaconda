@@ -13,7 +13,7 @@ import time
 # Columns:
 CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
-from messageInfo import ACTIVE, EQUAL, LT, GT
+from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
 # Comparison operators
 CMP = ('=', '<', '>')
@@ -285,6 +285,10 @@ class FilterTable(QtWidgets.QWidget):
         except ValueError:
             pivot = float(byValueString[1:])
 
+        # If the user wants to use 0 as a comparison, we need to use a constant called 'ZERO'
+        if pivot == 0:
+            pivot = ZERO
+
         # Store the pivot in the correct dictionary entry of 'byValue'
         if byValueString[0] == '<':
             dataBack.messages[messageInfoName].fields[fieldName].byValue[LT] = pivot
@@ -302,6 +306,7 @@ class FilterTable(QtWidgets.QWidget):
 
         # Test to make sure that at least one of the 'byValue' filters is active. If none are active,
         # Then it is probable that the user did not use the correct syntax
+        # FIXME: This won't work for '>0', because .byValue[GT] will be 0, evaluating to False
         equal = dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL]
         lt = dataBack.messages[messageInfoName].fields[fieldName].byValue[LT]
         gt = dataBack.messages[messageInfoName].fields[fieldName].byValue[GT]

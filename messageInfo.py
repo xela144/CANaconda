@@ -14,6 +14,9 @@ CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED = range(2)
 
 ACTIVE, EQUAL, LT, GT = range(4)
 
+# A psuedo zero, such that bool(ZERO) does not evaulate to false.
+ZERO = '0'
+
 # xmlImport 
 # Reads the messages file, written in xml format. Parses the xml, creates
 # and initializes the messageInfo objects that are used to parse the incoming 

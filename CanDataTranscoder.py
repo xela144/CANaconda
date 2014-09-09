@@ -30,7 +30,7 @@ import time
 import sys
 from math import ceil
 
-from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT
+from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT, ZERO
 
 class CanTranscoder():
     def __init__(self, dataBack):
@@ -185,8 +185,7 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
         if dataFilter.type == 'bitfield':
-                # is this a string here?
-            newCanMessage.body[dataFilter.name] = payloadData
+            newCanMessage.body[dataFilter.name] = bitfieldFilterPayloadByValue(dataFilter, payloadData)
         else:
             newCanMessage.body[dataFilter.name] = scale_filter_convert(dataFilter, newCanMessage, payloadData)
 
@@ -207,6 +206,7 @@ def scale_filter_convert(dataFilter, newCanMessage, payloadData):
     # FIXME: Make this a mask instead
     if payloadData == 65535:
         return 'NaN'
+    # If the number 0 was used, then it was stored as a constant, 'ZERO'.
 
     payloadData *= dataFilter.scaling
 
@@ -224,20 +224,42 @@ def scale_filter_convert(dataFilter, newCanMessage, payloadData):
 # If the user wants to see data based on equality or inequality of a certain
 # value, then the data must pass through this sieve
 # 'byValue' is a dictionary: {ACTIVE:True?False, EQUAL:[x, ..], LT:x, GT:x}
+# Due to the fact that bool(0) evaluates to False, if the user wants to filter
+# using 0 then we have a problem. To fix this, note that bool('0') evaluate to True.
+# Therefore, set a constant ZERO = '0' and call float() on each dataFilter.byValue entry
 def filterPayloadByValue(payloadData, dataFilter):
     filteredPayload = None
     if dataFilter.byValue[EQUAL]:
         for equality in dataFilter.byValue[EQUAL]:
-            if payloadData == equality:
+            if payloadData == float(equality):
                 filteredPayload = payloadData
     if dataFilter.byValue[LT]:
-        if payloadData < dataFilter.byValue[LT]:
+        if payloadData < float(dataFilter.byValue[LT]):
             filteredPayload = payloadData
     if dataFilter.byValue[GT]:
-        if payloadData > dataFilter.byValue[GT]:
+        if payloadData > float(dataFilter.byValue[GT]):
             filteredPayload = payloadData
     return filteredPayload
-        
+
+
+# Same as 'filterPayloadByValue()' but for bitfields
+def bitfieldFilterPayloadByValue(dataFilter, payloadData):    
+    bitfieldLength = len(payloadData) - 2 # To account for the '0b'
+    # Format the bitfield as an int to do the comparisons
+    payloadData = int(payloadData, 2)
+    filteredPayload = 0
+    if dataFilter.byValue[EQUAL]:
+        for equality in dataFilter.byValue[EQUAL]:
+            if payloadData == float(equality):
+                filteredPayload = payloadData
+    if dataFilter.byValue[LT]:
+        if payloadData < float(dataFilter.byValue[LT]):
+            filteredPayload = payloadData
+    if dataFilter.byValue[GT]:
+        if payloadData > float(dataFilter.byValue[GT]):
+            filteredPayload = payloadData
+    # Format the payload as a bitfield once more
+    return '0b' + (bin(filteredPayload)[2:]).zfill(bitfieldLength)
 
 
 # Retrieves the data field from the CAN message body and does any units 
