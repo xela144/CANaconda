@@ -286,6 +286,7 @@ class FilterTable(QtWidgets.QWidget):
             pivot = float(byValueString[1:])
 
         # If the user wants to use 0 as a comparison, we need to use a constant called 'ZERO'
+        # because bool(0) evalualtes to False, while bool(ZERO) gives us the behavior that we want.
         if pivot == 0:
             pivot = ZERO
 
@@ -306,7 +307,6 @@ class FilterTable(QtWidgets.QWidget):
 
         # Test to make sure that at least one of the 'byValue' filters is active. If none are active,
         # Then it is probable that the user did not use the correct syntax
-        # FIXME: This won't work for '>0', because .byValue[GT] will be 0, evaluating to False
         equal = dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL]
         lt = dataBack.messages[messageInfoName].fields[fieldName].byValue[LT]
         gt = dataBack.messages[messageInfoName].fields[fieldName].byValue[GT]

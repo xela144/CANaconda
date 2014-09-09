@@ -6,7 +6,7 @@ argparse module.
 '''
 
 import backend
-from messageInfo import ACTIVE, EQUAL, LT, GT
+from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
 # create the display modifiers, if filters were specified.
 # for NOGUI mode
@@ -124,6 +124,8 @@ def setHelper(string, dataBack, messageInfoName, fieldName):
 # A helper to the helper function above
 def setHelperHelper(string, dataBack, messageInfoName, fieldName):
     pivot = int(string[1:])
+    if pivot == 0:
+        pivot = ZERO
 
     if string[0] == '<':
         dataBack.messages[messageInfoName].fields[fieldName].byValue[LT] = pivot
