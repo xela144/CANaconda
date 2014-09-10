@@ -33,6 +33,8 @@ import time
 import os
 import xml.etree.ElementTree as ET
 
+from canport import BAUDLIST, BAUDMAP
+
 # displayList
 from outmessage import ID, PGN, BODY, RAW
 
@@ -236,9 +238,19 @@ class Ui_MainWindow(QtCore.QObject):
         self.menuBar = QtWidgets.QMenuBar(mainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 659, 20))
         self.menuBar.setObjectName("menuBar")
-        self.menuShow = QtWidgets.QMenu(self.menuBar)
-        self.menuShow.setObjectName("menuShow")
-        self.menuChoose_port = QtWidgets.QMenu(self.menuShow)
+        self.menuWidget = QtWidgets.QMenu(self.menuBar)
+        self.menuWidget.setObjectName("menuWidget")
+
+        self.menuChooseBaud = QtWidgets.QMenu(self.menuWidget)
+        self.menuChooseBaud.setObjectName("menuChooseBaud")
+        self.menuChooseBaud.addAction("Not supported yet, and these checkboxes should be radio buttons")
+        for baudrate in BAUDLIST:
+            _baudrate = QtWidgets.QAction(baudrate,  mainWindow)
+            _baudrate.setCheckable(True)
+            self.menuChooseBaud.addAction(_baudrate)
+            _baudrate.triggered.connect(self.setBaud)
+
+        self.menuChoose_port = QtWidgets.QMenu(self.menuWidget)
         self.menuChoose_port.setObjectName("menuChoose_port")
         mainWindow.setMenuBar(self.menuBar)
         self.actionLoad_filters_from_file = QtWidgets.QAction(mainWindow)
@@ -258,9 +270,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.actionTab1.setObjectName("actionTab1")
         self.actionTab2 = QtWidgets.QAction(mainWindow)
         self.actionTab2.setObjectName("actionTab2")
-        self.menuShow.addAction(self.actionLoad_filters_from_file)
-        self.menuShow.addAction(self.menuChoose_port.menuAction())
-        self.menuBar.addAction(self.menuShow.menuAction())
+        self.menuWidget.addAction(self.actionLoad_filters_from_file)
+        self.menuWidget.addAction(self.menuChooseBaud.menuAction())
+        self.menuWidget.addAction(self.menuChoose_port.menuAction())
+        self.menuBar.addAction(self.menuWidget.menuAction())
         # QtDesigner code:
         self.retranslateUi(mainWindow)
         self.tabWidget.setCurrentIndex(0)
@@ -285,7 +298,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.tabWidget.setTabText(self.tabWidget.indexOf(
                                       self.filtersTreeWidget),
                                      _translate("MainWindow", "View MetaData"))
-        self.menuShow.setTitle(_translate("MainWindow", "&Action"))
+        self.menuWidget.setTitle(_translate("MainWindow", "&Action"))
+        self.menuChooseBaud.setTitle(_translate("MainWindow", "Choose Can &Baud"))
         self.menuChoose_port.setTitle(_translate("MainWindow", "&Choose port"))
         self.actionLoad_filters_from_file.setText(_translate(
                                     "MainWindow", "Load &Filters from file"))
@@ -306,6 +320,10 @@ class Ui_MainWindow(QtCore.QObject):
             return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
+    def setBaud(self):
+        text = self.sender().text()
+        baudrate = BAUDMAP[text]
+        print(text, baudrate)
 
     def comportSelect(self):
         if self.dataBack.args.port != None:
