@@ -41,7 +41,7 @@ class CANPort():
     ERROR_TIMEOUT    Timeout in sending the 'O' command to CANusb device
     ERROR_BAUD       Could not set the baud rate for CAN bus
     '''
-    ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
+    ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD, SUCCESS = range(5)
 
     # Set the timeout (in seconds) for connecting to the CANusb hardware.
     TIMEOUT = 5
@@ -52,10 +52,10 @@ class CANPort():
         self.comport = dataBack.comport
         self.args = dataBack.args
 
-    def pyserialInit(self):
+    def pyserialInit(self, baudrate=57600):
         #opens a serial connection called serialCAN on COM? at 57600 Baud
         try:
-            serialCAN = serial.Serial(self.comport, 57600)
+            serialCAN = serial.Serial(self.comport, baudrate)
             # self.comport is the com port which is opened
         except:
             return CANPort.ERROR_NO_CONNECT
@@ -64,47 +64,72 @@ class CANPort():
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
             
-            # If the port is open already, the following may fail. We therefore try to close
-            # the first first, and ignore whatever output we received.
+            # If the port is open already, close it first. Do this by writing the character 'C'
+            # followed by the carriage return. The hardware will return either a carriage
+            # return (13) or a bell (7) (At least that's what the docs for this device say)
+            # (In practice, looks like we're expecting a 2.)
             val = serialCAN.write(b'C\r')
             if val != 2:
                 return CANPort.ERROR_NO_CONNECT
 
-            # Start a timer to see if initialization has taken too long, erroring out in that case.
-            start = time.time()
+            StatusMsg = self.CanUSBinit(serialCAN)
+            if StatusMsg != CANPort.SUCCESS:
+                return StatusMsg
             
-            # Now keep looping until we've successfully configured the CANusb hardware.
-            temp = serialCAN.read()
-            while temp != b'\r':
-                time.sleep(.1)
-                # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
-                val = serialCAN.write(b'S5\r')
+            StatusMsg = self.CanUSBopen(serialCAN)
+            if StatusMsg != CANPort.SUCCESS:
+                return StatusMsg
 
-                # If a bell was received after sending 'S5', it means an error's occurred
-                if val == 7:
-                    return CANPort.ERROR_BAUD
-
-                # Store the initial bytes in a temporary variable.
-                temp = serialCAN.read()
-
-                # Return if no data is being received over serial:
-                if time.time() - start - 5 > CANPort.TIMEOUT:
-                    return CANPort.ERROR_NO_DATA
-
-            # Open the CAN port to begin receiving messages, using timer as above
-            start = time.time()
-            val = serialCAN.write(b'O\r')
-            while val != 2:
-                val = serialCAN.write(b'O\r')
-                if time.time() - start - 5 > CANPort.TIMEOUT:
-                    return CANPort.ERROR_TIMEOUT
-            time.sleep(.1)
+            # Finally, if we have made it to here, the serialCAN object was created successfully
+            # and the CanUSB device is ready for read/write operations
             return serialCAN
 
-    # CANport thread repeat target is the getMessages function, which calls 
+
+    def CanUSBinit(self, serialCAN, setup='S5'):
+        # Start a timer to see if initialization has taken too long, erroring out in that case.
+        start = time.time()
+        setupBytes = setup.encode() + b'\r'
+        # Now keep looping until we've successfully configured the CANusb hardware.
+        temp = serialCAN.read()
+        while temp != b'\r':
+            time.sleep(.1)
+            # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
+            val = serialCAN.write(setupBytes)
+            # If a bell was received after sending 'S5', it means an error's occurred
+            if val == 7:
+                return CANPort.ERROR_BAUD
+
+            # Store the initial bytes in a temporary variable.
+            temp = serialCAN.read()
+
+            # Return if no data is being received over serial:
+            if time.time() - start - 5 > CANPort.TIMEOUT:
+                return CANPort.ERROR_NO_DATA
+
+        # Fall through to SUCCESS
+        return CANPort.SUCCESS
+
+    # CanUSBopen. CanUSB flags have been set, now send the command for the device to open its
+    # connection over serial.
+    def CanUSBopen(self, serialCAN):
+        # Open the CAN port to begin receiving messages, using timer as above
+        start = time.time()
+        val = serialCAN.write(b'O\r')
+        while val != 2:
+            val = serialCAN.write(b'O\r')
+            if time.time() - start - 5 > CANPort.TIMEOUT:
+                return CANPort.ERROR_TIMEOUT
+        return CANPort.SUCCESS
+
+    # CANport thread repeat target is the getMessages function, which calls the actual
+    # parsing function. If the serial connection is closed, for example, when changing the
+    # baudrate, then we don't parse anything.
+    # FIXME: serialCAN.closed being False may not be a sufficient condition, because when
+    # serial is re-established, the CanUSB device does not immediately open...
     def getMessages(self, serialCAN):
         while True:
-            self.serialParse(serialCAN)
+            if not serialCAN.closed:
+                self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
@@ -112,13 +137,9 @@ class CANPort():
         matchedmsg = self.getMatchObject(serialCAN)
 
         
-        # Once we've parsed out a complete message, actually process the data for display.
+        # Push the match object to this queue for parsing from within CanDataTranscoder.py
         if matchedmsg:
             self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
-            #canacondamessage = CANacondaMessage()
-
-            #CANacondaMessageParse(canacondamessage, matchedmsg, self.dataBack)
-            #self.PrintMessage(canacondamessage)
 
     # Build up a message character by character from the serial stream, and then wrap it
     # in a regex match object.
@@ -140,6 +161,7 @@ class CANPort():
         rawmsg = rawmsg.decode('utf-8')
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
+
 
 class CANPortCLI(CANPort):
 

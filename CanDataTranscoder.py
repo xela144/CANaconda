@@ -185,7 +185,7 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
         if dataFilter.type == 'bitfield':
-            newCanMessage.body[dataFilter.name] = bitfieldFilterPayloadByValue(dataFilter, payloadData)
+            newCanMessage.body[dataFilter.name] = bitfieldFilterPayloadByValue(payloadData, dataFilter)
         else:
             newCanMessage.body[dataFilter.name] = scale_filter_convert(dataFilter, newCanMessage, payloadData)
 
@@ -243,7 +243,7 @@ def filterPayloadByValue(payloadData, dataFilter):
 
 
 # Same as 'filterPayloadByValue()' but for bitfields
-def bitfieldFilterPayloadByValue(dataFilter, payloadData):    
+def bitfieldFilterPayloadByValue(payloadData, dataFilter):    
     bitfieldLength = len(payloadData) - 2 # To account for the '0b'
     # Format the bitfield as an int to do the comparisons
     payloadData = int(payloadData, 2)
