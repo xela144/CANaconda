@@ -321,9 +321,33 @@ class Ui_MainWindow(QtCore.QObject):
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
     def setBaud(self):
+        self.setHourGlass()
         text = self.sender().text()
+        
         baudrate = BAUDMAP[text]
-        print(text, baudrate)
+        # Setting this flag to False will cause the canPort serial thread
+        # to return, ending the thread. The serial connection will still
+        # be open.
+        self.dataBack.canPort.live = False
+        # Sleep in order to allow serial thread to return
+        time.sleep(1)
+
+        # Now it is okay to set the baud
+        self.dataBack.canPort.changeCanUSBbaud(self.serialCAN, baudrate)
+        
+        # Now that the CanUSB baud has changed, we can start a new serial
+        # thread using the CANPort class.
+        self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
+        self.serialThread.daemon = True
+
+        # Set the canPort.live flag back to True, otherwise the thread 
+        # will return immediately after starting it.
+        self.dataBack.canPort.live = True
+
+        # Now start the thread
+        self.serialThread.start()
+        self.removeHourGlass()
+
 
     def comportSelect(self):
         if self.dataBack.args.port != None:

@@ -34,6 +34,9 @@ BAUDLIST = ['10k', '20k', '50k', '100k', '125k', '250k', '500k', '800k', '1M']
 # A dictionary map from baudrate to CanUSB set commands
 BAUDMAP = {'10k':b'S0', '20k':b'S1', '50k':b'S2', '100k':b'S3', '125k':b'S4', '250k':b'S5', '500k':b'S6', '800k':b'S7', '1M':b'S8'}
 
+# An inverse dictionary of the previous
+MAPBAUD = dict(zip(BAUDMAP.values(), BAUDMAP.keys()))
+
 # Carriage return command for CanUSB
 CR = b'\r'
 
@@ -66,11 +69,15 @@ class CANPort():
         self.CANacondaRx_TranscodeQueue = dataBack.CANacondaRx_TranscodeQueue
         self.comport = dataBack.comport
         self.args = dataBack.args
+        # This flag should prevent executing Parsing code unless it is True
+        self.live = False
+        # A string that indicates the current baudrate
+        self.canBaudRate = ''
 
-    def pyserialInit(self, baudrate=57600):
+    def pyserialInit(self, baudrate=57600, canbaud=BAUDMAP['250k']):
         #opens a serial connection called serialCAN on COM? at 57600 Baud
         try:
-            serialCAN = serial.Serial(self.comport, baudrate)
+            serialCAN = serial.Serial(self.comport, baudrate, timeout=3)
             # self.comport is the com port which is opened
         except:
             return CANPort.ERROR_NO_CONNECT
@@ -87,25 +94,58 @@ class CANPort():
             if val != 2:
                 return CANPort.ERROR_NO_CONNECT
 
-            StatusMsg = self.CanUSBinit(serialCAN)
+            StatusMsg = self.CanUSBinit(serialCAN, canbaud)
             if StatusMsg != CANPort.SUCCESS:
                 return StatusMsg
-            
+            else: 
+                # Set the baudrate of the object so that we can access it later
+                self.canBaudRate = MAPBAUD[canbaud]
+
             StatusMsg = self.CanUSBopen(serialCAN)
             if StatusMsg != CANPort.SUCCESS:
                 return StatusMsg
 
             # Finally, if we have made it to here, the serialCAN object was created successfully
             # and the CanUSB device is ready for read/write operations
+            self.live = True
             return serialCAN
 
+    def changeCanUSBbaud(self, serialCAN, newBaud):
+        self.live = False
+        # First close the device, otherwise setting a new baud rate is
+        # not possible. If we don't do this 10 times, CanUSB barfs on us.
+        # Then the Python threading module barfs on us too.
+        i = 1
+        while i < 10:
+            i +=1
+            val = serialCAN.write(CLOSE)
+            if val != 2:
+                return CANPort.ERROR_NO_CONNECT
+            time.sleep(.01)
+        # Set the CanUSB baud rate to the new value
+        StatusMsg = self.CanUSBinit(serialCAN, newBaud)
+        if StatusMsg != CANPort.SUCCESS:
+            return StatusMsg
+        else: 
+            # Set the baudrate of the object so that we can access it later
+            self.canBaudRate = MAPBAUD[newBaud]
+        # Open the CanUSB device once more
+        StatusMsg = self.CanUSBopen(serialCAN)
+        if StatusMsg != CANPort.SUCCESS:
+            return StatusMsg
+        # Succesfully changed the CanUSB baud
+        self.live = True
+        return CANPort.SUCCESS
 
-    def CanUSBinit(self, serialCAN, setup=BAUDMAP['250k']):
+    def CanUSBinit(self, serialCAN, canbaud):
         # Start a timer to see if initialization has taken too long, erroring out in that case.
         start = time.time()
-        setupBytes = setup + CR
+        setupBytes = canbaud + CR
         # Now keep looping until we've successfully configured the CANusb hardware.
-        temp = serialCAN.read()
+        try:
+            temp = serialCAN.read()
+        except serial.serialutil.SerialException:
+            self.CanUSBinit(serialCAN, canbaud) # hahaha
         while temp != CR:
             time.sleep(.1)
             # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
@@ -142,8 +182,12 @@ class CANPort():
     # FIXME: serialCAN.closed being False may not be a sufficient condition, because when
     # serial is re-established, the CanUSB device does not immediately open...
     def getMessages(self, serialCAN):
+        #time.sleep(2)
         while True:
-            if not serialCAN.closed:
+            if not self.live:
+                # This return here should exit the getMessages thread
+                return
+            if self.live:
                 self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object, and print it.
@@ -151,7 +195,6 @@ class CANPort():
         # Sit and wait for all the bytes for an entire CAN message from the serial port.
         matchedmsg = self.getMatchObject(serialCAN)
 
-        
         # Push the match object to this queue for parsing from within CanDataTranscoder.py
         if matchedmsg:
             self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
@@ -176,6 +219,9 @@ class CANPort():
         rawmsg = rawmsg.decode('utf-8')
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
+
+    def getCanBaud(self):
+        return self.canBaudrate
 
 
 class CANPortCLI(CANPort):
