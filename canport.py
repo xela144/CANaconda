@@ -89,10 +89,15 @@ class CANPort():
             # If the port is open already, close it first. Do this by writing the character 'C'
             # followed by the carriage return. The hardware will return either a carriage
             # return (13) or a bell (7) (At least that's what the docs for this device say)
-            # (In practice, looks like we're expecting a 2.)
-            val = serialCAN.write(CLOSE)
-            if val != 2:
-                return CANPort.ERROR_NO_CONNECT
+            # (In practice, looks like we're expecting a 2.) Also, do this at least 10 times
+            # because the device is picky. Even then sometimes it does not work
+            i = 0
+            while i < 10:
+                val = serialCAN.write(CLOSE)
+                if val != 2:
+                    return CANPort.ERROR_NO_CONNECT
+                i += 1
+                time.sleep(.01)
 
             StatusMsg = self.CanUSBinit(serialCAN, canbaud)
             if StatusMsg != CANPort.SUCCESS:

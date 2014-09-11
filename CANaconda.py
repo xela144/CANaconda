@@ -21,12 +21,11 @@ import outmessage
 from outmessage import ID, PGN, BODY, RAW
 
 
-
 def main():
-    
     parser = argparse.ArgumentParser()
     parserInit(parser)
     args = parser.parse_args()
+
 
     # Create the dataBack singleton
     dataBack = CanData(args)
@@ -37,7 +36,21 @@ def main():
         except Exception as e:
             print("ERROR: " + str(e))
             return
-        ErrorType = pyserialNoGuiInit(dataBack)
+
+        # Check to see if the user has given a --canbaud arg, and if the arg is valid
+        from canport import BAUDLIST
+        try:
+            canbaudString = args.canbaud[0]
+        except TypeError:
+            canbaudString = None
+        if canbaudString:
+            if canbaudString not in BAUDLIST:
+                print("Choose a baud from", ", ".join(BAUDLIST))
+                return
+        else:
+            # 250k is the default value
+            canbaudString = '250k'
+        ErrorType = pyserialNoGuiInit(dataBack, canbaudString)
 
         # Make sure the serial port was initialized properly before settings things up to read from
         #  it.
@@ -81,6 +94,9 @@ def parserInit(parser):
                         help='Add debug buttons in GUI mode')
     parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
             help="Pre-select a port for GUI")
+    parser.add_argument('--canbaud', nargs=1,# metavar='canbaud',
+            help="Choose a baud for the CAN to USB device. Example: 100k, 125k, 250k, etc.\
+                    Defaults to 250k, the maritime standard")
 
 
 def canacondaNoGuiInit(dataBack):
@@ -172,13 +188,15 @@ def canacondaNoGuiInit(dataBack):
         print("Opening connection to", dataBack.comport)
   
 
-def pyserialNoGuiInit(dataBack):
+def pyserialNoGuiInit(dataBack, canbaudString):
     from canport import CANPortCLI
     # Create a threading object that communicates with the serial bus
     dataBack.canPort = CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
-    # and report any errors
-    serialCAN = dataBack.canPort.pyserialInit()
+
+    from canport import BAUDMAP
+    canbaud = BAUDMAP[canbaudString]
+    serialCAN = dataBack.canPort.pyserialInit(57600, canbaud)
 
     # If we successfully initialized the CANusb hardware and connected,
     # start up a thread for processing messages
