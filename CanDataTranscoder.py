@@ -71,6 +71,7 @@ try:
         # This queue separates the serial layer from the rest of the program.
         def CanTranscoderRun(self):
             while True:
+                #debugMode()
                 matchedMsg = self.CanacondaRx_TranscodeQueue.get()
                 newCanMessage = CANacondaMessage()
                 CANacondaMessageParse(matchedMsg, newCanMessage, self.dataBack)
