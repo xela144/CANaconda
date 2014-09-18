@@ -503,7 +503,8 @@ def generateMessage(dataBack, payload, messageName):
 # Need to check for return value length. Should be same as 'length'
 # specified in metadata. Current code does not handle numbers that are too big.
 # Returns an array of 0's and 1's, of length 'length'.
-def encodePayload(payload, dataFilter):
+#FIXME Make fillValue a 0 or a 1 depending on message type (N2K or other)
+def encodePayload(payload, dataFilter, fillValue=0):
     endian = dataFilter.endian
     _signed = dataFilter.signed == 'yes'
     offset = dataFilter.offset
@@ -512,6 +513,7 @@ def encodePayload(payload, dataFilter):
     _type = dataFilter.type
     # First check for proper length of signed fields
     if _signed:
+        #FIXME move the length calculation into a variable
         if payload < -2**(length-1)  or payload > 2**(length-1)-1:
             raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
 
@@ -532,7 +534,7 @@ def encodePayload(payload, dataFilter):
         pay = bin(int(payload/scaling))[2:]
 
     # Initialize an array of zeros with correct length
-    fieldData = [0]*length
+    fieldData = [fillValue]*length
 
     for i in range(len(pay)):
         try:
