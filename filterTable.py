@@ -214,6 +214,7 @@ class FilterTable(QtWidgets.QWidget):
 
     # This function needs to be modified so that if an invalid
     # entry occurs, a dialog window warns the user.
+    # Also it is called each time the table updates. Expensive!
     def filterByValue(self, item):
         if item.column() != FILTER:
             return
@@ -244,12 +245,12 @@ class FilterTable(QtWidgets.QWidget):
                 # Check that the first character of the string is in the CMP tuple, which contains
                 # the three comparison operators '<', '>', '='
                 if len(value) == 0:
-                    self.tableWidget.item(currentRow, FILTER).setText('None')
+                    self.tableWidget.item(currentRow, FILTER).setText('')
                     self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
                     self.tableWidget.itemChanged.connect(self.filterByValue)
                     return
                 if value[0] not in CMP:
-                    self.tableWidget.item(currentRow, FILTER).setText('None')
+                    self.tableWidget.item(currentRow, FILTER).setText('')
                     self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
                     raise Exception('Filtering failed for value \'{}\' in field \'{}\'. \
                             Hint: Correct syntax example with mouseover'.format(valueString, fieldName))
