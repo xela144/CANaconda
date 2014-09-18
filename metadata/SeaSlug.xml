@@ -108,7 +108,6 @@
         offset = "32" 
         length = "16" 
         signed = "no" 
-        units = "n/a" 
         />
         <field 
         name = "Errors"
@@ -116,7 +115,6 @@
         offset = "48" 
         length = "16" 
         signed = "no" 
-        units = "n/a" 
         />
     </messageInfo>
 </metaData>

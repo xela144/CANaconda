@@ -76,7 +76,7 @@
 		endian = "little"
 		/>
 	</messageInfo>
-	<messageInfo name = "Speed" pgn = "128259" size = "6"> 
+	<messageInfo name = "Speed" pgn = "128259" size = "8"> 
 		<desc></desc>
 		<field 
 		name = "SID"
