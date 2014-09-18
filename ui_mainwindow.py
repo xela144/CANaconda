@@ -124,6 +124,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.firstTxBody1 = QtWidgets.QLineEdit()
         self.firstTxBody1.setPlaceholderText('payload data')
         self.firstTxBody1.setDisabled(True)
+        self.firstTxUnitsLabel = QtWidgets.QLabel()
+        self.firstTxUnitsLabel.setText('[..]')
         self.firstTxLabelFreq = QtWidgets.QLabel()
         self.firstTxLabelFreq.setText("Frequency [Hz]: ")
         self.firstTxFreq = QtWidgets.QLineEdit()
@@ -141,9 +143,10 @@ class Ui_MainWindow(QtCore.QObject):
         self.txGrid.addWidget(self.firstTxLabelField,    1, 2)
         self.txGrid.addWidget(self.firstTxField1,        1, 3)
         self.txGrid.addWidget(self.firstTxBody1,         1, 4)
-        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 5)
-        self.txGrid.addWidget(self.firstTxFreq,          1, 6)
-        self.txGrid.addWidget(self.firstTxButton,        1, 7)
+        self.txGrid.addWidget(self.firstTxUnitsLabel,    1, 5)
+        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 6)
+        self.txGrid.addWidget(self.firstTxFreq,          1, 7)
+        self.txGrid.addWidget(self.firstTxButton,        1, 8)
 
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
@@ -526,10 +529,13 @@ class Ui_MainWindow(QtCore.QObject):
         for i in range(1, rowcount):
             try:
                 # Remove the old widgets from the grid, then delete
+                widget5 = self.txGrid.itemAtPosition(i, 5).widget()
                 widget4 = self.txGrid.itemAtPosition(i, 4).widget()
                 widget3 = self.txGrid.itemAtPosition(i, 3).widget()
+                self.txGrid.removeWidget(widget5)
                 self.txGrid.removeWidget(widget4)
                 self.txGrid.removeWidget(widget3)
+                widget5.deleteLater()
                 widget4.deleteLater()
                 widget3.deleteLater()
             except AttributeError:
@@ -546,11 +552,19 @@ class Ui_MainWindow(QtCore.QObject):
                 newLabel = QtWidgets.QLabel()
                 newLabel.setText(field)
                 newLineEdit = QtWidgets.QLineEdit()
+                units = self.dataBack.messages[key].fields[field].units
+                newUnitsLabel = QtWidgets.QLabel()
+                try:
+                    newUnitsPretty = '[' + outmessage.unitStringMap[units] + ']'
+                except KeyError:
+                    newUnitsPretty = ''
+                newUnitsLabel.setText(newUnitsPretty)
 
                 # Append to the following list to access from txActivateHandler.
                 self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
-                self.txGrid.addWidget(newLabel,    row, 3)
-                self.txGrid.addWidget(newLineEdit, row, 4)
+                self.txGrid.addWidget(newLabel,      row, 3)
+                self.txGrid.addWidget(newLineEdit,   row, 4)
+                self.txGrid.addWidget(newUnitsLabel, row, 5)
                 row += 1
 
         # For one iteration, 'key' will be '', and we want to ignore this error.
