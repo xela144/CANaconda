@@ -15,6 +15,11 @@ CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
 from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
+from outmessage import unitStringMap
+
+MapStringUnits =  dict(zip(unitStringMap.values(), unitStringMap.keys()))
+
+
 # Comparison operators
 CMP = ('=', '<', '>')
 
@@ -105,18 +110,25 @@ class FilterTable(QtWidgets.QWidget):
             byValue.setToolTip("<font color=black>Enter comma-separated values to match, with =, &lt;, or &gt;. Example: \'<4,>9,=5.5\' Use a null character to stop active filtering.</font>")
             self.tableWidget.setItem(row, FILTER, byValue)
             ##
-
+            if fieldData.units == 'CEL':
+                pass
+            try:
+                prettyUnits = unitStringMap[fieldData.units]
+            except KeyError:
+                prettyUnits = ''
             # If there is a valid conversion, its units will show up in 
-            # conversionMap
+            # conversionMap. If this is the case, we use a comboBox.
             if fieldData.units in backend.conversionMap:
                 unitsComboBox = QtWidgets.QComboBox()
                 for key in list(backend.conversionMap[fieldData.units].keys()):
-                    unitsComboBox.addItem(key)
-                unitsComboBox.setCurrentText(fieldData.units)
+                    unitsComboBox.addItem(unitStringMap[key])
+                unitsComboBox.setCurrentText(prettyUnits)
                 self.tableWidget.setCellWidget(row, UNITS, unitsComboBox)
                 unitsComboBox.currentTextChanged.connect(self.changeUnits)
+
+            # Otherwise create a cell that has no widget
             else:
-                _units = QtWidgets.QTableWidgetItem(fieldData.units)
+                _units = QtWidgets.QTableWidgetItem(prettyUnits)
                 _units.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
                 _units.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
                 self.tableWidget.setItem(row, UNITS, _units)
@@ -150,6 +162,7 @@ class FilterTable(QtWidgets.QWidget):
 
     # Change units based on comboBox widget and update dataBack
     def changeUnits(self, text):
+        text = MapStringUnits[text]
         widgyWidge = QtWidgets.QApplication.focusWidget()
         if widgyWidge:
             index = self.tableWidget.indexAt(widgyWidge.pos())

@@ -18,7 +18,7 @@ unitStringMap = {
         'V':'V',
         '%':'%',
         'HPA':'hPa',
-        'D':'s',
+        'S':'s',
         'DAYS':'days'
         }
 
