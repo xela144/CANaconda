@@ -9,6 +9,19 @@ import time
 
 from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
 
+# FIXME: update this as more cases are discovered from use or by examining
+# the packetlogger text
+unitStringMap = {
+        'MPS':'m/s', 'KNOT':'knots', 'MPH':'MPH',
+        'RAD':'radians', 'DEG':'degrees',
+        'CEL':'°C', 'FAR': '°F', 'K':'°K',
+        'V':'V',
+        '%':'%',
+        'HPA':'hPa',
+        'D':'s',
+        'DAYS':'days'
+        }
+
 # displayList constants
 ID, PGN, BODY, RAW = range(4)
 
@@ -69,7 +82,11 @@ def noGuiParse(dataBack, message):
                         units = dataBack.messages[message.name].fields[field].unitsConversion
                     else:
                         units = dataBack.messages[message.name].fields[field].units
-                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], units)
+                    # This will produce a KeyError for unspecified names or names that do
+                    # not need to be changed. Error won't show up as a stack trace since this
+                    # is in its own thread FIXME
+                    pretty = unitStringMap[units]
+                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], pretty)
                 except:
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:
