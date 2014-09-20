@@ -511,13 +511,16 @@ def encodePayload(payload, dataFilter, fillValue=0):
     length = dataFilter.length
     scaling = dataFilter.scaling
     _type = dataFilter.type
+
+    #FIXME do this checking for proper data in a function called before this one.
     # First check for proper length of signed fields
     if _signed:
+        bound = 2**(length - 1)
         #FIXME move the length calculation into a variable
-        if payload < -2**(length-1)  or payload > 2**(length-1)-1:
-            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
+        if payload < -bound  or payload > bound - 1:
+            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -bound, bound - 1))
 
-    # If the payload is signed, handle this correctly.
+    # If the payload is signed, handle this
     Negative = False
     if _signed and payload < 0:
         payload = -payload
@@ -533,13 +536,13 @@ def encodePayload(payload, dataFilter, fillValue=0):
     else:
         pay = bin(int(payload/scaling))[2:]
 
-    # Initialize an array of zeros with correct length
+    # Initialize an array of zeros (or ones for N2K) 
     fieldData = [fillValue]*length
 
     for i in range(len(pay)):
         try:
-            # Fill in fieldData, starting from the right.
-            fieldData[-i-1] = int(pay[-i-1])
+            # Fill in fieldData
+            fieldData[i] = int(pay[i])
         except IndexError: #  payload scaled up and has become too big for data type
             raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
     return fieldData
@@ -550,14 +553,3 @@ def debugMode():
     pyqtRemoveInputHook()
     import pdb
     pdb.set_trace()
-   
-
-
-## For the left-over dangling bits, convert them to int and append
-#  output = 0
-#  try:
-#      output = int(payloadSlice, 2)
-#  except:
-#      pass
-#  dataset.append(output)
-

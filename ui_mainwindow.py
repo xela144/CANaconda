@@ -23,7 +23,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 import threading
 from serial.tools.list_ports import comports
-from CanDataTranscoder import encodePayload, generateMessage
+from CanDataTranscoder import generateMessage
 from backend import *
 import filtersTreeWidget
 import filterTable
