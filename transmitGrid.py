@@ -12,25 +12,17 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.parent = parent
         self.singleshot = singleshot
         # Create the grid and a label to go along with it
-        self.txGrid = QtWidgets.QGridLayout()
+        self.txGrid = QtWidgets.QGridLayout(parent)
         self.txGrid.setHorizontalSpacing(10)
         self.txGrid.setColumnStretch(1, 2)
         self.txGrid.setColumnStretch(3, 2)
-
         # A helper button that drops us into the python debugger
         if self.dataBack.args.debug:
             self.buttonPdb = QtWidgets.QPushButton()
-            self.buttonPdb.setText("pdb")
+            self.buttonPdb.setText("drop into pdb from here")
             self.buttonPdb.clicked.connect(self.pdbset)
+            self.txGrid.addWidget(self.buttonPdb, 0,0)
 
-        # Create a box layout and at the grid layout to it
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addLayout(self.txGrid)
-        if self.dataBack.args.debug:
-            vbox.addWidget(self.buttonPdb)
-        self.setLayout(vbox)
-
-        # add a vertical layout to the txFrame and put line edits inside it
         self.txLabel = QtWidgets.QLabel()
         self.txLabel.setText("Transmit Messages")
         self.firstTxMessageInfo = QtWidgets.QComboBox()
