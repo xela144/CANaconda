@@ -78,15 +78,25 @@ def noGuiParse(dataBack, message):
                 if field:
                     dataFound = True
                 try:
+                    # If there is no unit conversion the payload is an int, and no decimals should be used.
+                    # This flag will be used to sort this out
+                    conversion = False
                     if dataBack.messages[message.name].fields[field].unitsConversion:
                         units = dataBack.messages[message.name].fields[field].unitsConversion
+                        conversion = True
                     else:
                         units = dataBack.messages[message.name].fields[field].units
-                    # This will produce a KeyError for unspecified names or names that do
-                    # not need to be changed. Error won't show up as a stack trace since this
-                    # is in its own thread FIXME
-                    pretty = unitStringMap[units]
-                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], pretty)
+                    if conversion:
+                        # Since there is a units conversion, there is a reason to format the body as a float
+                        body = '{0.3f}'.format(message.body[field])
+                    else:
+                        # Since there is no units conversion, there is no reason to format the body
+                        body = message.body[field]
+                    prettyUnits = unitStringMap[units]
+                    outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
+                # This will produce a KeyError for unspecified names or names that do
+                # not need to be changed. Error won't show up as a stack trace since this
+                # is in its own thread FIXME
                 except:
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:

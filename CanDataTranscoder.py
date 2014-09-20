@@ -71,7 +71,6 @@ try:
         # This queue separates the serial layer from the rest of the program.
         def CanTranscoderRun(self):
             while True:
-                #debugMode()
                 matchedMsg = self.CanacondaRx_TranscodeQueue.get()
                 newCanMessage = CANacondaMessage()
                 CANacondaMessageParse(matchedMsg, newCanMessage, self.dataBack)
@@ -208,8 +207,8 @@ def scale_filter_convert(dataFilter, newCanMessage, payloadData):
     if payloadData == 65535:
         return 'NaN'
     # If the number 0 was used, then it was stored as a constant, 'ZERO'.
-
-    payloadData *= dataFilter.scaling
+    if dataFilter.scaling != 1:
+        payloadData *= dataFilter.scaling
 
     # Check to see of user has changed units
     if dataFilter.unitsConversion:
