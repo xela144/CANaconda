@@ -56,10 +56,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.txGrid.addWidget(self.firstTxLabelField,    1, 2)
         self.txGrid.addWidget(self.firstTxField1,        1, 3)
         self.txGrid.addWidget(self.firstTxBody1,         1, 4)
-        self.txGrid.addWidget(self.firstTxUnitsLabel,    1, 5)
-        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 6)
-        self.txGrid.addWidget(self.firstTxFreq,          1, 7)
-        self.txGrid.addWidget(self.firstTxButton,        1, 8)
+        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 5)
+        self.txGrid.addWidget(self.firstTxFreq,          1, 6)
+        self.txGrid.addWidget(self.firstTxButton,        1, 7)
 
         if singleshot:
             self.populateTxMessageInfoCombo()
@@ -92,13 +91,10 @@ class TransmitGridWidget(QtWidgets.QDialog):
         for i in range(1, rowcount):
             try:
                 # Remove the old widgets from the grid, then delete
-                widget5 = self.txGrid.itemAtPosition(i, 5).widget()
                 widget4 = self.txGrid.itemAtPosition(i, 4).widget()
                 widget3 = self.txGrid.itemAtPosition(i, 3).widget()
-                self.txGrid.removeWidget(widget5)
                 self.txGrid.removeWidget(widget4)
                 self.txGrid.removeWidget(widget3)
-                widget5.deleteLater()
                 widget4.deleteLater()
                 widget3.deleteLater()
             except AttributeError:
@@ -107,31 +103,50 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
         # For storing the QLineEdits
         self.txQLabel_LineContainer = []  # store QLineEdits here
-        key = self.firstTxMessageInfo.currentText()
+        currentMessageInfo = self.firstTxMessageInfo.currentText()
         row = 1   # counter for adding to txGrid row
         # Add all of the widgets to the transmission QGridLayout
         try:
-            for field in self.dataBack.messages[key].fields.keys():
+            for currentfield in self.dataBack.messages[currentMessageInfo].fields.keys():
                 newLabel = QtWidgets.QLabel()
-                newLabel.setText(field)
+                newLabel.setText(currentfield)
                 newLineEdit = QtWidgets.QLineEdit()
-                units = self.dataBack.messages[key].fields[field].units
-                newUnitsLabel = QtWidgets.QLabel()
+                placeholder = self.getPlaceholderText(currentMessageInfo, currentfield, self.dataBack)
                 try:
-                    newUnitsPretty = '[' + outmessage.unitStringMap[units] + ']'
+                    units = self.dataBack.messages[currentMessageInfo].fields[currentfield].units
+                    placeholder += ' [' + outmessage.unitStringMap[units] + ']'
                 except KeyError:
-                    newUnitsPretty = ''
-                newUnitsLabel.setText(newUnitsPretty)
+                    pass
+                newLineEdit.setPlaceholderText(placeholder)
 
                 # Append to the following list to access from txActivateHandler.
                 self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
                 self.txGrid.addWidget(newLabel,      row, 3)
                 self.txGrid.addWidget(newLineEdit,   row, 4)
-                self.txGrid.addWidget(newUnitsLabel, row, 5)
                 row += 1
         # For one iteration, 'key' will be '' and we want to ignore this error.
         except KeyError:
             pass
+
+    def getPlaceholderText(self, messageInfo, field, dataBack):
+        fieldInfo = dataBack.messages[messageInfo].fields[field]
+        endian  = fieldInfo.endian
+        _signed = fieldInfo.signed == 'yes'
+        offset  = fieldInfo.offset
+        length  = fieldInfo.length
+        scaling = fieldInfo.scaling
+        if scaling == 1:
+            scaling = int(scaling)
+        _type   = fieldInfo.type
+        if _type == 'bitfield':
+            return '0 to {} bits'.format(length)
+        if _signed:
+            bound = 2**(length - 1)
+            return '{} to {}'.format(-bound*scaling, (bound - 1)*scaling)
+        elif not _signed:
+            bound = 2**(length) - 1
+            return '0 to {}'.format(bound*scaling)
+        return "fix this code"
 
     def txActivateHandler(self):
         # We shouldn't transmit anything if we are not streaming yet.
