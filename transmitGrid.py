@@ -3,6 +3,7 @@ import outmessage
 from CanDataTranscoder import generateMessage
 
 # from PyQt5.QtWidgets import QMessageBox
+baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
 class TransmitGridWidget(QtWidgets.QDialog):
 
@@ -61,6 +62,12 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.txGrid.addWidget(self.firstTxButton,        1, 7)
 
         if singleshot:
+            # Create a box layout and at the grid layout to it
+            vbox = QtWidgets.QVBoxLayout()
+            vbox.addLayout(self.txGrid)
+            if self.dataBack.args.debug:
+                vbox.addWidget(self.buttonPdb)
+            self.setLayout(vbox)
             self.populateTxMessageInfoCombo()
 
     # Called when a metadata file is loaded
@@ -68,7 +75,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
     def populateTxMessageInfoCombo(self):
         try:
             self.firstTxMessageInfo.currentTextChanged.disconnect(self.populateTxField)
-        except:
+        except TypeError:
             pass
         self.firstTxMessageInfo.clear()            
         self.firstTxMessageInfo.setDisabled(False) 
@@ -101,8 +108,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
                 # If widgets have already been deleted
                 pass
 
-        # For storing the QLineEdits
-        self.txQLabel_LineContainer = []  # store QLineEdits here
+        # For storing the QLineEdits, so that we can access the text they contain
+        # at some other point
+        self.txQLabel_LineContainer = []
         currentMessageInfo = self.firstTxMessageInfo.currentText()
         row = 1   # counter for adding to txGrid row
         # Add all of the widgets to the transmission QGridLayout
@@ -164,6 +172,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # The tranmission frequency as entered by the user
         freq = self.firstTxFreq.text()
 
+
         # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
@@ -181,9 +190,11 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # For redundancy, insert the values back into the QLineEdits. Necessary
         # if user left the LineEdits blank, which caused a default 0 to be added.
         for pair in self.txQLabel_LineContainer:
+            # First get the name of the field from the QLabel
             fieldName = pair[0].text()
-            fieldData = pair[1]
-            fieldData.setText(str(payload[fieldName]))
+            fieldDataLineEdit = pair[1]
+            # Then set the text from the label to the QLineEdit
+            fieldDataLineEdit.setText(str(payload[fieldName]))
 
         messageName = self.firstTxMessageInfo.currentText()
         try:
@@ -197,7 +208,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
         else:
             self.messageTxInit(freq)
-
 
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
@@ -222,6 +232,26 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # First check if field was left blank. If so, assume it means a 0.
         if value == '':
             return 0
+        if len(value) > 2:
+            if value[1] in baseTuple:
+                base = value[1].upper()
+                if base == ('X'):
+                    try:
+                        value = int(value, 16)
+                    except ValueError:
+                        return None
+                elif base == ('O'):
+                    try:
+                        value = int(value, 8)
+                    except ValueError:
+                        return None
+                elif base == ('B'):
+                    try:
+                        value = int(value, 2)
+                    except ValueError:
+                        return None
+                else:
+                    return None
         try:
             value = int(value)
             return value
@@ -236,7 +266,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         errormsg = QtWidgets.QMessageBox()
         errormsg.setText("Message Transmit Error")
         errormsg.setInformativeText("Payload and frequency values must\
-                                    be of type 'int' or 'float'")
+                                    be of type 'int' or 'float'. \nIf 'int', they must be of base 16\
+                                    (0x), base 8 (0o), or base 2 (0b). No base specified is \
+                                    interpreted as base 10.")
         errormsg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         errormsg.exec()
 
