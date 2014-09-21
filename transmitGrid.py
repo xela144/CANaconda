@@ -6,6 +6,8 @@ from math import floor
 # from PyQt5.QtWidgets import QMessageBox
 baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
+SUCCESS = 1
+
 class TransmitGridWidget(QtWidgets.QDialog):
 
     def setup(self, parent, dataBack, singleshot=False):
@@ -141,6 +143,8 @@ class TransmitGridWidget(QtWidgets.QDialog):
         except KeyError:
             pass
 
+    # This is used to calculate the default text for the user to see bounds on the 
+    # payload values for transmitting CAN messages.
     def getPlaceholderText(self, messageInfo, field, dataBack):
         fieldInfo = dataBack.messages[messageInfo].fields[field]
         endian  = fieldInfo.endian
@@ -161,7 +165,8 @@ class TransmitGridWidget(QtWidgets.QDialog):
             return '0 to {}'.format(bound*scaling)
         return "fix this code"
 
-
+    # Like above but checks the boundary on the data, making sure that the user-entered
+    # data is within the bounds of the CAN message
     def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo, dataBack):
         endian  = fieldInfo.endian
         _signed = fieldInfo.signed == 'yes'
@@ -178,27 +183,36 @@ class TransmitGridWidget(QtWidgets.QDialog):
         if _signed:
             bound = 2**(length - 1)
             if payload >= -bound and payload <= (bound - 1):
-                return True
+                return SUCCESS
             else:
-                return False
+                self.badData[fieldInfo.name] = 'The {} field is restricted to values between {} and {}.'.format(fieldInfo.name, -bound*scaling, (bound - 1)*scaling)
         elif not _signed:
             bound = 2**(length) 
             if payload >= 0 and payload < bound:
-                return True
+                return SUCCESS
             else:
-                return False
-        return "fix this code"
+                self.badData[fieldInfo.name] = 'The {} field is restricted to values between 0 and {}.'.format(fieldInfo.name, (bound - 1)*scaling)
+        self.txBoundErrorFlag = True
+        return False
 
-
-
+    # txActivateHandler: Called by a signal that is connected the "Activate" button. 
+    # Collects all the payload values in the QLineEdits at the moment the button was
+    # clicked. If any of the values were formatted in the wrong way, or would fall 
+    # of the bit boundary of the CAN message because the number is too big, then an
+    # error message is generated, the offending QLineEdit changes to red, and the
+    # function returns before creating the CAN message.
     def txActivateHandler(self):
         # We shouldn't transmit anything if we are not streaming yet.
         if not self.dataBack.alreadyStreaming:
             self.notStreamingWarn()
             return
         self.txTypeErrorFlag = False
+        self.txBoundErrorFlag = False
         # A list to store QLineEdits that have bad data
         self.errContainer = []
+        # Store error messages in case the user doesn't get it right:
+        self.badData = {}
+
         # Cycle through all the current payload QLineEdits, and extract the values
         # Do error checking with each cycle. Errors cause QLineEdits go to 'errContainer'
         # for accessing them later. Both good and bad data gets stored in 'payload'.
@@ -208,12 +222,10 @@ class TransmitGridWidget(QtWidgets.QDialog):
         if len(self.errContainer) > 0:
             for lineEdit in self.errContainer:
                 lineEdit.setStyleSheet("QLineEdit{background: red;}")
-            self.txTypeErrorFlag = True
+           # self.txTypeErrorFlag = True
         
-        # The tranmission frequency as entered by the user
+        # The tranmission frequency entered by the user. Check that the frequency is valid
         freq = self.firstTxFreq.text()
-
-        # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
             self.txTypeErrorFlag = True
@@ -232,7 +244,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # FIXME: Give a detailed error message here... try entering a value that is
         # too big or too small for the data field length. Error message is too generic
         # Use the same logic as the error messages from generateMessage(). 
-        if self.txTypeErrorFlag:
+        if self.txTypeErrorFlag or self.txBoundErrorFlag:
             self.txTypeError()
             return
 
@@ -250,7 +262,12 @@ class TransmitGridWidget(QtWidgets.QDialog):
         else:
             self.messageTxInit(freq)
 
+    # getPayloadsFromLineEdits: This is a helper function that does the actual
+    # checking, converting, and error reporting of all the values entered by 
+    # the user. Error flags will be set if there is bad data, and QLineEdits 
+    # will be stored in a list to be accessed later.
     def getPayloadsFromLineEdits(self):
+        # The return value will be this payload dictionary
         payload = {}
         messageInfoName = self.firstTxMessageInfo.currentText()
         currentMessageInfo = self.dataBack.messages[messageInfoName]
@@ -264,7 +281,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
             # Just at the bad data to the payload dictionary, and save a reference
             # to the corresponding QLineEdit.
             if payloadInt == None:
-                payload[fieldName] = payloadString # Bad data!
+                payload[fieldName] = payloadString # Bad data being put payload here.
                 self.txTypeErrorFlag = True
                 self.errContainer.append(Label_Line_pair[1])
                 continue
@@ -277,11 +294,12 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
             # Next we make sure that the payload, once converted to a CAN message, will
             # fit within the bit boundary as specified in the meta data for this field
-            Success = self.checkBoundsOnPayload(payloadInt, 
-                    currentMessageInfo, currentField, self.dataBack)
-            if not Success:
+            Success = self.checkBoundsOnPayload(payloadInt, currentMessageInfo, 
+                                                currentField, self.dataBack)
+            if Success != SUCCESS:
                 # Add the QLineEdit with dirty data to this list, so that we can acess
                 # them all at once.
+                self.txBoundErrorFlag = True
                 self.errContainer.append(Label_Line_pair[1])
             else:
                 # The current QLine Edit has clean data. Set its background to white 
@@ -291,29 +309,42 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # both good and bad data, return it
         return payload
 
-    # Push the encoded message to the transmit queue, and send a signal
-    def messageTxInit(self, freq):
-        # If no timer has been used, create one. Otherwise, re-start it, 
-        # but first disconnect from signals.
-        try:
-            self.TxTimer.timeout.disconnect()
-            
-        except AttributeError:
-            self.TxTimer = QtCore.QTimer()
-
-        freq = freq * 1000  # use milliseconds
-        self.TxTimer.timeout.connect(self.pushToTransmitQueue)
-        self.TxTimer.start(freq)
-
-    def pushToTransmitQueue(self):
-        self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
-
     # Check the type of the payload data. If it is neither int
     # nor float, returns None.
     def checkTypeAndConvert(self, value):
         # First check if field was left blank. If so, assume it means a 0.
         if value == '':
             return 0
+        Negative = False
+        # If the user entered a negative sign along with one of the non base 10
+        # tokens, then we should strip the negative sign to make sure that the token
+        # is at the [1] position.
+        if value[0] == '-':
+            Negative = True
+            value = value[1:]
+        value = self.checkOtherBases(value)
+        if value == None:
+            return None
+        try:
+            # If the value was negative to begin with, then put the negative sign back
+            if Negative:
+                value = '-' + value
+            # Now check to see if it is an int
+            value = int(value)
+            return value
+        except ValueError:
+            try:
+                # Check to see if its a flaot
+                value = float(value)
+                return value
+            except ValueError:
+                # Finally, return None to signify bad data
+                return None
+
+    # This function will check of the second entry of the payload string is
+    # an 'x', a 'b', or an 'o'. If not, it just returns the same string that
+    # was passed in.
+    def checkOtherBases(self, value):
         if len(value) > 2:
             if value[1] in baseTuple:
                 base = value[1].upper()
@@ -334,23 +365,41 @@ class TransmitGridWidget(QtWidgets.QDialog):
                         return None
                 else:
                     return None
-        try:
-            value = int(value)
+                # We have to make this a string again to follow along with the
+                # next few steps below
+                return str(value)
+        else:
             return value
-        except ValueError:
-            try:
-                value = float(value)
-                return value
-            except ValueError:
-                return None
 
+    # Push the encoded message to the transmit queue, and send a signal
+    def messageTxInit(self, freq):
+        # If no timer has been used, create one. Otherwise, re-start it, 
+        # but first disconnect from signals.
+        try:
+            self.TxTimer.timeout.disconnect()
+            
+        except AttributeError:
+            self.TxTimer = QtCore.QTimer()
+
+        freq = freq * 1000  # use milliseconds
+        self.TxTimer.timeout.connect(self.pushToTransmitQueue)
+        self.TxTimer.start(freq)
+
+    def pushToTransmitQueue(self):
+        self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
+
+     
     def txTypeError(self):
         errormsg = QtWidgets.QMessageBox()
         errormsg.setText("Message Transmit Error")
-        errormsg.setInformativeText("Payload and frequency values must\
-                                    be of type 'int' or 'float'. \nIf 'int', they must be of base 16\
-                                    (0x), base 8 (0o), or base 2 (0b). No base specified is \
-                                    interpreted as base 10.")
+        informativeText = ''
+        if self.txTypeErrorFlag:
+            informativeText += "Payload and frequency values must be of type 'int' or 'float'. \nIf 'int', they must be of base 16 (0x), base 8 (0o), or base 2 (0b). No base specified is interpreted as base 10.\n"
+        if self.txBoundErrorFlag:
+            informativeText += '\n'
+            for entry in self.badData:
+                informativeText += self.badData[entry] + '\n'
+        errormsg.setInformativeText(informativeText)
         errormsg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         errormsg.exec()
 
