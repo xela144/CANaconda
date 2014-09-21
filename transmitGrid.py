@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 import outmessage
 from CanDataTranscoder import generateMessage
+from math import floor
 
 # from PyQt5.QtWidgets import QMessageBox
 baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
@@ -17,6 +18,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.txGrid.setHorizontalSpacing(10)
         self.txGrid.setColumnStretch(1, 2)
         self.txGrid.setColumnStretch(3, 2)
+
         # A helper button that drops us into the python debugger
         if self.dataBack.args.debug:
             self.buttonPdb = QtWidgets.QPushButton()
@@ -24,6 +26,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
             self.buttonPdb.clicked.connect(self.pdbset)
             self.txGrid.addWidget(self.buttonPdb, 0,0)
 
+        # All rest of the line-edits and labels created here
         self.txLabel = QtWidgets.QLabel()
         self.txLabel.setText("Transmit Messages")
         self.firstTxMessageInfo = QtWidgets.QComboBox()
@@ -51,6 +54,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.firstTxButton.setDisabled(True)
         self.firstTxButton.clicked.connect(self.txActivateHandler)
         
+        # Insert the widgets to the grid at their coordinates
         self.txGrid.addWidget(self.txLabel,              0, 3)
         self.txGrid.addWidget(self.firstTxLabelMsg,      1, 0)
         self.txGrid.addWidget(self.firstTxMessageInfo,   1, 1)
@@ -61,8 +65,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.txGrid.addWidget(self.firstTxFreq,          1, 6)
         self.txGrid.addWidget(self.firstTxButton,        1, 7)
 
+        # For stand-alone mode. If we don't add a layout then the window will come
+        # up with nothing in it.
         if singleshot:
-            # Create a box layout and at the grid layout to it
             vbox = QtWidgets.QVBoxLayout()
             vbox.addLayout(self.txGrid)
             if self.dataBack.args.debug:
@@ -156,36 +161,95 @@ class TransmitGridWidget(QtWidgets.QDialog):
             return '0 to {}'.format(bound*scaling)
         return "fix this code"
 
+
+    def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo, dataBack):
+        endian  = fieldInfo.endian
+        _signed = fieldInfo.signed == 'yes'
+        offset  = fieldInfo.offset
+        length  = fieldInfo.length
+        scaling = fieldInfo.scaling
+        if scaling == 1:
+            scaling = int(scaling)
+        _type   = fieldInfo.type
+
+        # Rescale the payload so that we can check to see if it is within the bounds
+        # given by the bit length of its data field
+        payload = payload/scaling
+        if _signed:
+            bound = 2**(length - 1)
+            if payload >= -bound and payload <= (bound - 1):
+                return True
+            else:
+                return False
+        elif not _signed:
+            bound = 2**(length) 
+            if payload >= 0 and payload < bound:
+                return True
+            else:
+                return False
+        return "fix this code"
+
+
     def txActivateHandler(self):
         # We shouldn't transmit anything if we are not streaming yet.
         if not self.dataBack.alreadyStreaming:
             self.notStreamingWarn()
             return
-
+        txTypeErrorFlag = False
         # A dictionary for payload fields and values
         payload = {}
-
+        # A list to store QLineEdits that have bad data
+        self.errContainer = []
+        messageInfoName = self.firstTxMessageInfo.currentText()
+        currentMessageInfo = self.dataBack.messages[messageInfoName]
         # Cycle through all the current payload QLineEdits, and extract the values
+        # Do error checking with each cycle
         for pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
-            payload[pair[0].text()] = pair[1].text()
+            fieldName = pair[0].text()
+            payloadString = pair[1].text()
 
+            # Convert the payload to an int
+            payloadInt = self.checkTypeAndConvert(payloadString)
+            # If it can't be converted to an int, then the user gave bad data.
+            # Just at the bad data to the payload dictionary, and save a reference
+            # to the corresponding QLineEdit.
+            if payloadInt == None:
+                payload[fieldName] = payloadString # Bad data!
+                txTypeErrorFlag = True
+                self.errContainer.append(pair[1])
+                continue
+
+            # Now that we know the payload is has been converted to an integer or a float,
+            # assign the value to the payload dictionary where it will be actually used
+            payload[fieldName] = payloadInt
+
+            currentField = currentMessageInfo.fields[fieldName]
+
+            # Next we make sure that the payload, once converted to a CAN message, will
+            # fit within the bit boundary as specified in the meta data for this field
+            Success = self.checkBoundsOnPayload(payloadInt, 
+                    currentMessageInfo, currentField, self.dataBack)
+            if not Success:
+                # Add the QLineEdit with dirty data to this list, so that we can acess
+                # them all at once.
+                self.errContainer.append(pair[1])
+            else:
+                # The current QLine Edit has clean data. Set its background to white 
+                # in case it was previously set to red.
+                pair[1].setStyleSheet("QLineEdit{background: white;}")
+
+        if len(self.errContainer) > 0:
+            for lineEdit in self.errContainer:
+                lineEdit.setStyleSheet("QLineEdit{background: red;}")
+            txTypeErrorFlag = True
+        
         # The tranmission frequency as entered by the user
         freq = self.firstTxFreq.text()
-
 
         # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
-            self.txTypeError()
-            return
-
-        # Check that the value entered by the user is valid. Replace '' with '0'
-        # where appropriate
-        for val in payload:
-            payload[val] = self.checkTypeAndConvert(payload[val])
-            if payload[val] == None:
-                self.txTypeError()
-                return
+            txTypeErrorFlag = True
 
         # For redundancy, insert the values back into the QLineEdits. Necessary
         # if user left the LineEdits blank, which caused a default 0 to be added.
@@ -196,6 +260,15 @@ class TransmitGridWidget(QtWidgets.QDialog):
             # Then set the text from the label to the QLineEdit
             fieldDataLineEdit.setText(str(payload[fieldName]))
 
+        # We messed up earlier but are returning here 
+        # after the Line Edits were cleaned up.
+        # FIXME: Give a detailed error message here... try entering a value that is
+        # too big or too small for the data field length. Error message is too generic
+        # Use the same logic as the error messages from generateMessage(). 
+        if txTypeErrorFlag:
+            self.txTypeError()
+            return
+
         messageName = self.firstTxMessageInfo.currentText()
         try:
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
@@ -205,9 +278,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         if freq == 0:
             # Broadcase message only once. Skip messagTxInit step and directly push to queue
             self.pushToTransmitQueue()
-
         else:
             self.messageTxInit(freq)
+
 
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
