@@ -190,58 +190,25 @@ class TransmitGridWidget(QtWidgets.QDialog):
         return "fix this code"
 
 
+
     def txActivateHandler(self):
         # We shouldn't transmit anything if we are not streaming yet.
         if not self.dataBack.alreadyStreaming:
             self.notStreamingWarn()
             return
-        txTypeErrorFlag = False
-        # A dictionary for payload fields and values
-        payload = {}
+        self.txTypeErrorFlag = False
         # A list to store QLineEdits that have bad data
         self.errContainer = []
-        messageInfoName = self.firstTxMessageInfo.currentText()
-        currentMessageInfo = self.dataBack.messages[messageInfoName]
         # Cycle through all the current payload QLineEdits, and extract the values
-        # Do error checking with each cycle
-        for pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
-            fieldName = pair[0].text()
-            payloadString = pair[1].text()
+        # Do error checking with each cycle. Errors cause QLineEdits go to 'errContainer'
+        # for accessing them later. Both good and bad data gets stored in 'payload'.
+        payload = self.getPayloadsFromLineEdits()
 
-            # Convert the payload to an int
-            payloadInt = self.checkTypeAndConvert(payloadString)
-            # If it can't be converted to an int, then the user gave bad data.
-            # Just at the bad data to the payload dictionary, and save a reference
-            # to the corresponding QLineEdit.
-            if payloadInt == None:
-                payload[fieldName] = payloadString # Bad data!
-                txTypeErrorFlag = True
-                self.errContainer.append(pair[1])
-                continue
-
-            # Now that we know the payload is has been converted to an integer or a float,
-            # assign the value to the payload dictionary where it will be actually used
-            payload[fieldName] = payloadInt
-
-            currentField = currentMessageInfo.fields[fieldName]
-
-            # Next we make sure that the payload, once converted to a CAN message, will
-            # fit within the bit boundary as specified in the meta data for this field
-            Success = self.checkBoundsOnPayload(payloadInt, 
-                    currentMessageInfo, currentField, self.dataBack)
-            if not Success:
-                # Add the QLineEdit with dirty data to this list, so that we can acess
-                # them all at once.
-                self.errContainer.append(pair[1])
-            else:
-                # The current QLine Edit has clean data. Set its background to white 
-                # in case it was previously set to red.
-                pair[1].setStyleSheet("QLineEdit{background: white;}")
-
+        # Change the background color to red if the user data is bad
         if len(self.errContainer) > 0:
             for lineEdit in self.errContainer:
                 lineEdit.setStyleSheet("QLineEdit{background: red;}")
-            txTypeErrorFlag = True
+            self.txTypeErrorFlag = True
         
         # The tranmission frequency as entered by the user
         freq = self.firstTxFreq.text()
@@ -249,7 +216,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # Check that the frequency value is valid
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
-            txTypeErrorFlag = True
+            self.txTypeErrorFlag = True
 
         # For redundancy, insert the values back into the QLineEdits. Necessary
         # if user left the LineEdits blank, which caused a default 0 to be added.
@@ -265,11 +232,13 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # FIXME: Give a detailed error message here... try entering a value that is
         # too big or too small for the data field length. Error message is too generic
         # Use the same logic as the error messages from generateMessage(). 
-        if txTypeErrorFlag:
+        if self.txTypeErrorFlag:
             self.txTypeError()
             return
 
         messageName = self.firstTxMessageInfo.currentText()
+        # At this point we have done our own error checking here, so the try except block
+        # is now redundant
         try:
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
         except Exception as e:
@@ -281,6 +250,46 @@ class TransmitGridWidget(QtWidgets.QDialog):
         else:
             self.messageTxInit(freq)
 
+    def getPayloadsFromLineEdits(self):
+        payload = {}
+        messageInfoName = self.firstTxMessageInfo.currentText()
+        currentMessageInfo = self.dataBack.messages[messageInfoName]
+        for Label_Line_pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
+            fieldName = Label_Line_pair[0].text()
+            payloadString = Label_Line_pair[1].text()
+
+            # Convert the payload to an int
+            payloadInt = self.checkTypeAndConvert(payloadString)
+            # If it can't be converted to an int, then the user gave bad data.
+            # Just at the bad data to the payload dictionary, and save a reference
+            # to the corresponding QLineEdit.
+            if payloadInt == None:
+                payload[fieldName] = payloadString # Bad data!
+                self.txTypeErrorFlag = True
+                self.errContainer.append(Label_Line_pair[1])
+                continue
+
+            # Now that we know the payload is has been converted to an integer or a float,
+            # assign the value to the payload dictionary where it will be actually used
+            payload[fieldName] = payloadInt
+
+            currentField = currentMessageInfo.fields[fieldName]
+
+            # Next we make sure that the payload, once converted to a CAN message, will
+            # fit within the bit boundary as specified in the meta data for this field
+            Success = self.checkBoundsOnPayload(payloadInt, 
+                    currentMessageInfo, currentField, self.dataBack)
+            if not Success:
+                # Add the QLineEdit with dirty data to this list, so that we can acess
+                # them all at once.
+                self.errContainer.append(Label_Line_pair[1])
+            else:
+                # The current QLine Edit has clean data. Set its background to white 
+                # in case it was previously set to red.
+                Label_Line_pair[1].setStyleSheet("QLineEdit{background: white;}")
+        # Now that payload has been populated with
+        # both good and bad data, return it
+        return payload
 
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
