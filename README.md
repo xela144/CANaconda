@@ -120,7 +120,7 @@ To make changes active, log out, closing session completely, and log back in.
 To install Qt:
 Although we can't use apt-get to install Qt5, there are good instructions found at https://qt-project.org/wiki/Install_Qt_5_on_Ubuntu. To do an online install of Qt5.3.1, follow these steps.
 
->wget http://download.qt-project.org/official_releases/online_installers/qt-opensource-linux-x64-1.6.0-4-online.run
+Download the latest version of Qt at http://qt-project.org/downloads
 
 Make the file executable and then run it:
 
