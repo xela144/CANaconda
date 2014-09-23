@@ -1,12 +1,14 @@
-#include "CircularBuffer.h"
 #include "Uart1.h"
+
+#include "CircularBuffer.h"
+
 #include <xc.h>
 #include <uart.h>
 
 static CircularBuffer uart1RxBuffer;
-static uint8_t u1RxBuf[1024];
+static uint8_t u1RxBuf[UART1_BUFFER_SIZE];
 static CircularBuffer uart1TxBuffer;
-static uint8_t u1TxBuf[1024];
+static uint8_t u1TxBuf[UART1_BUFFER_SIZE];
 
 /*
  * Private functions.
@@ -24,24 +26,25 @@ void Uart1StartTransmission(void);
 void Uart1Init(uint16_t brgRegister)
 {
     // First initialize the necessary circular buffers.
-    CB_Init(&uart1RxBuffer, u1RxBuf, sizeof (u1RxBuf));
-    CB_Init(&uart1TxBuffer, u1TxBuf, sizeof (u1TxBuf));
+    CB_Init(&uart1RxBuffer, u1RxBuf, sizeof(u1RxBuf));
+    CB_Init(&uart1TxBuffer, u1TxBuf, sizeof(u1TxBuf));
 
     // If the UART was already opened, close it first. This should also clear the transmit/receive
     // buffers so we won't have left-over data around when we re-initialize, if we are.
     CloseUART1();
 
     // Configure and open the port.
-    OpenUART1(
-            UART_EN & UART_IDLE_CON & UART_IrDA_DISABLE & UART_MODE_FLOW & UART_UEN_00 & UART_EN_WAKE & UART_DIS_LOOPBACK & UART_DIS_ABAUD & UART_NO_PAR_8BIT & UART_UXRX_IDLE_ONE & UART_BRGH_SIXTEEN & UART_1STOPBIT,
-            UART_INT_TX_LAST_CH & UART_IrDA_POL_INV_ZERO & UART_SYNC_BREAK_DISABLED & UART_TX_ENABLE & UART_INT_RX_CHAR & UART_ADR_DETECT_DIS & UART_RX_OVERRUN_CLEAR,
-            brgRegister
-            );
+    OpenUART1(UART_EN & UART_IDLE_CON & UART_IrDA_DISABLE & UART_MODE_FLOW & UART_UEN_00 &
+        UART_EN_WAKE & UART_DIS_LOOPBACK & UART_DIS_ABAUD & UART_NO_PAR_8BIT & UART_UXRX_IDLE_ONE &
+        UART_BRGH_SIXTEEN & UART_1STOPBIT,
+        UART_INT_TX_LAST_CH & UART_IrDA_POL_INV_ZERO & UART_SYNC_BREAK_DISABLED & UART_TX_ENABLE &
+        UART_INT_RX_CHAR & UART_ADR_DETECT_DIS & UART_RX_OVERRUN_CLEAR,
+        brgRegister
+    );
 
     // Setup interrupts for proper UART communication. Enable both TX and RX interrupts at
     // priority level 6 (arbitrary).
-    ConfigIntUART1(UART_RX_INT_EN & UART_RX_INT_PR6 &
-            UART_TX_INT_EN & UART_TX_INT_PR6);
+    ConfigIntUART1(UART_RX_INT_EN & UART_RX_INT_PR6 & UART_TX_INT_EN & UART_TX_INT_PR6);
 }
 
 void Uart1ChangeBaudRate(uint16_t brgRegister)
@@ -73,7 +76,9 @@ void Uart1StartTransmission(void)
     while (uart1TxBuffer.dataSize > 0 && !U1STAbits.UTXBF) {
         // A temporary variable is used here because writing directly into U1TXREG causes some weird issues.
         uint8_t c;
+        IEC0bits.U1TXIE = 0;
         CB_ReadByte(&uart1TxBuffer, &c);
+        IEC0bits.U1TXIE = 1;
 
         // We process the char before we try to send it in case writing directly into U1TXREG has
         // weird side effects.
@@ -83,7 +88,10 @@ void Uart1StartTransmission(void)
 
 int Uart1ReadByte(uint8_t *datum)
 {
-    return CB_ReadByte(&uart1RxBuffer, datum);
+    IEC0bits.U1RXIE = 0;
+    int rv = CB_ReadByte(&uart1RxBuffer, datum);
+    IEC0bits.U1RXIE = 1;
+    return rv;
 }
 
 /**
@@ -92,7 +100,9 @@ int Uart1ReadByte(uint8_t *datum)
  */
 void Uart1WriteByte(uint8_t datum)
 {
+    IEC0bits.U1TXIE = 0;
     CB_WriteByte(&uart1TxBuffer, datum);
+    IEC0bits.U1TXIE = 1;
     Uart1StartTransmission();
 }
 
@@ -102,9 +112,12 @@ void Uart1WriteByte(uint8_t datum)
  */
 int Uart1WriteData(const void *data, size_t length)
 {
-    int success = CB_WriteMany(&uart1TxBuffer, data, length, false);
-
-    Uart1StartTransmission();
+    IEC0bits.U1TXIE = 0;
+    int success = CB_WriteMany(&uart1TxBuffer, data, length, true);
+    IEC0bits.U1TXIE = 1;
+    if (success) {
+        Uart1StartTransmission();
+    }
 
     return success;
 }
@@ -127,7 +140,7 @@ void _ISR _U1RXInterrupt(void)
             c = U1RXREG;
         } else {
             c = U1RXREG;
-            CB_WriteByte(&uart1RxBuffer, (uint8_t) c);
+            CB_WriteByte(&uart1RxBuffer, (uint8_t)c);
         }
     }
 
@@ -148,7 +161,15 @@ void _ISR _U1TXInterrupt(void)
     // TRMT bit to stall until the character is properly transmit.
     while (!U1STAbits.TRMT);
 
-    Uart1StartTransmission();
+    while (uart1TxBuffer.dataSize > 0 && !U1STAbits.UTXBF) {
+        // A temporary variable is used here because writing directly into U1TXREG causes some weird issues.
+        uint8_t c;
+        CB_ReadByte(&uart1TxBuffer, &c);
+
+        // We process the char before we try to send it in case writing directly into U1TXREG has
+        // weird side effects.
+        U1TXREG = c;
+    }
 
     // Clear the interrupt flag
     IFS0bits.U1TXIF = 0;
