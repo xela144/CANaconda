@@ -146,9 +146,12 @@ PyQt depends on Sip, which is found at www.riverbankcomputing.com. Download and 
 If you get an error that "python.h" is not found, it's because python3-dev is not installed.
 
 To install PyQt5, run the configure.py script:
+
 >python3 configure.py 
+
 If the program can't find the right version of qmake, use option -q along with the path.
->python3 configure.py -q  ~/Qt/5.3/gcc_64/bin/qmake
+
+>python3 configure.py -q  ~/path/to/qmake
  
 Then build and install. (Bro tip: use the -j option for multicore processors)
 
