@@ -181,16 +181,14 @@ class Ui_MainWindow(QtCore.QObject):
 #################
         self.tabWidget = QtWidgets.QTabWidget(self.visualizeFrame)
         self.tabWidget.setObjectName("tabWidget")
-        self.filterTab = QtWidgets.QWidget()
-        self.filterTab.setObjectName("filterTab")
-        self.filterTable = filterTable.FilterTable()
-        self.filterTable.setup(self.dataBack, self)
-        self.filterTable.setObjectName("filterTable")
-        self.filterTable.populateTable()
-        self.treeWidgetTab = QtWidgets.QWidget()
-        self.treeWidgetTab.setObjectName("treeWidgetTab")
-        self.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
-        self.filtersTreeWidget.setup(self, self.dataBack)
+        self.filterTable = filterTable.FilterTable()    #
+        self.filterTable.setup(self.dataBack, self)     #
+        self.filterTable.setObjectName("filterTable")   #
+        self.filterTable.populateTable()                #
+        self.treeWidgetTab = QtWidgets.QWidget()        #  
+        self.treeWidgetTab.setObjectName("treeWidgetTab")              #
+        self.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget() #
+        self.filtersTreeWidget.setup(self, self.dataBack)              #
         self.tabWidget.addTab(self.filterTable, "")
         self.tabWidget.addTab(self.filtersTreeWidget, "")
         self.verticalLayout.addWidget(self.tabWidget)
@@ -231,10 +229,6 @@ class Ui_MainWindow(QtCore.QObject):
             self.menuChoose_port.addAction(_port)
             _port.triggered.connect(self.comportSelect)
         ##########
-        self.actionTab1 = QtWidgets.QAction(mainWindow)
-        self.actionTab1.setObjectName("actionTab1")
-        self.actionTab2 = QtWidgets.QAction(mainWindow)
-        self.actionTab2.setObjectName("actionTab2")
         self.menuWidget.addAction(self.actionLoad_filters_from_file)
         self.menuWidget.addAction(self.menuChooseBaud.menuAction())
         self.menuWidget.addAction(self.menuChoose_port.menuAction())
