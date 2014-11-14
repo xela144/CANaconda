@@ -233,19 +233,11 @@ def pyserialGuiInit(dataBack):
     from CanDataTranscoder import CanTranscoderGUI
     dataBack.canTranscoderGUI = CanTranscoderGUI(dataBack)
 
+
 def canacondaGuiRun(dataBack):
-    # Qt imports
-    from PyQt5.QtWidgets import QApplication, QMainWindow, QStyleFactory
-    import ui_mainwindow
-    app = QApplication(sys.argv)
-    app.setStyle(QStyleFactory.create("Fusion"))
-    mainWindow = QMainWindow()
-    ui = ui_mainwindow.Ui_MainWindow()
-    # call setupUi with the necessary objects
-    ui.setupUi(mainWindow, dataBack)
-    # run the gui
-    mainWindow.show()
-    sys.exit(app.exec_())
+    # Call the wrapper class that inserts widgets into the pyuic5-generated GUI code from Qt Designer
+    import canaconda_GUI
+    ui = canaconda_GUI.Ui_CANaconda_GUI(dataBack)
 
 
 if __name__ == "__main__":
