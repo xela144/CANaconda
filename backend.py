@@ -40,10 +40,6 @@ class CanData():
     def __init__(self, args):
         # Store args from argparse:
         self.args = args
-        #Headers is the set of all CAN IDs that have been seen
-        self.headers = set()
-        #pgn is the set of all PGNs that have been seen
-        self.pgnSeenSoFar = set()
         # An array which contains all of the most recent messages for
         # each type seen so far
         self.messagesSeenSoFar = {}
@@ -57,15 +53,16 @@ class CanData():
             self.comport = args.nogui[0]
         else:
             self.comport = None
-        if args.fast:
-            self.comport = '/dev/ttyUSB0'
 
         # All of the current messages applied by the user.
         # Populated with messageInfo objects
         self.messages = {}
 
-        # Multithreading queue for receiving messages from the bus
+        # Multithreading queue for passing decoded CAN messages
         self.CANacondaRxMsg_queue = queue.Queue()
+
+        # Multithreading queue for receiving messages from the serial port
+        self.CANacondaRx_TranscodeQueue = queue.Queue()
 
         # Multithreading queue for transmitting messages tot he bus
         self.CANacondaTxMsg_queue = queue.Queue()

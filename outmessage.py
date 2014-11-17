@@ -6,8 +6,21 @@ For both the console mode and the GUI mode.
 '''
 
 import time
-from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
+from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
+
+# FIXME: update this as more cases are discovered from use or by examining
+# the packetlogger text
+unitStringMap = {
+        'MPS':'m/s', 'KNOT':'knots', 'MPH':'MPH',
+        'RAD':'radians', 'DEG':'degrees',
+        'CEL':'°C', 'FAR': '°F', 'K':'°K',
+        'V':'V',
+        '%':'%',
+        'HPA':'hPa',
+        'S':'s',
+        'DAYS':'days'
+        }
 
 # displayList constants
 ID, PGN, BODY, RAW = range(4)
@@ -39,8 +52,9 @@ def noGuiParse(dataBack, message):
     if message.name:
         outmsg += "\n" + message.name
     
-    # Then the PGN
-    if dataBack.displayList[PGN]:
+    # Then the PGN, if format is extended. First check format.
+    Extended = dataBack.messages[message.name].format == CAN_FORMAT_EXTENDED
+    if dataBack.displayList[PGN] and Extended:
         outmsg += "\nPGN: " + str(message.pgn)
     
     # Then the raw bytes of the message
@@ -51,12 +65,12 @@ def noGuiParse(dataBack, message):
     
     # Now finally pretty-print the internal data if metadata exists for this message
     if dataBack.displayList[ID]:
-        outmsg += "\nFilter ID: " + hex(message.id)
+        outmsg += "\nID: " + hex(message.id)
     # if displayList is empty, display all:
     if dataBack.displayList[BODY]:
         for field in message.body:
-            # If filtering, and no match, message.body[field] will be '', and we do a hard break.
-            if message.body[field] == '':
+            # If filtering, and no match, message.body[field] will be None, and we do a hard break.
+            if message.body[field] == None:
                 dataFound = False
                 return
 
@@ -64,11 +78,25 @@ def noGuiParse(dataBack, message):
                 if field:
                     dataFound = True
                 try:
+                    # If there is no unit conversion the payload is an int, and no decimals should be used.
+                    # This flag will be used to sort this out
+                    conversion = False
                     if dataBack.messages[message.name].fields[field].unitsConversion:
                         units = dataBack.messages[message.name].fields[field].unitsConversion
+                        conversion = True
                     else:
                         units = dataBack.messages[message.name].fields[field].units
-                    outmsg += '\n{0}: {1:0.3f} {2}'.format(field, message.body[field], units)
+                    if conversion:
+                        # Since there is a units conversion, there is a reason to format the body as a float
+                        body = '{0.3f}'.format(message.body[field])
+                    else:
+                        # Since there is no units conversion, there is no reason to format the body
+                        body = message.body[field]
+                    prettyUnits = unitStringMap[units]
+                    outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
+                # This will produce a KeyError for unspecified names or names that do
+                # not need to be changed. Error won't show up as a stack trace since this
+                # is in its own thread FIXME
                 except:
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:

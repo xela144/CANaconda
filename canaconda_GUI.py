@@ -1,19 +1,9 @@
-# ui_mainwindow.py
-# Originally generated with QtCreator and pyuic.
-'''
-Layout code is executed and GUI will load without any metadata loaded.
-When a comport is selected, self.pyserialInit is called, and serial thread
-is created. Message streaming will begin.
-When a metadata file is loaded, the 'ViewMetadata' tree widget is populated.
-When new decoded messages are discovered, the 'newMessageUp' signal is emitted
-from the serial thread, self.populateTable.
-Message transmission will take place if the 'Activate' pushbutton is pressed
-and no error occurs. (error checking not yet implemented)
+"""
+This is the GUI script. The general GUI setup is done using the  pyuic5-generated code
+that we get from Qt Designer. Once that setup function is called, we proceed to insert our
+own widgets, and our logic goes on top of that.
+"""
 
-Recieve queue:  CANacondaRxMsg_queue
-transmit queue: CANacondaTxMsg_queue
-
-'''
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QApplication
@@ -42,233 +32,69 @@ from outmessage import ID, PGN, BODY, RAW
 # Message stream enum
 DECODED, RAW_HEX, CSV = range(3)
 
-class Ui_MainWindow(QtCore.QObject):
+from canaconda_mainwindow import *
+
+
+class Ui_CANaconda_GUI(QtCore.QObject):
     startHourGlass = pyqtSignal()
     outmsgSignal = pyqtSignal()
-    def setupUi(self, mainWindow, dataBack):
+    def __init__(self, dataBack):
+        QtCore.QObject.__init__(self) # Without this, the PyQt wrapper is created but the C++ object is not!!!
+        from PyQt5.QtWidgets import QApplication, QMainWindow, QStyleFactory
+        import canaconda_mainwindow
+        import sys
+        app = QApplication(sys.argv)
+        app.setStyle(QStyleFactory.create("Fusion"))
+        self.mainWindow = QMainWindow()
+        #FIXME this ui business might get confusing and hard to maintain
+        self.ui = canaconda_mainwindow.Ui_CANaconda_MainWindow()
+        self.ui.setupUi(self.mainWindow)
+       
         self.dataBack = dataBack
-        self.messageCount = 0
-#############################
-## Layout code
-#############################
-        mainWindow.setObjectName("mainindow")
-        self.centralWidget = QtWidgets.QWidget(mainWindow)
-        self.centralWidget.setObjectName("centralWidget")
-        self.verticalLayout_top = QtWidgets.QVBoxLayout(self.centralWidget)
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.verticalLayout_top.addLayout(self.horizontalLayout)
+        self.insertWidgets()
 
-        self.messagesFrame = QtWidgets.QFrame(self.centralWidget)
-        self.messagesFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.messagesFrame.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.messagesFrame.setObjectName("messagesFrame")
-        self.messagesFrame.setMinimumWidth(400)
-        self.messagesFrame.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
-                                         QtWidgets.QSizePolicy.Expanding)
-
-        #### Logging ####
-        self.loggingFrame = QtWidgets.QFrame()
-        self.loggingFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.loggingFrame.setObjectName("LOGGINGFRAME")
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.loggingFrame)
-        self.horizontalLayout_2.setObjectName("HORIZONTAL_LAYOUT_2")
-        self.verticalLayout_top.addWidget(self.loggingFrame)
-
-        self.logLabel = QtWidgets.QLabel()
-        self.logLabel.setText("Enter filename:")
-        self.buttonLogging = QtWidgets.QPushButton()
-        self.buttonLogging.setObjectName("save")
-        self.buttonLogging.setText("Start logging") 
-        self.buttonLogging.clicked.connect(self.saveToFile)
-        self.logLabel.setBuddy(self.buttonLogging)
-        self.logFileName = QtWidgets.QLineEdit()
-        self.logFileName.setObjectName("fileName")
-        self.logFileName.returnPressed.connect(self.saveToFile)
-        self.loggingStatusLabel = QtWidgets.QLabel()
-        self.loggingStatusLabel.setTextFormat(1)
-        self.loggingStatusLabel.setText("Status:  <font color=grey><i>not recording</i></font>")
-        # Signal handler:
-        self.outmsgSignal.connect(self.loggingStatusHandler)
-        self.horizontalLayout_2.addWidget(self.logLabel)
-        self.horizontalLayout_2.addWidget(self.logFileName)
-        self.horizontalLayout_2.addWidget(self.buttonLogging)
-        self.horizontalLayout_2.addSpacing(100)
-        self.horizontalLayout_2.addWidget(self.loggingStatusLabel)
-
-        ################################
-        ####### Transmission code ######
-        ################################
-        self.txFrame = QtWidgets.QFrame()
-        self.txFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.txFrame.setObjectName("TXFRAME")
-        self.verticalLayout_top.addWidget(self.txFrame)
-
-        self.transmitGrid = transmitGrid.TransmitGridWidget(self.txFrame)
-        self.transmitGrid.setup(self.txFrame, self.dataBack)
-        self.transmitGrid.setObjectName("transmitGrid")
-        ###############################
+        self.mainWindow.show()
+        sys.exit(app.exec_())
 
 
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.messagesFrame)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.label = QtWidgets.QLabel(self.messagesFrame)
-        self.label.setObjectName("messageStreamLabel")
-        self.verticalLayout_2.addWidget(self.label)
-
-
-        #### Display Combobox code ####
-        # Choose the format for displaying messages in the Message Stream frame
-        # When first launching, default display to 'raw hex' and make inactive
-        self.displayLayout = QtWidgets.QHBoxLayout()
-        self.verticalLayout_2.addLayout(self.displayLayout)
-        self.displayLayout.setObjectName("display combobox layout")
-        self.displayLabel = QtWidgets.QLabel()
-        self.displayLabel.setText("Display: ")
-        self.displayCombo = QtWidgets.QComboBox()
-        self.displayLayout.addWidget(self.displayLabel)
-        self.displayLayout.addWidget(self.displayCombo)
-        
-        # Note: displayList must be in order of message stream enum at top of file
-        displayList = ["Decoded", "Raw hex", "CSV"]
-        self.displayCombo.addItems(displayList)
-        self.displayCombo.setDisabled(True)  # FIXME set enabled when metadata loaded
-        self.displayCombo.setCurrentIndex(RAW_HEX)
-        self.displayCombo.currentIndexChanged.connect(self.setOutput)
-        self.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText) 
-
-        self.messagesTextBrowser = QtWidgets.QTextBrowser(self.messagesFrame)
-        self.messagesTextBrowser.setObjectName("messagesTextBrowser")
-        #FIXME: set the flag to be able to delete text in the text browser
-        self.verticalLayout_2.addWidget(self.messagesTextBrowser)
-
-        if self.dataBack.args.debug:
-            self.debug = QtWidgets.QPushButton()
-            self.debug.setText("pdb")
-            self.debug.clicked.connect(self.debugMode)
-            self.buttonsGrid = QtWidgets.QGridLayout()
-            self.verticalLayout_2.addLayout(self.buttonsGrid)
-            self.buttonsGrid.setObjectName("button grid layout")
-            self.buttonsGrid.addWidget(self.debug, 3,1, 1,2)
-
-        self.horizontalLayout.addWidget(self.messagesFrame)
-        self.visualizeFrame = QtWidgets.QFrame(self.centralWidget)
-        self.visualizeFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.visualizeFrame.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.visualizeFrame.setObjectName("visualizeFrame")
-        self.visualizeFrame.setMinimumWidth(555)
-        self.visualizeFrame.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                          QtWidgets.QSizePolicy.Expanding)
-
-
-        ##### Right side #####
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.visualizeFrame)
-        self.verticalLayout.setObjectName("verticalLayout")
-
-        self.topRightLabels = QtWidgets.QHBoxLayout()
-        self.topRightLabels.setObjectName("topRightLabels")
-        self.verticalLayout.addLayout(self.topRightLabels)
-
-        self.label_2 = QtWidgets.QLabel(self.visualizeFrame)
-        self.label_2.setObjectName("label_2")
-        self.topRightLabels.addWidget(self.label_2)
-
-        self.fileNameLabel = QtWidgets.QLabel()
-        self.topRightLabels.addWidget(self.fileNameLabel)
-        self.fileNameLabel.setText("MetaData file: <font color=grey><i>   None loaded</></font>    ")
-#################
-# TabWidget, tableWidget, and treeWidget code
-#################
-        self.tabWidget = QtWidgets.QTabWidget(self.visualizeFrame)
-        self.tabWidget.setObjectName("tabWidget")
-        self.filterTable = filterTable.FilterTable()    #
-        self.filterTable.setup(self.dataBack, self)     #
-        self.filterTable.setObjectName("filterTable")   #
-        self.filterTable.populateTable()                #
-        self.treeWidgetTab = QtWidgets.QWidget()        #  
-        self.treeWidgetTab.setObjectName("treeWidgetTab")              #
-        self.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget() #
-        self.filtersTreeWidget.setup(self, self.dataBack)              #
-        self.tabWidget.addTab(self.filterTable, "")
-        self.tabWidget.addTab(self.filtersTreeWidget, "")
-        self.verticalLayout.addWidget(self.tabWidget)
-        self.horizontalLayout.addWidget(self.visualizeFrame)
-        mainWindow.setCentralWidget(self.centralWidget)
-
-#############################
-## Menu code
-#############################
-        self.menuBar = QtWidgets.QMenuBar(mainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 659, 20))
-        self.menuBar.setObjectName("menuBar")
-        self.menuWidget = QtWidgets.QMenu(self.menuBar)
-        self.menuWidget.setObjectName("menuWidget")
-
-        self.menuChooseBaud = QtWidgets.QMenu(self.menuWidget)
-        self.menuChooseBaud.setObjectName("menuChooseBaud")
-        self.menuChooseBaud.addAction("Not supported yet, and these checkboxes should be radio buttons")
-        for baudrate in BAUDLIST:
-            _baudrate = QtWidgets.QAction(baudrate,  mainWindow)
-            _baudrate.setCheckable(True)
-            self.menuChooseBaud.addAction(_baudrate)
-            _baudrate.triggered.connect(self.setBaud)
-
-        self.menuChoose_port = QtWidgets.QMenu(self.menuWidget)
-        self.menuChoose_port.setObjectName("menuChoose_port")
-        mainWindow.setMenuBar(self.menuBar)
-        self.actionLoad_filters_from_file = QtWidgets.QAction(mainWindow)
-        self.actionLoad_filters_from_file.setObjectName(
-                                        "actionLoad_filters_from_file")
-        self.actionLoad_filters_from_file.triggered.connect(self.loadFilter)
-        # comports code:
-        ##########
-        # Populate the serial port menu with all the available ports.
-        for port in comports():
-            _port = QtWidgets.QAction(port[0], mainWindow)
-            _port.setCheckable(True)
-            self.menuChoose_port.addAction(_port)
+    def insertWidgets(self):
+        # First the comports code
+        self.ui.menuChoose_port = QtWidgets.QMenu(self.ui.menuAction) 
+        self.ui.menuChoose_port.setObjectName("menuChoose_port")
+        self.ui.menuChoose_port.setTitle("Choose Port")
+        for com in comports():
+            _port = QtWidgets.QAction(self.mainWindow)
+            _port.setText(com[0])
             _port.triggered.connect(self.comportSelect)
-        ##########
-        self.menuWidget.addAction(self.actionLoad_filters_from_file)
-        self.menuWidget.addAction(self.menuChooseBaud.menuAction())
-        self.menuWidget.addAction(self.menuChoose_port.menuAction())
-        self.menuBar.addAction(self.menuWidget.menuAction())
-        # QtDesigner code:
-        self.retranslateUi(mainWindow)
-        self.tabWidget.setCurrentIndex(0)
-        QtCore.QMetaObject.connectSlotsByName(mainWindow)
+            self.ui.menuChoose_port.addAction(_port)
+        self.ui.menuAction.addAction(self.ui.menuChoose_port.menuAction())
 
-        ## Check for command line arguments: --messages or --port
-        if self.dataBack.args.messages != None:
-            self.commandLineLoadFilter()
+        # Here we set up one of the tabs
+        self.ui.filterTable = filterTable.FilterTable()
+        self.ui.filterTable.setup(self.dataBack, self)
+        self.ui.filterTable.setObjectName("filterTable")
+        self.ui.filterTable.populateTable()
+        self.ui.tabWidget.addTab(self.ui.filterTable, "Units and filtering by value")
+    
+        # set up the other tab
+        self.ui.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
+        self.ui.filtersTreeWidget.setup(self.ui, self.dataBack)
+        self.ui.tabWidget.addTab(self.ui.filtersTreeWidget, "View Meta Data")
 
-        if self.dataBack.args.port != None:
-            self.comportSelect()
+        # Now set up the transmit grid
+        self.ui.transmitGrid = transmitGrid.TransmitGridWidget(self.ui.transmitWidget)
+        self.ui.transmitGrid.setup(self.ui.transmitWidget, self.dataBack)
+        self.ui.transmitGrid.setObjectName("transmitGrid")
 
-
-    def retranslateUi(self, mainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        mainWindow.setWindowTitle(_translate(
-                                "MainWindow", "CAN Message Viewer"))
-        self.label.setText(_translate("MainWindow", "Message Stream"))
-        self.label_2.setText(_translate("MainWindow", "MetaData and Filtering"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.filterTable),
-                            _translate("MainWindow", "Units and filtering by value"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(
-                                      self.filtersTreeWidget),
-                                     _translate("MainWindow", "View MetaData"))
-        self.menuWidget.setTitle(_translate("MainWindow", "&Action"))
-        self.menuChooseBaud.setTitle(_translate("MainWindow", "Choose Can &Baud"))
-        self.menuChoose_port.setTitle(_translate("MainWindow", "&Choose port"))
-        self.actionLoad_filters_from_file.setText(_translate(
-                                    "MainWindow", "Load &Filters from file"))
+        # start connecting signals and slots
+        self.ui.actionLoad_Filters_From_File.triggered.connect(self.loadFilter)
+        self.ui.loggingButton.clicked.connect(self.saveToFile)
 
 
-    #
     def updateUi(self):
         outmsg = self.getMessage(self.dataBack.CANacondaRxMsg_queue)
         if outmsg is not None:
-            self.messagesTextBrowser.append("%s" % outmsg)
+            self.ui.messagesTextBrowser.append("%s" % outmsg)
             self.outmsgSignal.emit()
 
     def getMessage(self, CANacondaRxMsg_queue):
@@ -341,7 +167,7 @@ class Ui_MainWindow(QtCore.QObject):
         # Use this timer as a watchdog for when a node on the bus is shut off.
         # Without it, frequency column won't go back to zero.
         self.freqTimer = QtCore.QTimer()
-        self.freqTimer.timeout.connect(self.filterTable.updateValueInTable)
+        self.freqTimer.timeout.connect(self.ui.filterTable.updateValueInTable)
         self.freqTimer.start(1000)
 
     # begin receiving messages and push to CANacondaRxMsg_queue
@@ -353,8 +179,8 @@ class Ui_MainWindow(QtCore.QObject):
         if type(self.serialCAN) != int:
             self.dataBack.canTranscoderGUI.parsedMsgPut.connect(self.updateUi)
             self.dataBack.canTranscoderGUI.parsedMsgPut.connect(
-                                               self.filterTable.updateValueInTable)
-            self.dataBack.canTranscoderGUI.newMessageUp.connect(self.filterTable.populateTable)
+                                               self.ui.filterTable.updateValueInTable)
+            self.dataBack.canTranscoderGUI.newMessageUp.connect(self.ui.filterTable.populateTable)
             self.removeHourGlass()
             self.setStreamingFlag()
             return True
@@ -416,14 +242,14 @@ class Ui_MainWindow(QtCore.QObject):
         self.fileName = fileName
 
         self.updateFileNameQLabel()
-        self.filtersTreeWidget.populateTree()
+        self.ui.filtersTreeWidget.populateTree()
         self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
-        self.transmitGrid.populateTxMessageInfoCombo()
+        self.ui.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
-        self.displayCombo.setDisabled(False)
-        self.displayCombo.setCurrentIndex(DECODED)
+        self.ui.displayCombo.setDisabled(False)
+        self.ui.displayCombo.setCurrentIndex(DECODED)
 
 
     # If --messages argument was given, this function loads the metadata file.
@@ -438,7 +264,7 @@ class Ui_MainWindow(QtCore.QObject):
         # Save the filename for updating the UI
         self.fileName = fileName
         self.updateFileNameQLabel()
-        self.filtersTreeWidget.populateTree()
+        self.ui.filtersTreeWidget.populateTree()
         self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
@@ -453,14 +279,14 @@ class Ui_MainWindow(QtCore.QObject):
     def updateFileNameQLabel(self):
         self.fileName = self.fileName.split('/')[-1]
         text = "MetaData file: <font color=grey><i>  " + self.fileName + "</></font>    "
-        self.fileNameLabel.setText(text)
+        self.ui.fileNameLabel.setText(text)
 
     # Connected with displayCombo's currentIndexChanged signal
     def updateButtonLoggingText(self):
         # Before updating the text, make sure we are not currently logging, in which
         # case the button should read "End Logging", and therefore should not be updated.
         if not self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText())
+            self.ui.loggingButton.setText("Start logging as " + self.displayCombo.currentText())
             # Also, re-enable the DisplayAs combobox
 
 
@@ -478,12 +304,12 @@ class Ui_MainWindow(QtCore.QObject):
     # Set the messageInfo_to_fields for correct message stream output
     def update_messageInfo_to_fields(self):
         self.dataBack.messageInfo_to_fields = {}
-        for row in range(0,self.filterTable.tableWidget.rowCount()):
-            if self.filterTable.tableWidget.item(
+        for row in range(0,self.ui.filterTable.tableWidget.rowCount()):
+            if self.ui.filterTable.tableWidget.item(
                     row, filterTable.CHECKBOX).checkState() == QtCore.Qt.Checked:
-                name = self.filterTable.tableWidget.item(
+                name = self.ui.filterTable.tableWidget.item(
                                                 row, filterTable.MESSAGE).text()
-                field = self.filterTable.tableWidget.item(
+                field = self.ui.filterTable.tableWidget.item(
                                                 row, filterTable.FIELD).text()
                 if name in self.dataBack.messageInfo_to_fields:
                     self.dataBack.messageInfo_to_fields[name].append(field)
@@ -536,7 +362,7 @@ class Ui_MainWindow(QtCore.QObject):
                 i += 1
 
     def clearTextBrowser(self):
-        self.messagesTextBrowser.clear()
+        self.ui.messagesTextBrowser.clear()
 
 
     # This function handles the logging functionality. When the "start logging as..." 
@@ -545,55 +371,55 @@ class Ui_MainWindow(QtCore.QObject):
     # recording is done, this function is called again to flip the state back to normal.
     def saveToFile(self):
         if self.dataBack.logflag:
-            self.buttonLogging.setText("Start logging as " + self.displayCombo.currentText()) 
-            self.file.write(self.messagesTextBrowser.toPlainText())
+            self.ui.loggingButton.setText("Start logging as " + self.ui.displayCombo.currentText()) 
+            self.file.write(self.ui.messagesTextBrowser.toPlainText())
             self.file.close()
             # Revert label back to original text
-            self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i><font>")
+            self.ui.loggingStatusLabel.setText("<font color = grey><i>not recording</i><font>")
             self.dataBack.logflag = False
             # Disable the display combo box so that the user doesn't change anything 
             # by mistake while logging
-            self.displayCombo.setDisabled(True)
-            self.filterTable.enableItemsAfterLogging()
+            self.ui.displayCombo.setDisabled(True)
+            self.ui.filterTable.enableItemsAfterLogging()
         else:
-            if self.logFileName.text() == '':
+            if self.ui.loggingFileName.text() == '':
                 self.warnLogging()
                 return
-            if os.path.isfile(self.logFileName.text()):
+            if os.path.isfile(self.ui.loggingFileName.text()):
                 overWrite = self.warnOverwrite()
                 if overWrite == 0x400000:  # 'don't overwrite'
                     return
                 elif overWrite == 0x400:   # 'okay to overwrite'
-                   os.remove(self.logFileName.text())
+                   os.remove(self.ui.loggingFileName.text())
 
             # OK to log. Clear text browser, disable the display combo box, and open a file
             # for writing.
             self.clearTextBrowser()
-            self.displayCombo.setDisabled(True)
-            self.filterTable.disableItemsForLogging()
-            self.file = open(self.logFileName.text(), 'w')
+            self.ui.displayCombo.setDisabled(True)
+            self.ui.filterTable.disableItemsForLogging()
+            self.file = open(self.ui.loggingFileName.text(), 'w')
             # A header for use with Matlab or other programs:
             if self.dataBack.GUI_CSVflag:
                 header = 'time,' + ','.join(self.dataBack.guiCSVDisplayList)
                 self.file.write(header)
                 self.file.write('\n')
-            self.buttonLogging.setText("End Logging")
-# Move this functionality to another spot:
-            self.loggingStatusLabel.setText("Status:  <font color=red><b>\
+            self.ui.loggingButton.setText("End Logging")
+    # Move this functionality to another spot:
+            self.ui.loggingStatusLabel.setText("<font color=red><b>\
                                             recording</b></font>    ")
             self.dataBack.logflag = True
-    
+
     def loggingStatusHandler(self):
         # If we are not logging, then the accompanying text should say so
         if self.dataBack.logflag == False:
-            self.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i></font>")
+            self.ui.loggingStatusLabel.setText("Status:  <font color = grey><i>not recording</i></font>")
             self.messageCount = 0
             return
 
         # Otherwise, change the text and update the messageCount
-        self.statusText = "Status:  <font color=red><b><i>recording  </i>" + str(self.messageCount) + "</b></font>"
+        self.statusText = "<font color=red><b><i>recording  </i>" + str(self.messageCount) + "</b></font>"
         self.messageCount += 1
-        self.loggingStatusLabel.setText(self.statusText)
+        self.ui.loggingStatusLabel.setText(self.statusText)
 
     def resetTime(self):
         self.dataBack.CSV_START_TIME = time.time()

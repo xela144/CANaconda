@@ -2,10 +2,7 @@
 
 '''
 This file is the top level implementation of the canpython script.
-Under development:
-    console mode
-    GUI mode -> pyqt5 filters tree file
-
+Both the CLI and GUI versions are launched from within this script.
 '''
 
 # Commandline mode
@@ -24,29 +21,14 @@ import outmessage
 from outmessage import ID, PGN, BODY, RAW
 
 
-
-###########################
-# format we want:
-# pyserial.init()
-# pyserial.run()
-# canaconda.init(pyserial)
-# canaconda.run()
-# if gui:
-#    import PyQt
-#    gui.init()
-#    gui.run(canaconda)
-# else:
-#    cancaconda.push(config)
-############################
 def main():
-    
     parser = argparse.ArgumentParser()
     parserInit(parser)
     args = parser.parse_args()
 
+
     # Create the dataBack singleton
     dataBack = CanData(args)
-
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         try:
@@ -54,7 +36,21 @@ def main():
         except Exception as e:
             print("ERROR: " + str(e))
             return
-        ErrorType = pyserialNoGuiInit(dataBack)
+
+        # Check to see if the user has given a --canbaud arg, and if the arg is valid
+        from canport import BAUDLIST
+        try:
+            canbaudString = args.canbaud[0]
+        except TypeError:
+            canbaudString = None
+        if canbaudString:
+            if canbaudString not in BAUDLIST:
+                print("Choose a baud from", ", ".join(BAUDLIST))
+                return
+        else:
+            # 250k is the default value
+            canbaudString = '250k'
+        ErrorType = pyserialNoGuiInit(dataBack, canbaudString)
 
         # Make sure the serial port was initialized properly before settings things up to read from
         #  it.
@@ -78,39 +74,33 @@ def main():
 
 
 def parserInit(parser):
-    # firt the development options --- remove later
-    parser.add_argument('--fast', action="store_true",
-            help="Load xmltest.txt and choose /dev/ttyUSB0 as port")
-    parser.add_argument('--slow', action="store_true",
-            help="Don't start the stream thread (nogui mode)")
     # for noGUI mode:
     parser.add_argument('--nogui', nargs=1, metavar='PORT',
             help="No GUI mode. Positional argument: port")
     parser.add_argument('-m', '--messages', metavar="File",
             help="Specify the messages file")
     parser.add_argument('--filter', metavar="FilterID", nargs=1,
-            help="Comma-separated list, eg --filter='WSO100{airspeed[mph],\
+            help="Comma-separated list (CLI), eg --filter='WSO100{airspeed[mph],\
                     wind_dir},DST800' float values must match precision")
     parser.add_argument('--display', nargs=1,
             help="Comma-separated list, eg: --display=ID,pgn,raw,body")
     parser.add_argument('--csv', action="store_true",
-            help="Gives output in CSV format")
+            help="Gives output in CSV format (CLI)")
     parser.add_argument('--time', action="store_true",
-            help="Time stamped output for CSV mode")
+            help="Time stamped output for CSV mode (CLI)")
     parser.add_argument('--zero', action="store_true",
-            help="Give zero-order hold output for CSV mode")
+            help="Give zero-order hold output for CSV mode (CLI)")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
     parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
             help="Pre-select a port for GUI")
+    parser.add_argument('--canbaud', nargs=1,# metavar='canbaud',
+            help="Choose a baud for the CAN to USB device. Example: 100k, 125k, 250k, etc.\
+                    Defaults to 250k, the maritime standard")
 
 
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args
-    # Debug print statements
-    if args.fast:
-        print("Fast debug mode")
-
     # '--filter' option must come with '--messages'
     if args.filter and not args.messages:
         print("\nYou are selectively displaying messages",
@@ -120,10 +110,11 @@ def canacondaNoGuiInit(dataBack):
 
     # import filters, and return a boolean value as 'filtersNotImpoted'
     fileName = dataBack.args.messages
-    noMessagesImported = not xmlImport(dataBack, fileName)
+    if fileName is not None:
+        xmlImport(dataBack, fileName)
 
     # a typical usage might be something like:
-    # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
+    # ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}'
 
     if args.filter:
         filterString = args.filter[0]
@@ -177,6 +168,7 @@ def canacondaNoGuiInit(dataBack):
         dataBack.displayList[ID] = True
         dataBack.displayList[BODY] = True
 
+    noMessagesImported = not dataBack.messageInfoFlag
     if noMessagesImported:
         print("Running CANaconda without messages specified,",
             "for raw message viewing")
@@ -194,60 +186,58 @@ def canacondaNoGuiInit(dataBack):
             setDisplayCSVmode(dataBack)
     else:
         print("Opening connection to", dataBack.comport)
+  
 
-    # If --slow was given, halt program here.
-    # Otherwise, start streaming messages.
-
-
-# 
-def pyserialNoGuiInit(dataBack):
+def pyserialNoGuiInit(dataBack, canbaudString):
     from canport import CANPortCLI
-    # create the threading object
+    # Create a threading object that communicates with the serial bus
     dataBack.canPort = CANPortCLI(dataBack)
     # initialize the serial connection to the CANusb device
-    # and report any errors
-    serialCAN = dataBack.canPort.pyserialInit()
+
+    from canport import BAUDMAP
+    canbaud = BAUDMAP[canbaudString]
+    serialCAN = dataBack.canPort.pyserialInit(57600, canbaud)
 
     # If we successfully initialized the CANusb hardware and connected,
     # start up a thread for processing messages
     if type(serialCAN) != int:
         dataBack.serialThread = threading.Thread(target=dataBack.canPort.getMessages, args=(serialCAN,))
-    
-    # Just pass through the return value from pyserialInit()
+
+    # Create another threading object that will encode and decode CAN messages
+    from CanDataTranscoder import CanTranscoderCLI
+    canTranscoder = CanTranscoderCLI(dataBack)
+    dataBack.transcoderThread = threading.Thread(target=canTranscoder.CanTranscoderRun)
+
+    # Pass through the return value from pyserialInit()
+    # FIXME: find a way to intercept KeyBoardInterrupt exception when quitting
     return serialCAN
-    
-    # find a way to intercept KeyBoardInterrupt exception
-    # when quitting
 
 def pyserialNoGuiRun(dataBack):
-    if dataBack.args.slow: # a debug mode -- cause program to halt
-        return
     try:
+        dataBack.transcoderThread.start()
         dataBack.serialThread.start()
+
     # This is the error thrown if serialThread did not initialize
     except AttributeError:
         pass
 
-# Create the serial 
+# Create the serial thread. Don't call .start() yet, since this 
+# must be done after the GUI thread has started and user input
+# is obtained for certain parameters.
 def pyserialGuiInit(dataBack):
     # create the threading object
     from canport import CANPortGUI
     dataBack.canPort = CANPortGUI(dataBack)
     dataBack.noGui = bool(dataBack.args.nogui)  # aka FALSE
 
+    from CanDataTranscoder import CanTranscoderGUI
+    dataBack.canTranscoderGUI = CanTranscoderGUI(dataBack)
+
+
 def canacondaGuiRun(dataBack):
-    # Qt imports
-    from PyQt5.QtWidgets import QApplication, QMainWindow, QStyleFactory
-    import ui_mainwindow
-    app = QApplication(sys.argv)
-    app.setStyle(QStyleFactory.create("Fusion"))
-    mainWindow = QMainWindow()
-    ui = ui_mainwindow.Ui_MainWindow()
-    # call setupUi with the necessary objects
-    ui.setupUi(mainWindow, dataBack)
-    # run the gui
-    mainWindow.show()
-    sys.exit(app.exec_())
+    # Call the wrapper class that inserts widgets into the pyuic5-generated GUI code from Qt Designer
+    import canaconda_GUI
+    ui = canaconda_GUI.Ui_CANaconda_GUI(dataBack)
 
 
 if __name__ == "__main__":

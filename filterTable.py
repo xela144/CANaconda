@@ -13,6 +13,16 @@ import time
 # Columns:
 CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
+from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
+
+from outmessage import unitStringMap
+
+MapStringUnits =  dict(zip(unitStringMap.values(), unitStringMap.keys()))
+
+
+# Comparison operators
+CMP = ('=', '<', '>')
+
 
 class FilterTable(QtWidgets.QWidget):
     comboChanged = QtCore.pyqtSignal(int)
@@ -92,25 +102,33 @@ class FilterTable(QtWidgets.QWidget):
             ##
             fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
             ##
-            if len(fieldData.byValue) == 0:
+            if not fieldData.byValue[ACTIVE]:
                 byValueText = ''
             else:
                 byValueText = str(fieldData.byValue)[1:-1]
             byValue = QtWidgets.QTableWidgetItem(byValueText)
+            byValue.setToolTip("<font color=black>Enter comma-separated values to match, with =, &lt;, or &gt;. Example: \'<4,>9,=5.5\' Use a null character to stop active filtering.</font>")
             self.tableWidget.setItem(row, FILTER, byValue)
             ##
-
+            if fieldData.units == 'CEL':
+                pass
+            try:
+                prettyUnits = unitStringMap[fieldData.units]
+            except KeyError:
+                prettyUnits = ''
             # If there is a valid conversion, its units will show up in 
-            # conversionMap
+            # conversionMap. If this is the case, we use a comboBox.
             if fieldData.units in backend.conversionMap:
                 unitsComboBox = QtWidgets.QComboBox()
                 for key in list(backend.conversionMap[fieldData.units].keys()):
-                    unitsComboBox.addItem(key)
-                unitsComboBox.setCurrentText(fieldData.units)
+                    unitsComboBox.addItem(unitStringMap[key])
+                unitsComboBox.setCurrentText(prettyUnits)
                 self.tableWidget.setCellWidget(row, UNITS, unitsComboBox)
                 unitsComboBox.currentTextChanged.connect(self.changeUnits)
+
+            # Otherwise create a cell that has no widget
             else:
-                _units = QtWidgets.QTableWidgetItem(fieldData.units)
+                _units = QtWidgets.QTableWidgetItem(prettyUnits)
                 _units.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
                 _units.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
                 self.tableWidget.setItem(row, UNITS, _units)
@@ -130,19 +148,21 @@ class FilterTable(QtWidgets.QWidget):
         self.tableWidget.itemChanged.connect(
                                      self.parent.update_messageInfo_to_fields)
         self.tableWidget.itemChanged.connect(self.parent.csvOutputSet)
-        #self.tableWidget.setSortingEnabled(True)  #  Not working
+        #self.tableWidget.setSortingEnabled(True)  # FIXME
         #self.tableWidget.sortByColumn(0,0)        # 
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.setColumnWidth(VALUE, 120)
 
-        # STRETCHY CODE
+        # STRETCHY CODE - FIXME
         #self.tableWidget.horizontalHeader().setSizePolicy(3,3)
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  
 
+
     # Change units based on comboBox widget and update dataBack
     def changeUnits(self, text):
+        text = MapStringUnits[text]
         widgyWidge = QtWidgets.QApplication.focusWidget()
         if widgyWidge:
             index = self.tableWidget.indexAt(widgyWidge.pos())
@@ -207,27 +227,134 @@ class FilterTable(QtWidgets.QWidget):
 
     # This function needs to be modified so that if an invalid
     # entry occurs, a dialog window warns the user.
+    # Also it is called each time the table updates. Expensive!
     def filterByValue(self, item):
         if item.column() != FILTER:
             return
+        if self.dataBack.logflag:
+            # FIXME
+            # This prevents the user from editing the 'byValue' filter while logging
+            # is happening, but it doesn't have the intended effect of disabling the
+            # entire tableWidget.
+            self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+            return
+
         valueString = item.text()
         currentRow = item.row()
         messageInfoName = self.tableWidget.item(currentRow, MESSAGE).data(0)
         fieldName = self.tableWidget.item(currentRow, FIELD).data(0)
-        self.dataBack.messages[messageInfoName].fields[fieldName].byValue = []
-        byValueList = self.dataBack.messages[messageInfoName]\
-                                                .fields[fieldName].byValue
+
+        # First, null out the byValue dictionaries, clearing any previous entries
+        self.dataBack.messages[messageInfoName].fields[fieldName].byValue[ACTIVE] = False
+        self.dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL] = None
+        self.dataBack.messages[messageInfoName].fields[fieldName].byValue[LT] = None
+        self.dataBack.messages[messageInfoName].fields[fieldName].byValue[GT] = None
+
+        # Disconnect the signal to avoid cross talk. Will have to call 'connect' again
+        # before returning from this function
+        self.tableWidget.itemChanged.disconnect(self.filterByValue)
         for value in valueString.split(','):
             try:
-                byValueList.append(float(value))
+                # Check that the first character of the string is in the CMP tuple, which contains
+                # the three comparison operators '<', '>', '='
+                if len(value) == 0:
+                    self.tableWidget.item(currentRow, FILTER).setText('')
+                    self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
+                    self.tableWidget.itemChanged.connect(self.filterByValue)
+                    return
+                if value[0] not in CMP:
+                    self.tableWidget.item(currentRow, FILTER).setText('')
+                    self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
+                    raise Exception('Filtering failed for value \'{}\' in field \'{}\'. \
+                            Hint: Correct syntax example with mouseover'.format(valueString, fieldName))
+                    self.tableWidget.itemChanged.connect(self.filterByValue)
+                    return
+
+                # Do the actual setting of the 'byValue' filtering
+                self.byValueHelper(value, self.dataBack, messageInfoName, fieldName, valueString)
                 self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.cyan)
+
             except ValueError:
-                # The filter was a string, in which case the user is notified by seeing
+                # The filter was a invalid, in which case the user is notified by seeing
                 # the text change to 'None'
-                # This is also how the user clears a filter. FIXME: add this to a mouseover.
-                self.dataBack.messages[messageInfoName].fields[fieldName].byValue = []
                 self.tableWidget.item(currentRow, FILTER).setText('None')
                 self.tableWidget.item(currentRow, FILTER).setBackground(QtCore.Qt.white)
+                self.tableWidget.itemChanged.connect(self.filterByValue)
+
+        # Finally, set the 'byValue' flag to True
+        self.dataBack.messages[messageInfoName].fields[fieldName].byValue[ACTIVE] = True
+        self.tableWidget.itemChanged.connect(self.filterByValue)
+
+
+    # A helper function called by 'filterByValue()'. The 'valueString' parameter is the 
+    # character string of the number that does the filtering, based on the operator, '<,>,='
+    # Once converted to a float or an int, valueString becomes the 'pivot'. This function
+    # assigns the pivot to the correct entry of the 'byValue' dictionary, which is how the
+    # program decides whether or not do display a value (see CanDataTranscoder.py)
+    def byValueHelper(self, byValueString, dataBack, messageInfoName, fieldName, valueString):
+        # The pivot can be a float or an int. It is the value of the number that does the filtering,
+        # based on the operator '<,>,='. 
+        try:
+            pivot = int(byValueString[1:])
+        except ValueError:
+            pivot = float(byValueString[1:])
+
+        # If the user wants to use 0 as a comparison, we need to use a constant called 'ZERO'
+        # because bool(0) evalualtes to False, while bool(ZERO) gives us the behavior that we want.
+        if pivot == 0:
+            pivot = ZERO
+
+        # Store the pivot in the correct dictionary entry of 'byValue'
+        if byValueString[0] == '<':
+            dataBack.messages[messageInfoName].fields[fieldName].byValue[LT] = pivot
+
+        if byValueString[0] == '>':
+            dataBack.messages[messageInfoName].fields[fieldName].byValue[GT] = pivot
+
+        # Since a user can potentially give more than one equality value, we use a list
+        # This wouldn't make sense for less-than or greater-than, as above.
+        if byValueString[0] == '=':
+            try:
+                dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL].append(pivot)
+            except AttributeError:
+                dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL] = [pivot]
+
+        # Test to make sure that at least one of the 'byValue' filters is active. If none are active,
+        # Then it is probable that the user did not use the correct syntax
+        equal = dataBack.messages[messageInfoName].fields[fieldName].byValue[EQUAL]
+        lt = dataBack.messages[messageInfoName].fields[fieldName].byValue[LT]
+        gt = dataBack.messages[messageInfoName].fields[fieldName].byValue[GT]
+        if not (equal or lt or gt):
+            raise Exception('Filtering failed for {}. Hint: Correct syntax example with mouseover'.format(valueString))
+
+    # Disable items that are normally editable in the tableWidget. 
+    def enableItemsAfterLogging(self):
+        i = 0
+        count = self.tableWidget.rowCount()
+        while i < count:
+            # First make a QtWidgetItem.flags() object.
+            currentFilterFlags = self.tableWidget.item(i,FILTER).flags()
+            # Mask the flag object and set the item to 'uneditable'
+            self.tableWidget.item(i,FILTER).setFlags(currentFilterFlags | QtCore.Qt.ItemIsEnabled)
+
+            currentCheckboxFlags = self.tableWidget.item(i,CHECKBOX)
+            self.tableWidget.item(i,CHECKBOX).setFlags(currentFilterFlags | QtCore.Qt.ItemIsEnabled)
+            i += 1
+
+    # Disable items that are normally editable in the tableWidget. 
+    def disableItemsForLogging(self):
+        i = 0
+        count = self.tableWidget.rowCount()
+        while i < count:
+            # First make a QtWidgetItem.flags() object.
+            currentFilterFlags = self.tableWidget.item(i,FILTER).flags()
+            # Mask the flag object and set the item to 'uneditable'
+            self.tableWidget.item(i,FILTER).setFlags(currentFilterFlags & ~QtCore.Qt.ItemIsEnabled)
+
+            currentCheckboxFlags = self.tableWidget.item(i,CHECKBOX)
+            self.tableWidget.item(i,CHECKBOX).setFlags(currentFilterFlags & ~QtCore.Qt.ItemIsEnabled)
+            i += 1
+
 
     def pdbset(self):
         pyqtrm()

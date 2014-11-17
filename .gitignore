@@ -1,6 +1,7 @@
 portsTest.py
 pyserial_binary_fix.patch
 
+build-CANaconda_ui-Desktop*
 __pycache__/
 docs/
 qt_gui/__pycache__/

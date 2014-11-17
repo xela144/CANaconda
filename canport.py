@@ -2,9 +2,11 @@
 This file includes the code for the CanPort class, which is run from the
 recieveMessage_helper function from canpython.py
 
-The CanPort deal with the serial data from the CAN to USB node.
-Once a message has been received, a Message object is created and
-the serial data is no longer dealt with for that message.
+The CanPort deals with the serial data from the CAN to USB node.
+Once a message has been received, a regex match object is created and
+the serial data is discarded.
+
+
 '''
 
 # Standard libraries
@@ -12,7 +14,6 @@ import re
 import time
 import sys
 from queue import Queue
-from math import ceil
 
 # Other libraries
 import serial
@@ -27,10 +28,28 @@ from Nmea2000 import Iso11783Decode
 # Constants
 from messageInfo import CAN_FORMAT_EXTENDED
 
+# A list of CanUSB commands for setting baudrates
+BAUDLIST = ['10k', '20k', '50k', '100k', '125k', '250k', '500k', '800k', '1M']
+
+# A dictionary map from baudrate to CanUSB set commands
+BAUDMAP = {'10k':b'S0', '20k':b'S1', '50k':b'S2', '100k':b'S3', '125k':b'S4', '250k':b'S5', '500k':b'S6', '800k':b'S7', '1M':b'S8'}
+
+# An inverse dictionary of the previous
+MAPBAUD = dict(zip(BAUDMAP.values(), BAUDMAP.keys()))
+
+# Carriage return command for CanUSB
+CR = b'\r'
+
+# Open command for CanUSB
+OPEN = b'O\r'
+
+# Close command for CanUSB
+CLOSE = b'C\r'
+
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
-# messages. These messages are then passed to the GUI thread via the
-# CANacondaRxMsg_queue queue where they are added to the GUI
+# messages. These messages are then passed to the CanTranscoder thread for parsing
+# into CANacondaMessage objects.
 class CANPort():
     '''
     Error constants to be returned by pyserialInit():
@@ -38,22 +57,27 @@ class CANPort():
     ERROR_NO_CONNECT Could not open serial port
     ERROR_TIMEOUT    Timeout in sending the 'O' command to CANusb device
     ERROR_BAUD       Could not set the baud rate for CAN bus
+    SUCCESS          No errors
     '''
-    ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD = range(4)
+    ERROR_NO_DATA, ERROR_NO_CONNECT, ERROR_TIMEOUT, ERROR_BAUD, SUCCESS = range(5)
 
     # Set the timeout (in seconds) for connecting to the CANusb hardware.
     TIMEOUT = 5
 
     def __init__(self, dataBack):
         self.dataBack = dataBack
-        self.CANacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
+        self.CANacondaRx_TranscodeQueue = dataBack.CANacondaRx_TranscodeQueue
         self.comport = dataBack.comport
         self.args = dataBack.args
+        # This flag should prevent executing Parsing code unless it is True
+        self.live = False
+        # A string that indicates the current baudrate
+        self.canBaudRate = ''
 
-    def pyserialInit(self):
+    def pyserialInit(self, baudrate=57600, canbaud=BAUDMAP['250k']):
         #opens a serial connection called serialCAN on COM? at 57600 Baud
         try:
-            serialCAN = serial.Serial(self.comport, 57600)
+            serialCAN = serial.Serial(self.comport, baudrate, timeout=3)
             # self.comport is the com port which is opened
         except:
             return CANPort.ERROR_NO_CONNECT
@@ -62,60 +86,123 @@ class CANPort():
             # and long form messages as defined in the CAN-USB manual
             self.regex = re.compile(r"\s*(?:t([0-9a-fA-F]{3})|T([0-9a-fA-F]{8}))(\d)((?:[0-9a-fA-F][0-9a-fA-F]){0,8})((?:[0-9a-fA-F][0-9a-fA-F]){2})?")
             
-            # If the port is open already, the following may fail. We therefore try to close
-            # the first first, and ignore whatever output we received.
-            val = serialCAN.write(b'C\r')
-            if val != 2:
-                return CANPort.ERROR_NO_CONNECT
+            # If the port is open already, close it first. Do this by writing the character 'C'
+            # followed by the carriage return. The hardware will return either a carriage
+            # return (13) or a bell (7) (At least that's what the docs for this device say)
+            # (In practice, looks like we're expecting a 2.) Also, do this at least 10 times
+            # because the device is picky. Even then sometimes it does not work
+            i = 0
+            while i < 10:
+                val = serialCAN.write(CLOSE)
+                if val != 2:
+                    return CANPort.ERROR_NO_CONNECT
+                i += 1
+                time.sleep(.01)
 
-            # Start a timer to see if initialization has taken too long, erroring out in that case.
-            start = time.time()
-            
-            # Now keep looping until we've successfully configured the CANusb hardware.
-            temp = serialCAN.read()
-            while temp != b'\r':
-                time.sleep(.1)
-                # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
-                val = serialCAN.write(b'S5\r')
+            StatusMsg = self.CanUSBinit(serialCAN, canbaud)
+            if StatusMsg != CANPort.SUCCESS:
+                return StatusMsg
+            else: 
+                # Set the baudrate of the object so that we can access it later
+                self.canBaudRate = MAPBAUD[canbaud]
 
-                # If a bell was received after sending 'S5', it means an error's occurred
-                if val == 7:
-                    return CANPort.ERROR_BAUD
+            StatusMsg = self.CanUSBopen(serialCAN)
+            if StatusMsg != CANPort.SUCCESS:
+                return StatusMsg
 
-                # Store the initial bytes in a temporary variable.
-                temp = serialCAN.read()
-
-                # Return if no data is being received over serial:
-                if time.time() - start - 5 > CANPort.TIMEOUT:
-                    return CANPort.ERROR_NO_DATA
-
-            # Open the CAN port to begin receiving messages, using timer as above
-            start = time.time()
-            val = serialCAN.write(b'O\r')
-            while val != 2:
-                val = serialCAN.write(b'O\r')
-                if time.time() - start - 5 > CANPort.TIMEOUT:
-                    return CANPort.ERROR_TIMEOUT
-            time.sleep(.1)
+            # Finally, if we have made it to here, the serialCAN object was created successfully
+            # and the CanUSB device is ready for read/write operations
+            self.live = True
             return serialCAN
 
-    # CANport thread can repeat targed is the getMessages function:
+    def changeCanUSBbaud(self, serialCAN, newBaud):
+        self.live = False
+        # First close the device, otherwise setting a new baud rate is
+        # not possible. If we don't do this 10 times, CanUSB barfs on us.
+        # Then the Python threading module barfs on us too.
+        i = 1
+        while i < 10:
+            i +=1
+            val = serialCAN.write(CLOSE)
+            if val != 2:
+                return CANPort.ERROR_NO_CONNECT
+            time.sleep(.01)
+        # Set the CanUSB baud rate to the new value
+        StatusMsg = self.CanUSBinit(serialCAN, newBaud)
+        if StatusMsg != CANPort.SUCCESS:
+            return StatusMsg
+        else: 
+            # Set the baudrate of the object so that we can access it later
+            self.canBaudRate = MAPBAUD[newBaud]
+        # Open the CanUSB device once more
+        StatusMsg = self.CanUSBopen(serialCAN)
+        if StatusMsg != CANPort.SUCCESS:
+            return StatusMsg
+        # Succesfully changed the CanUSB baud
+        self.live = True
+        return CANPort.SUCCESS
+
+    def CanUSBinit(self, serialCAN, canbaud):
+        # Start a timer to see if initialization has taken too long, erroring out in that case.
+        start = time.time()
+        setupBytes = canbaud + CR
+        # Now keep looping until we've successfully configured the CANusb hardware.
+        try:
+            temp = serialCAN.read()
+        except serial.serialutil.SerialException:
+            self.CanUSBinit(serialCAN, canbaud) # hahaha
+        while temp != CR:
+            time.sleep(.1)
+            # Initialize the CAN-USB device at 250Kbits/s, the NMEA standard
+            val = serialCAN.write(setupBytes)
+            # If a bell was received after sending 'S5', it means an error's occurred
+            if val == 7:
+                return CANPort.ERROR_BAUD
+
+            # Store the initial bytes in a temporary variable.
+            temp = serialCAN.read()
+
+            # Return if no data is being received over serial:
+            if time.time() - start - 5 > CANPort.TIMEOUT:
+                return CANPort.ERROR_NO_DATA
+
+        # Fall through to SUCCESS
+        return CANPort.SUCCESS
+
+    # CanUSBopen. CanUSB flags have been set, now send the command for the device 
+    # to open its connection over serial.
+    def CanUSBopen(self, serialCAN):
+        # Open the CAN port to begin receiving messages, using timer as above
+        start = time.time()
+        val = serialCAN.write(OPEN)
+        while val != 2:
+            val = serialCAN.write(OPEN)
+            if time.time() - start - 5 > CANPort.TIMEOUT:
+                return CANPort.ERROR_TIMEOUT
+        return CANPort.SUCCESS
+
+    # CANport thread repeat target is the getMessages function, which calls the actual
+    # parsing function. If the serial connection is closed, for example, when changing the
+    # baudrate, then we don't parse anything.
+    # FIXME: serialCAN.closed being False may not be a sufficient condition, because when
+    # serial is re-established, the CanUSB device does not immediately open...
     def getMessages(self, serialCAN):
+        #time.sleep(2)
         while True:
-            self.serialParse(serialCAN)
+            if not self.live:
+                # This return here should exit the getMessages thread
+                return
+            if self.live:
+                self.serialParse(serialCAN)
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
         # Sit and wait for all the bytes for an entire CAN message from the serial port.
         matchedmsg = self.getMatchObject(serialCAN)
-        
-        # Once we've parsed out a complete message, actually process the data for display.
+
+        # Push the match object to this queue for parsing from within CanDataTranscoder.py
         if matchedmsg:
-            canacondamessage = CANacondaMessage()
-
-            CANacondaMessageParse(canacondamessage, matchedmsg, self.dataBack)
-
-            self.PrintMessage(canacondamessage)
+            self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
 
     # Build up a message character by character from the serial stream, and then wrap it
     # in a regex match object.
@@ -124,7 +211,7 @@ class CANPort():
         rawmsg = b""
         # Reads in characters from the serial stream until
         # a carriage return is encountered
-        while character != (b'\r' or '\r'):
+        while character != (CR or '\r'):
             # Wrap the read() call in a try/except to catch possible serial port errors since we 
             # never check the state of the serial port after initial opening.
             try:
@@ -138,49 +225,19 @@ class CANPort():
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
 
+    def getCanBaud(self):
+        return self.canBaudrate
+
+
 class CANPortCLI(CANPort):
 
     def __init__(self, dataBack):
         """Initialization only requires initializing the parent class, which really does all the work."""
         super(CANPortCLI, self).__init__(dataBack)
 
-    def PrintMessage(self, canacondamessage):
-        """Print the given message to stdout. It accounts for some program settings regarding how the output should look."""
-        outmsg = ''
-
-        if self.args.csv:
-            # If specified, do zero-order hold on output CSV data.
-            if self.args.zero:
-                outmsg = noGuiParseCSV_zero(
-                               self.dataBack, canacondamessage)
-            # If CSV mode is specified, print data comma-separated.
-            else:
-                outmsg = noGuiParseCSV(self.dataBack,
-                                       canacondamessage)
-        else:
-            # If we have metadata for messages, pretty-print using it.
-            if self.args.messages is not None:
-                outmsg = noGuiParse(self.dataBack,
-                                    canacondamessage)
-            # Otherwise just print out the raw message data
-            else:
-                # Prepend timestamp to millisecond precision if the user requested it.
-                if self.args.time:
-                    outmsg = "{0:0.3f} ".format(time.time())
-                
-                # And then output the raw message data.
-                outmsg += str(canacondamessage)
-
-        # Finally print the message data. We call flush here to speed up the output.
-        # This allows the CSV output to be used as input for pipePlotter and render
-        # in real-time.
-        if outmsg:
-            print(outmsg)
-            sys.stdout.flush()
 
 try:
     from PyQt5.QtCore import pyqtSignal, QObject
-    from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
     class CANPortGUI(CANPort, QObject):
 
@@ -195,10 +252,8 @@ try:
             dataBack = self.dataBack
             matchedmsg = self.getMatchObject(serialCAN)
             newCANacondaMessage = CANacondaMessage()
-            if matchedmsg:
-                CANacondaMessageParse(newCANacondaMessage, matchedmsg, dataBack)
-                # use dataBack.nogui?
-                self.dataBack.CANacondaRxMsg_queue.put(newCANacondaMessage)
+            if matchedmsg: 
+                self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
                 self.parsedMsgPut.emit()
 
                 # If not present already, add the message's messageInfo
@@ -212,342 +267,6 @@ try:
 except ImportError:
     pass
 
-'''
-For adding the data to the CANacondaMessage object.
-CANacondaMessageParse -- main parser
-hexToVal --------------- converts the payload data
-
-A Regex Match object is passed to this parsing function contained in this file.
-Example parsed message:
-(None, '09FD0284', '8', 'D410002841FAFFFF', '5CCC')
-parsedmsg.groups() will give:
-     (1)               (2)            (3)          (4)       (5)
-header for 't'    header for 'T'     length        body      junk
-
-
-Note that the 'id' tag is sometimes referred to as 'header'
-'''
-from backend import conversionMap
-from Nmea2000 import Iso11783Decode
-from queue import Queue
-
-# The goal here is to fill in all of the following:
-# name, pgn, id, body (aka 'payload'), raw
-def CANacondaMessageParse(self, match, dataBack):
-    # Parse out the ID from the regex Match object. Keep it an integer!
-    if match.group(1):
-        self.id = int(match.group(1), 16)
-    elif match.group(2):
-        self.id = int(match.group(2), 16)
-
-    payloadSize = int(match.group(3))
-
-    payloadString = match.group(4)
-    if payloadSize * 2 != len(payloadString):
-        payloadString = payloadString[0:2 * payloadSize]
-
-    self.payload = ParseBody(payloadString)
-
-    # Now grab a PGN value if one's found
-    [pgn, x, y, z] = Iso11783Decode(self.id)
-    self.pgn = pgn
-
-    # Now that we have the current message's ID, raw, and pgn values,
-    # find and assign the message's name to self.name
-    for key in dataBack.messages.keys():
-        if dataBack.messages[key].pgn == str(self.pgn) or dataBack.messages[key].id == self.id:
-            self.name = dataBack.messages[key].name
-            #break
-    # If self.name is still None, then the  message is not in the xml 
-    # file and is not of interest:
-    if not self.name:
-        return
-    
-    # make a pointer to the MessageInfo object. First, try with filter ID. Then PGN.
-    try:
-        currentMessage = dataBack.messages[dataBack.id_to_name[self.id]]
-    except:
-        currentMessage = dataBack.messages[dataBack.pgn_to_name[str(self.pgn)]]
-
-    if self.id not in dataBack.IDencodeMap:
-        dataBack.IDencodeMap[self.name] = self.id
-
-    # grab the values from the data field(s)
-    for fieldName in currentMessage.fields: 
-        #dataFilter is a MessageInfo.Field object. Used for parsing field data.
-        dataFilter = currentMessage.fields[fieldName]  
-        # The field data may be an int or a bitfield, depending on the type specified in metadata.
-        # FIXME: dataFilter is just currentMessage.fields[fieldname], which is passed
-        # in as a parameter here.
-        # Should be using self.payload anyway.
-        #payLoadData = getBodyFieldData(dataFilter, currentMessage, match)
-        payLoadData = getBodyFieldData(dataFilter, currentMessage, match, self.payload)
-
-        self.body[dataFilter.name] = payLoadData
-
-    # Now to calculate message frequency:
-    if self.name not in dataBack.frequencyMap:
-        dataBack.frequencyMap[self.name] = Queue()
-    else:
-        dataBack.frequencyMap[self.name].put(time.time())
-
-    # If the first element(s) in the queue is/are older than 5 seconds, remove:
-    if dataBack.frequencyMap[self.name].qsize() > 0:
-        while time.time() - dataBack.frequencyMap[self.name].queue[0] > 5.0:
-            null = dataBack.frequencyMap[self.name].get()
-            if dataBack.frequencyMap[self.name].empty():
-                break
-    # Division by 5 now gives us a running average
-    self.freq = dataBack.frequencyMap[self.name].qsize()/5.0
-
-    # The CANacondaMessage has now been created.
-
-########### GUI related #################################
-    # Add data to the headers and messages sets
-    dataBack.headers.add(self.id)
-    dataBack.pgnSeenSoFar.add(self.pgn)
-
-    # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
-    dataBack.latest_CANacondaMessages[self.name] = self.body
-
-    # Add the frequency to the 'latest_frequencies' dictionary:
-    dataBack.latest_frequencies[self.name] = self.freq
-    
-    # Make the frequency calculation and add to CANacondaMessage object:
-    # dataBack.frequencyMap[self.name].qsize()
-
-# Function parameters: hexData is the raw hex string of one of the message body fields.
-# dataFilter a messagInfo.Field type, extracted from the meta data given by the user.
-# The return value is a single field payload, before filtering/error checking.
-# FIXME: Parse out the data from CanMessage.payload instead
-# FIXME: Returning a single field item, yet parsing the entire message body with each call
-def getPayload(hexData, dataFilter, payload):
-    # Variables used in this function:
-    endian = dataFilter.endian
-    signed = dataFilter.signed
-    offset = dataFilter.offset
-    length = dataFilter.length
-    type   = dataFilter.type
-
-    count = len(hexData)
-    dataflipped = ""
-   
-
-    while count > 0:
-        # this flips the order of all the hex bits to switch from little
-        # to big endian
-        dataflipped = dataflipped + hexData[count-2:count]
-        count -= 2
-
-    binaryData = bin(int(dataflipped, 16))  # converts the data to binary
-    # Strip the '0b' and pad with leading 0's
-    binaryData = (4 * len(hexData) - (len(binaryData) - 2)) * '0' + binaryData[2:]
-    #shifting indices to the right
-    start = len(binaryData) - offset
-    stop = len(binaryData) - (length + offset) # could be 'start - length' too.
-
-    datasect = binaryData[stop: start]
-    # from the offset to the end of size is selected to separate
-    # the relevant data
-
-    dataset = []
-    while len(datasect) > 8:
-    # This code converts from binary to a set of integers for int.from_bytes() further down
-        highdata = datasect[-8:]
-        datasect = datasect[:-8]
-        dataset.append(int(highdata, 2))
-    output = 0
-    try:
-        output = int(datasect, 2)
-    except:
-        pass
-    dataset.append(output)
-    
-    if type == 'bitfield':
-        # Convert the value into a binary string that shows every bit
-        value = ("{:#0" + str(2 + length) + "b}").format(int.from_bytes(dataset, byteorder=endian))
-    #little endian unsigned
-    elif endian == "little" and signed == "no":
-        value = int.from_bytes(dataset, byteorder='little', signed=False)
-
-    #little endian signed
-    elif endian == "little" and signed == "yes":
-        value = int.from_bytes(dataset, byteorder='little', signed=True)
-
-    #big endian signed
-    elif endian == "big" and signed == "yes":
-        value = int.from_bytes(dataset, byteorder='big', signed=True)
-
-    #big endian unsigned
-    elif endian == "big" and signed == "no":
-        value = int.from_bytes(dataset, byteorder='big', signed=False)
-
-    else:
-        print("not valid")
-
-    return value
-
-# count: size of message body in bytes
-# hexData: message body in hex format
-# return value: string of body data in hex format, with nibbles flipped.
-def flipNibbles(count, hexData):
-    dataflipped = ""
-    i = 0
-    while i < count:
-        try:
-            dataflipped += hexData[i+1] + hexData[i]
-        except IndexError:
-            dataflipped += hexData[i]
-        i += 2
-    return dataflipped
-
-def ParseBody(payloadString):
-    """Parse out an array of integers from a string of hex chars"""
-    # Set the size of the output array
-    payloadSize = len(payloadString) // 2
-
-    # Parse out each byte from the payload string into an integer array
-    payload = [None] * payloadSize 
-    for i in range(payloadSize):
-        charIndex = 2 * i
-        payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
-
-    return payload
-
-
-def generateMessage(dataBack, payload, messageName):
-    messageInfo = dataBack.messages[messageName]  # MessageInfo object
-    # Construct a string that we will use to .format() later on. 'formatString' needs to 
-    # adjust itself for any CAN message body length; 'bodyFormatter' does this.
-    bodylength = messageInfo.size*2
-    bodyFormatter = "0" + str(bodylength) + "x"
-    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
-    if messageInfo.format == CAN_FORMAT_EXTENDED:
-        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
-    try:
-        # This will work only if the node is connected and broadcasting.
-        id = dataBack.IDencodeMap[messageName]  
-    except KeyError:
-        # We assumed the node was connected and broadcasting but it was not.
-        # Need to use the Nmea11783Encode version of the ID instead.
-        id = dataBack.messages[messageInfo.name].fakeID
-
-    # Initialize an array of 0's of length equal to number of bits in message body
-    payloadArray = [0]*messageInfo.size*8
-    for field in messageInfo.fields:
-        dataFilter = dataBack.messages[messageName].fields[field]
-        if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
-            # If user gives a message whose bit-length is longer than specified in medata, barf on user.
-            raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
-        fieldData = encodePayload(payload[field], dataFilter)
-        # Find appropriate array indices, and insert fieldData into the payloadArray
-        start = dataFilter.offset
-        stop  = dataFilter.offset + dataFilter.length
-        payloadArray[start:stop] = fieldData
-
-    # Collapse 
-    payloadString = ''.join(map(str,payloadArray))
-    payloadInt = int(payloadString, 2)
-    payloadHexString = hex(payloadInt)[2:]
-
-    # Pad the hex string with leading zeros, using zfill().
-    if len(payloadHexString) < bodylength:
-        payloadHexString.zfill(bodylength)
-
-    # And return the transmit message as a properly formatted message.
-    outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
-    print(outStr)
-
-    return outStr
-
-
-# Need to check for return value length. Should be same as 'length'
-# specified in metadata. Current code does not handle numbers that are too big.
-# Returns an array of 0's and 1's, of length 'length'.
-def encodePayload(payload, dataFilter):
-    endian = dataFilter.endian
-    _signed = dataFilter.signed == 'yes'
-    offset = dataFilter.offset
-    length = dataFilter.length
-    scaling = dataFilter.scaling
-    _type = dataFilter.type
-    # First check for proper length of signed fields
-    if _signed:
-        if payload < -2**(length-1)  or payload > 2**(length-1)-1:
-            raise Exception ("The {} field uses a signed data type, and the range of values is from {} to {}.".format(dataFilter.name, -(2**(length-1)), 2**(length-1)-1))
-
-    # If the payload is signed, handle this correctly.
-    Negative = False
-    if _signed and payload < 0:
-        payload = -payload
-        Negative = True
-
-    # If the user has entered a negative number for an unsigned field, error out.    
-    elif not _signed and payload < 0:
-        raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
-
-    # Convert the payload to a binary string
-    if Negative:
-        pay = bin(int(-payload/scaling) % (1<<length))[2:]  # two's complement
-    else:
-        pay = bin(int(payload/scaling))[2:]
-
-    # Initialize an array of zeros with correct length
-    fieldData = [0]*length
-
-    for i in range(len(pay)):
-        try:
-            # Fill in fieldData, starting from the right.
-            fieldData[-i-1] = int(pay[-i-1])
-        except IndexError: #  payload scaled up and has become too big for data type
-            raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
-    return fieldData
-
-    
-
-
-# Retrieves the data field from the CAN message body and does any units 
-# conversion and/or filtering specified by the user during runtime.
-# FIXME: Don't pull data from `match`, instead pull from self.payload
-def getBodyFieldData(dataFilter, currentMessage, match, payload):
-    msgBody = match.group(4)
-    value = getPayload(msgBody, dataFilter, payload)
-    # Check for invalid data.
-    # 0xFFFF is the 'invalid data' code
-   
-    # If we have a bitfield for status or error codes, just return the string.
-    if dataFilter.type == 'bitfield':
-        if dataFilter.byValue:
-            if int(value[2:], 2) not in dataFilter.byValue:
-                value = ''
-        return value
-
-    # If it is an N2K FFFF, return Not A Number.
-    if value == 65535:
-        value = 'NaN'
-
-    # Otherwise continue processing the int with scalar, converting to float.
-    else:
-        value *= dataFilter.scaling
-        if dataFilter.unitsConversion:
-            try:
-            # Data conversion done by adding, multiplying, then
-            # adding the tuple entries found in the conversion map
-            # in backend.py
-                value += float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][1])
-                value *= float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][0])
-                value += float(conversionMap[dataFilter.units][
-                                        dataFilter.unitsConversion][2])
-            except KeyError:
-                pass
-
-    # Last but not least, if we are doing a 'filterByValue':
-    if dataFilter.byValue:
-        if value not in dataFilter.byValue:
-            value = ''
-    return value
 
 def debugMode():
     from PyQt5.QtCore import pyqtRemoveInputHook

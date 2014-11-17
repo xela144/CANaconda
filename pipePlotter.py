@@ -27,7 +27,7 @@ def main():
     if sys.stdin.isatty():
         pdb.set_trace()
 
-    #plt.xkcd()
+    plt.xkcd()
     xx = np.arange(0, 20, 0.2)
     yy = np.zeros(xx.size)
     fig = plt.figure()
@@ -53,9 +53,9 @@ def main():
 #    plt.ylabel(ylabel)
     ax.axes.set_xlim(0, 20)
     ax.axes.set_ylim(0, 3)
-    ax.text(5, 1.5,
-            ("First iteration of csv plotter"),
-             size=16)
+    #ax.text(5, 1.5,
+    #        ("First iteration of csv plotter"),
+    #         size=16)
     line, = ax.plot(xx, yy, 'r-', animated=True)
     fig.show()
     fig.canvas.draw()
