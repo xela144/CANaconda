@@ -153,7 +153,7 @@ Then build and install. (Bro tip: use the -j option for multicore processors)
 >make
 >sudo make install
 
-Finally, export the PyQt directory to the PYTHONPATH variable
+Export the PyQt directory to the PYTHONPATH variable
 >export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.4/site-packages/
 
 Make sure this is the correct path.
