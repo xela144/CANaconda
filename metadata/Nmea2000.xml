@@ -115,7 +115,37 @@
         endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Position, Rapid Update" pgn = "129025" size = "6">
+    <messageInfo name = "Water Depth" pgn = "128267" size = "8">
+        <field
+        name = "SID"
+        type = "int"
+        offset = "0"
+        length = "8"
+        signed = "no"
+        endian = "little"
+        />
+        <field
+        name = "Depth"
+        type = "int"
+        offset = "8"
+        length = "32"
+        signed = "no"
+        units = "m"
+        scaling = "0.01"
+        endian = "little"
+        />
+        <field
+        name = "Offset"
+        type = "int"
+        offset = "40"
+        length = "16"
+        signed = "yes"
+        units = "m"
+        scaling = "0.001"
+        endian = "little"
+        />
+	</messageInfo>
+	<messageInfo name = "Position, Rapid Update" pgn = "129025" size = "6">
         <desc></desc>
         <field
         name = "Latitude"
