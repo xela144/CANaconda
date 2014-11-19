@@ -334,5 +334,161 @@
         endian = "little"
         />
     </messageInfo>
+    <messageInfo name = "Temperature"  pgn = "130312" size = "8">
+        <desc></desc>
+        <field
+        name = "SID"
+        type = "int"
+        offset = "0"
+        length = "8"
+        signed = "no"
+        units = ""
+        endian = "little"
+        />
+        <field
+        name = "Temperature Instance"
+        type = "int"
+        offset = "8"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Temperature Source"
+        type = "enum"
+        offset = "12"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Actual Temperature"
+        type = "int"
+        offset = "16"
+        length = "16"
+        signed = "no"
+        units = "K"
+        scaling = ".01"
+        endian = "little"
+        />
+        <field
+        name = "Set Temperature"
+        type = "int"
+        offset = "32"
+        length = "16"
+        signed = "no"
+        units = "K"
+        scaling = ".01"
+        endian = "little"
+        />
+	</messageInfo>
+    <messageInfo name = "Humidity"  pgn = "130313" size = "8">
+        <desc></desc>
+        <field
+        name = "SID"
+        type = "int"
+        offset = "0"
+        length = "8"
+        signed = "no"
+        units = ""
+        endian = "little"
+        />
+        <field
+        name = "Humidity Instance"
+        type = "int"
+        offset = "8"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Humidity Source"
+        type = "enum"
+        offset = "12"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Actual Humidity"
+        type = "int"
+        offset = "16"
+        length = "16"
+        signed = "no"
+        units = "%"
+        scaling = ".004"
+        endian = "little"
+        />
+        <field
+        name = "Set Humidity"
+        type = "int"
+        offset = "32"
+        length = "16"
+        signed = "no"
+        units = "%"
+        scaling = ".004"
+        endian = "little"
+        />
+	</messageInfo>
+    <messageInfo name = "Actual Pressure"  pgn = "130314" size = "8">
+        <desc></desc>
+        <field
+        name = "SID"
+        type = "int"
+        offset = "0"
+        length = "8"
+        signed = "no"
+        units = ""
+        endian = "little"
+        />
+        <field
+        name = "Pressure Instance"
+        type = "int"
+        offset = "8"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Pressure Source"
+        type = "enum"
+        offset = "12"
+        length = "4"
+        endian = "little"
+        signed = "no"
+        units = ""
+        scaling = "1"
+        />
+        <field
+        name = "Actual Pressure"
+        type = "int"
+        offset = "16"
+        length = "16"
+        signed = "no"
+        units = "Pa"
+        scaling = ".1"
+        endian = "little"
+        />
+        <field
+        name = "Set Pressure"
+        type = "int"
+        offset = "32"
+        length = "16"
+        signed = "no"
+        units = "Pa"
+        scaling = ".1"
+        endian = "little"
+        />
+	</messageInfo>
 </metaData>
 
