@@ -116,6 +116,7 @@
         />
     </messageInfo>
     <messageInfo name = "Water Depth" pgn = "128267" size = "8">
+        <desc></desc>
         <field
         name = "SID"
         type = "int"
