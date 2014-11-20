@@ -6,8 +6,6 @@ from math import floor
 # from PyQt5.QtWidgets import QMessageBox
 baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
-SUCCESS = 1
-
 class TransmitGridWidget(QtWidgets.QDialog):
 
     def setup(self, parent, dataBack, singleshot=False):
@@ -147,55 +145,61 @@ class TransmitGridWidget(QtWidgets.QDialog):
     # payload values for transmitting CAN messages.
     def getPlaceholderText(self, messageInfo, field, dataBack):
         fieldInfo = dataBack.messages[messageInfo].fields[field]
-        endian  = fieldInfo.endian
-        _signed = fieldInfo.signed == 'yes'
-        offset  = fieldInfo.offset
-        length  = fieldInfo.length
-        scaling = fieldInfo.scaling
-        if scaling == 1:
-            scaling = int(scaling)
-        _type   = fieldInfo.type
-        if _type == 'bitfield':
-            return '0 to {} bits'.format(length)
-        if _signed:
-            bound = 2**(length - 1)
-            return '{} to {}'.format(-bound*scaling, (bound - 1)*scaling)
-        elif not _signed:
-            bound = 2**(length) - 1
-            return '0 to {}'.format(bound*scaling)
-        return "fix this code"
 
-    # Like above but checks the boundary on the data, making sure that the user-entered
-    # data is within the bounds of the CAN message
-    def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo, dataBack):
-        endian  = fieldInfo.endian
-        _signed = fieldInfo.signed == 'yes'
-        offset  = fieldInfo.offset
-        length  = fieldInfo.length
-        scaling = fieldInfo.scaling
-        if scaling == 1:
-            scaling = int(scaling)
-        _type   = fieldInfo.type
+        # If it's a bitfield, just tell them how many bits they have
+        if fieldInfo.type == 'bitfield':
+            return '0 to {} bits'.format(length)
+
+        # Otherwise it's an integer, so get the range and tell them that
+        bounds = self.getBoundsForField(fieldInfo)
+        # Convert the bounds to integers if they are exact values
+        return '{} to {}'.format(bounds[0], bounds[1])
+
+    def getBoundsForField(self, fieldInfo):
+        """
+        Returns a tuple with the min and max value possible for the given field.
+        Note that this accounts for scaling.
+        """
+        def round_down(num, divisor):
+            """Round 'num' down to nearest multiple of 'divisor'."""
+            return num - (num % divisor)
 
         # Rescale the payload so that we can check to see if it is within the bounds
         # given by the bit length of its data field
-        payload = payload/scaling
-        if _signed:
-            bound = 2**(length - 1)
-            if payload >= -bound and payload <= (bound - 1):
-                return SUCCESS
-            else:
-                self.badData[fieldInfo.name] = 'The {} field is restricted to values between {} and {}.'.format(fieldInfo.name, -bound*scaling, (bound - 1)*scaling)
-        elif not _signed:
-            bound = 2**(length) 
-            if payload >= 0 and payload < bound:
-                return SUCCESS
-            else:
-                self.badData[fieldInfo.name] = 'The {} field is restricted to values between 0 and {}.'.format(fieldInfo.name, (bound - 1)*scaling)
-        self.txBoundErrorFlag = True
-        return False
+        if fieldInfo.signed == 'yes':
+            bound = 2**(fieldInfo.length - 1)
+            bounds = (round_down(-bound * fieldInfo.scaling, fieldInfo.scaling), round_down((bound - 1) * fieldInfo.scaling, fieldInfo.scaling))
+        else:
+            bound = 2**(fieldInfo.length)
+            bounds = (0, round_down((bound - 1) * fieldInfo.scaling, fieldInfo.scaling))
 
-    # txActivateHandler: Called by a signal that is connected the "Activate" button. 
+        lower_bound = int(bounds[0])
+        if bounds[0] != lower_bound:
+            lower_bound = bounds[0]
+        upper_bound = int(bounds[1])
+        if bounds[1] != upper_bound:
+            upper_bound = bounds[1]
+        return (lower_bound, upper_bound)
+
+    # Like above but checks the boundary on the data, making sure that the user-entered
+    # data is within the bounds of the CAN message
+    def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo):
+        # Rescale the payload so that we can check to see if it is within the bounds
+        # given by the bit length of its data field
+        if fieldInfo.scaling == 1:
+            payload = int(payload)
+        else:
+            payload = payload / fieldInfo.scaling
+
+        # And check that the payload value is within the bounds of this field
+        bounds = self.getBoundsForField(fieldInfo)
+        if payload >= bounds[0] and payload <= bounds[1]:
+            return True
+        else:
+            self.badData[fieldInfo.name] = 'The {} field is restricted to values between {} and {}.'.format(fieldInfo.name, bounds[0], bounds[1])
+            return False
+
+    # txActivateHandler: Called by a signal that is connected the "Activate" button.
     # Collects all the payload values in the QLineEdits at the moment the button was
     # clicked. If any of the values were formatted in the wrong way, or would fall
     # of the bit boundary of the CAN message because the number is too big, then an
@@ -217,6 +221,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # Do error checking with each cycle. Errors cause QLineEdits go to 'errContainer'
         # for accessing them later. Both good and bad data gets stored in 'payload'.
         payload = self.getPayloadsFromLineEdits()
+        print(payload)
 
         # Change the background color to red if the user data is bad
         if len(self.errContainer) > 0:
@@ -273,101 +278,68 @@ class TransmitGridWidget(QtWidgets.QDialog):
         currentMessageInfo = self.dataBack.messages[messageInfoName]
         for Label_Line_pair in self.txQLabel_LineContainer:  # has: (QLabel, QLineEdit)
             fieldName = Label_Line_pair[0].text()
-            payloadString = Label_Line_pair[1].text()
+            valueString = Label_Line_pair[1].text()
 
             # Convert the payload to an int
-            payloadInt = self.checkTypeAndConvert(payloadString)
+            try:
+                valueNumeric = self.checkTypeAndConvert(valueString)
             # If it can't be converted to an int, then the user gave bad data.
             # Just at the bad data to the payload dictionary, and save a reference
             # to the corresponding QLineEdit.
-            if payloadInt == None:
-                payload[fieldName] = payloadString # Bad data being put payload here.
+            except ValueError:
+                payload[fieldName] = valueString # Bad data being put payload here.
                 self.txTypeErrorFlag = True
                 self.errContainer.append(Label_Line_pair[1])
                 continue
 
             # Now that we know the payload is has been converted to an integer or a float,
             # assign the value to the payload dictionary where it will be actually used
-            payload[fieldName] = payloadInt
-
+            payload[fieldName] = valueNumeric
             currentField = currentMessageInfo.fields[fieldName]
 
             # Next we make sure that the payload, once converted to a CAN message, will
             # fit within the bit boundary as specified in the meta data for this field
-            Success = self.checkBoundsOnPayload(payloadInt, currentMessageInfo, 
-                                                currentField, self.dataBack)
-            if Success != SUCCESS:
-                # Add the QLineEdit with dirty data to this list, so that we can acess
+            if self.checkBoundsOnPayload(valueNumeric, currentMessageInfo, currentField):
+                # The current QLine Edit has clean data. Set its background to white
+                # in case it was previously set to red.
+                Label_Line_pair[1].setStyleSheet("QLineEdit{background: white;}")
+            else:
+                # Add the QLineEdit with dirty data to this list, so that we can access
                 # them all at once.
                 self.txBoundErrorFlag = True
                 self.errContainer.append(Label_Line_pair[1])
-            else:
-                # The current QLine Edit has clean data. Set its background to white 
-                # in case it was previously set to red.
-                Label_Line_pair[1].setStyleSheet("QLineEdit{background: white;}")
+
         # Now that payload has been populated with
         # both good and bad data, return it
         return payload
 
     def checkTypeAndConvert(self, value):
-        # First check if field was left blank. If so, assume it means a 0.
-        if value == '':
+        """
+        Parse the value string into a numeric representation.
+
+        This will return either an integer or float datatype. If parsing
+        fails, a ValueError will be raised
+        """
+        # Assume empty fields are 0
+        if len(value) == 0:
             return 0
-        Negative = False
-        # If the user entered a negative sign along with one of the non base 10
-        # tokens, then we should strip the negative sign to make sure that the token
-        # is at the [1] position.
-        if value[0] == '-':
-            Negative = True
-            value = value[1:]
-        value = self.checkOtherBases(value)
-        if value == None:
-            return None
+
+        # Now try to convert the value to integers first, and then finally a float.
+        # If none of these succeed, the final
         try:
-            # If the value was negative to begin with, then put the negative sign back
-            if Negative:
-                value = '-' + value
-            # Now check to see if it is an int
-            value = int(value)
-            return value
+            return int(value, 10)
         except ValueError:
             try:
-                # Check to see if its a flaot
-                value = float(value)
-                return value
+                return int(value, 16)
             except ValueError:
-                # Finally, return None to signify bad data
-                return None
+                try:
+                    return int(value, 8)
+                except ValueError:
+                    try:
+                        return int(value, 2)
+                    except ValueError:
+                        return float(value)
 
-    # This function will check of the second entry of the payload string is
-    # an 'x', a 'b', or an 'o'. If not, it just returns the same string that
-    # was passed in.
-    def checkOtherBases(self, value):
-        if len(value) > 2:
-            if value[1] in baseTuple:
-                base = value[1].upper()
-                if base == ('X'):
-                    try:
-                        value = int(value, 16)
-                    except ValueError:
-                        return None
-                elif base == ('O'):
-                    try:
-                        value = int(value, 8)
-                    except ValueError:
-                        return None
-                elif base == ('B'):
-                    try:
-                        value = int(value, 2)
-                    except ValueError:
-                        return None
-                else:
-                    return None
-                # We have to make this a string again to follow along with the
-                # next few steps below
-                return str(value)
-        else:
-            return value
 
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
