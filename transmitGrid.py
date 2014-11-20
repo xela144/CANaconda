@@ -221,7 +221,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # Do error checking with each cycle. Errors cause QLineEdits go to 'errContainer'
         # for accessing them later. Both good and bad data gets stored in 'payload'.
         payload = self.getPayloadsFromLineEdits()
-        print(payload)
 
         # Change the background color to red if the user data is bad
         if len(self.errContainer) > 0:
