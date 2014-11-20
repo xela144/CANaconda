@@ -187,6 +187,27 @@ class Field():
         self.endian = endian
         self.unitsConversion = None
 
+        # Set the bounds for this field once, so we don't need to constantly recalculate them.
+        # This is valid as the field range can only be changed in the XML file.
+        def round_down(num, divisor):
+            """Round 'num' down to nearest multiple of 'divisor'."""
+            return num - (num % divisor)
+
+        if self.signed == 'yes':
+            bound = 2**(self.length - 1)
+            bounds = (round_down(-bound * self.scaling, self.scaling), round_down((bound - 1) * self.scaling, self.scaling))
+        else:
+            bound = 2**(self.length)
+            bounds = (0, round_down((bound - 1) * self.scaling, self.scaling))
+
+        lower_bound = int(bounds[0])
+        if bounds[0] != lower_bound:
+            lower_bound = bounds[0]
+        upper_bound = int(bounds[1])
+        if bounds[1] != upper_bound:
+            upper_bound = bounds[1]
+        self.bounds = (lower_bound, upper_bound)
+
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
             raise Exception("Parsing failed for XML file '{}'. '{}' has leading or trailing space character".format(fileName, string))

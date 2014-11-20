@@ -151,35 +151,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
             return '0 to {} bits'.format(length)
 
         # Otherwise it's an integer, so get the range and tell them that
-        bounds = self.getBoundsForField(fieldInfo)
-        # Convert the bounds to integers if they are exact values
-        return '{} to {}'.format(bounds[0], bounds[1])
-
-    def getBoundsForField(self, fieldInfo):
-        """
-        Returns a tuple with the min and max value possible for the given field.
-        Note that this accounts for scaling.
-        """
-        def round_down(num, divisor):
-            """Round 'num' down to nearest multiple of 'divisor'."""
-            return num - (num % divisor)
-
-        # Rescale the payload so that we can check to see if it is within the bounds
-        # given by the bit length of its data field
-        if fieldInfo.signed == 'yes':
-            bound = 2**(fieldInfo.length - 1)
-            bounds = (round_down(-bound * fieldInfo.scaling, fieldInfo.scaling), round_down((bound - 1) * fieldInfo.scaling, fieldInfo.scaling))
-        else:
-            bound = 2**(fieldInfo.length)
-            bounds = (0, round_down((bound - 1) * fieldInfo.scaling, fieldInfo.scaling))
-
-        lower_bound = int(bounds[0])
-        if bounds[0] != lower_bound:
-            lower_bound = bounds[0]
-        upper_bound = int(bounds[1])
-        if bounds[1] != upper_bound:
-            upper_bound = bounds[1]
-        return (lower_bound, upper_bound)
+        return '{} to {}'.format(fieldInfo.bounds[0], fieldInfo.bounds[1])
 
     # Like above but checks the boundary on the data, making sure that the user-entered
     # data is within the bounds of the CAN message
@@ -192,11 +164,10 @@ class TransmitGridWidget(QtWidgets.QDialog):
             payload = payload / fieldInfo.scaling
 
         # And check that the payload value is within the bounds of this field
-        bounds = self.getBoundsForField(fieldInfo)
-        if payload >= bounds[0] and payload <= bounds[1]:
+        if payload >= fieldInfo.bounds[0] and payload <= fieldInfo.bounds[1]:
             return True
         else:
-            self.badData[fieldInfo.name] = 'The {} field is restricted to values between {} and {}.'.format(fieldInfo.name, bounds[0], bounds[1])
+            self.badData[fieldInfo.name] = 'The {} field is restricted to values between {} and {}.'.format(fieldInfo.name, fieldInfo.bounds[0], fieldInfo.bounds[1])
             return False
 
     # txActivateHandler: Called by a signal that is connected the "Activate" button.
