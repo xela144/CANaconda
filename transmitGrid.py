@@ -55,7 +55,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.firstTxButton.setText("Activate")
         self.firstTxButton.setDisabled(True)
         self.firstTxButton.clicked.connect(self.txActivateHandler)
-        
+
         # Insert the widgets to the grid at their coordinates
         self.txGrid.addWidget(self.txLabel,              0, 3)
         self.txGrid.addWidget(self.firstTxLabelMsg,      1, 0)
@@ -84,16 +84,16 @@ class TransmitGridWidget(QtWidgets.QDialog):
             self.firstTxMessageInfo.currentTextChanged.disconnect(self.populateTxField)
         except TypeError:
             pass
-        self.firstTxMessageInfo.clear()            
-        self.firstTxMessageInfo.setDisabled(False) 
+        self.firstTxMessageInfo.clear()
+        self.firstTxMessageInfo.setDisabled(False)
         try:
-            self.firstTxBody1.clear()                  
+            self.firstTxBody1.clear()
         except RuntimeError:
             # The widget has already been deleted
             pass
         # move to separate function
-        self.firstTxFreq.setDisabled(False)       
-        self.firstTxButton.setDisabled(False)     
+        self.firstTxFreq.setDisabled(False)
+        self.firstTxButton.setDisabled(False)
         for messageInfoName in self.dataBack.messages.keys():
             self.firstTxMessageInfo.addItem(messageInfoName)
         self.populateTxField()
@@ -135,7 +135,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
                 newLineEdit.setPlaceholderText(placeholder)
 
                 # Append to the following list to access from txActivateHandler.
-                self.txQLabel_LineContainer.append((newLabel, newLineEdit))  
+                self.txQLabel_LineContainer.append((newLabel, newLineEdit))
                 self.txGrid.addWidget(newLabel,      row, 3)
                 self.txGrid.addWidget(newLineEdit,   row, 4)
                 row += 1
@@ -143,7 +143,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         except KeyError:
             pass
 
-    # This is used to calculate the default text for the user to see bounds on the 
+    # This is used to calculate the default text for the user to see bounds on the
     # payload values for transmitting CAN messages.
     def getPlaceholderText(self, messageInfo, field, dataBack):
         fieldInfo = dataBack.messages[messageInfo].fields[field]
@@ -197,7 +197,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
     # txActivateHandler: Called by a signal that is connected the "Activate" button. 
     # Collects all the payload values in the QLineEdits at the moment the button was
-    # clicked. If any of the values were formatted in the wrong way, or would fall 
+    # clicked. If any of the values were formatted in the wrong way, or would fall
     # of the bit boundary of the CAN message because the number is too big, then an
     # error message is generated, the offending QLineEdit changes to red, and the
     # function returns before creating the CAN message.
@@ -223,8 +223,8 @@ class TransmitGridWidget(QtWidgets.QDialog):
             for lineEdit in self.errContainer:
                 lineEdit.setStyleSheet("QLineEdit{background: red;}")
            # self.txTypeErrorFlag = True
-        
-        # The tranmission frequency entered by the user. Check that the frequency is valid
+
+        # The transmission frequency entered by the user. Check that the frequency is valid
         freq = self.firstTxFreq.text()
         freq = self.checkTypeAndConvert(freq)
         if freq == None:
@@ -239,11 +239,11 @@ class TransmitGridWidget(QtWidgets.QDialog):
             # Then set the text from the label to the QLineEdit
             fieldDataLineEdit.setText(str(payload[fieldName]))
 
-        # We messed up earlier but are returning here 
+        # We messed up earlier but are returning here
         # after the Line Edits were cleaned up.
         # FIXME: Give a detailed error message here... try entering a value that is
         # too big or too small for the data field length. Error message is too generic
-        # Use the same logic as the error messages from generateMessage(). 
+        # Use the same logic as the error messages from generateMessage().
         if self.txTypeErrorFlag or self.txBoundErrorFlag:
             self.txTypeError()
             return
@@ -255,16 +255,16 @@ class TransmitGridWidget(QtWidgets.QDialog):
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
         except Exception as e:
             self.transmissionWarn(str(e))
-            return 
+            return
         if freq == 0:
-            # Broadcase message only once. Skip messagTxInit step and directly push to queue
+            # Broadcast message only once. Skip messagTxInit step and directly push to queue
             self.pushToTransmitQueue()
         else:
             self.messageTxInit(freq)
 
     # getPayloadsFromLineEdits: This is a helper function that does the actual
-    # checking, converting, and error reporting of all the values entered by 
-    # the user. Error flags will be set if there is bad data, and QLineEdits 
+    # checking, converting, and error reporting of all the values entered by
+    # the user. Error flags will be set if there is bad data, and QLineEdits
     # will be stored in a list to be accessed later.
     def getPayloadsFromLineEdits(self):
         # The return value will be this payload dictionary
@@ -309,8 +309,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # both good and bad data, return it
         return payload
 
-    # Check the type of the payload data. If it is neither int
-    # nor float, returns None.
     def checkTypeAndConvert(self, value):
         # First check if field was left blank. If so, assume it means a 0.
         if value == '':
@@ -373,11 +371,11 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
     # Push the encoded message to the transmit queue, and send a signal
     def messageTxInit(self, freq):
-        # If no timer has been used, create one. Otherwise, re-start it, 
+        # If no timer has been used, create one. Otherwise, re-start it,
         # but first disconnect from signals.
         try:
             self.TxTimer.timeout.disconnect()
-            
+
         except AttributeError:
             self.TxTimer = QtCore.QTimer()
 
@@ -388,13 +386,13 @@ class TransmitGridWidget(QtWidgets.QDialog):
     def pushToTransmitQueue(self):
         self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
 
-     
+
     def txTypeError(self):
         errormsg = QtWidgets.QMessageBox()
         errormsg.setText("Message Transmit Error")
         informativeText = ''
         if self.txTypeErrorFlag:
-            informativeText += "Payload and frequency values must be of type 'int' or 'float'. \nIf 'int', they must be of base 16 (0x), base 8 (0o), or base 2 (0b). No base specified is interpreted as base 10.\n"
+            informativeText += "Values must be of type 'int' or 'float'. \nIf 'int', they must be of base 16 (0x), base 8 (0o), or base 2 (0b). No base specified is interpreted as base 10.\n"
         if self.txBoundErrorFlag:
             informativeText += '\n'
             for entry in self.badData:
