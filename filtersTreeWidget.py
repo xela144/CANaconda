@@ -94,29 +94,3 @@ class FiltersTreeWidget(QtWidgets.QDialog):
     def pdbset(self):
         QtCore.pyqtRemoveInputHook()
         pdb.set_trace()
-
-
-def main():
-    import backend
-    import CANaconda
-    import argparse
-    import sys
-    import messageInfo
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    args.nogui = None
-    args.fast = None
-    args.debug = True
-    dataBack = backend.CanData(args)
-    messageInfo.xmlImport(dataBack, './metadata/SeaSlug.xml')
-    app = QtWidgets.QApplication(sys.argv)
-    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    ui = FiltersTreeWidget()
-    singleshot = True
-    ui.setup(None, dataBack, singleshot)
-    ui.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()

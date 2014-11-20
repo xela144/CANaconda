@@ -359,33 +359,3 @@ class FilterTable(QtWidgets.QWidget):
     def pdbset(self):
         pyqtrm()
         pdb.set_trace()
-
-
-# For debug purposes -- delete later
-def main():
-    import backend
-    import CANaconda
-    import argparse
-    import sys
-    import filtersTreeWidget
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    args.nogui = None
-    args.fast = None
-    args.debug = False
-    dataBack = backend.CanData(args)
-    CANaconda.xmlImport(dataBack, 'exampleMetaData.xml')
-    app = QtWidgets.QApplication(sys.argv)
-    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    singleshot = True
-    tree = filtersTreeWidget.FiltersTreeWidget()
-    tree.setup(None, dataBack, singleshot)
-    ui = FilterTable()
-    ui.setup(dataBack, singleshot)
-    tree.show()
-    ui.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
