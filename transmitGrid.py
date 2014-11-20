@@ -391,30 +391,3 @@ class TransmitGridWidget(QtWidgets.QDialog):
         QtCore.pyqtRemoveInputHook()
         import pdb
         pdb.set_trace()
-
-
-def main():
-    import backend
-    import CANaconda
-    import argparse
-    import sys
-    import messageInfo
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    args.nogui = None
-    args.debug = True
-    dataBack = backend.CanData(args)
-    dataBack.alreadyStreaming = True
-    messageInfo.xmlImport(dataBack, './metadata/SeaSlug.xml')
-    app = QtWidgets.QApplication(sys.argv)
-    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    ui = TransmitGridWidget()
-    singleshot = True
-    ui.setup(None, dataBack, singleshot)
-    ui.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
-
