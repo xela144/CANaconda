@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './CANaconda_ui/canaconda_mainwindow.ui'
+# Form implementation generated from reading ui file 'CANaconda_ui/canaconda_mainwindow.ui'
 #
-# Created: Sun Nov 16 00:41:36 2014
+# Created: Thu Nov 27 11:21:11 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -108,7 +108,7 @@ class Ui_CANaconda_MainWindow(object):
         self.gridLayout.addWidget(self.transmitWidget, 4, 0, 1, 1)
         CANaconda_MainWindow.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(CANaconda_MainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 776, 27))
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 776, 25))
         self.menuBar.setObjectName("menuBar")
         self.menuAction = QtWidgets.QMenu(self.menuBar)
         self.menuAction.setObjectName("menuAction")
@@ -138,8 +138,8 @@ class Ui_CANaconda_MainWindow(object):
         CANaconda_MainWindow.setWindowTitle(_translate("CANaconda_MainWindow", "CANaconda_MainWindow"))
         self.label_2.setText(_translate("CANaconda_MainWindow", "Message Stream"))
         self.label_6.setText(_translate("CANaconda_MainWindow", "Display:"))
-        self.displayCombo.setItemText(0, _translate("CANaconda_MainWindow", "Raw hex"))
-        self.displayCombo.setItemText(1, _translate("CANaconda_MainWindow", "Decoded"))
+        self.displayCombo.setItemText(0, _translate("CANaconda_MainWindow", "Decoded"))
+        self.displayCombo.setItemText(1, _translate("CANaconda_MainWindow", "Raw hex"))
         self.displayCombo.setItemText(2, _translate("CANaconda_MainWindow", "CSV"))
         self.label.setText(_translate("CANaconda_MainWindow", "MetaData and Filtering"))
         self.fileNameLabel.setText(_translate("CANaconda_MainWindow", "MetaData file: <font color=grey><i>   None loaded</></font>    "))

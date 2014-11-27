@@ -42,12 +42,12 @@
             </property>
             <item>
              <property name="text">
-              <string>Raw hex</string>
+              <string>Decoded</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Decoded</string>
+              <string>Raw hex</string>
              </property>
             </item>
             <item>
@@ -226,7 +226,7 @@
      <x>0</x>
      <y>0</y>
      <width>776</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAction">
