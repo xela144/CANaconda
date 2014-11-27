@@ -89,6 +89,10 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # start connecting signals and slots
         self.ui.actionLoad_Filters_From_File.triggered.connect(self.loadFilter)
         self.ui.loggingButton.clicked.connect(self.saveToFile)
+        self.ui.displayCombo.currentIndexChanged.connect(self.setOutput)
+        self.ui.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText)
+
+
 
 
     def updateUi(self):

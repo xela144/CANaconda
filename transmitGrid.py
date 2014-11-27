@@ -145,10 +145,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
     # payload values for transmitting CAN messages.
     def getPlaceholderText(self, messageInfo, field, dataBack):
         fieldInfo = dataBack.messages[messageInfo].fields[field]
-
         # If it's a bitfield, just tell them how many bits they have
         if fieldInfo.type == 'bitfield':
-            return '0 to {} bits'.format(length)
+            return '0 to {} bits'.format(fieldInfo.length)
 
         # Otherwise it's an integer, so get the range and tell them that
         return '{} to {}'.format(fieldInfo.bounds[0], fieldInfo.bounds[1])

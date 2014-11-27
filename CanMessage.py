@@ -8,7 +8,7 @@ class CanMessage():
         self.pgn = 0 # The Parameter Group Number of the CAN message. Only applies to extended packets and only makes sense for NMEA2000 messages. Decoded from the message id.
         self.id = 0 # The message id.
         self.payload = [] # The payload of the CAN message. Should be between 0 and 8 in length. Each element is a byte.
-        self.payloadBitString = '' # This is a bit-string representation of the
+        self.payloadBitstring = '' # This is a bit-string representation of the
                                    # payload data. This is actually used in
                                    # the code.
 
