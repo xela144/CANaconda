@@ -95,13 +95,23 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
 
 
-    def updateUi(self):
+    def updateMessageStream(self):
+        """
+        Update the message stream. Connected to the 'parsedMsgPut' signal.
+        """
         outmsg = self.getMessage(self.dataBack.CANacondaRxMsg_queue)
         if outmsg is not None:
             self.ui.messagesTextBrowser.append("%s" % outmsg)
             self.outmsgSignal.emit()
 
+
     def getMessage(self, CANacondaRxMsg_queue):
+        """
+        Called by updateMessageStream. 'messageInfoFlag' is set when the metadata is loaded
+        GUI_rawFlag is set to False when program initalizes, but is set to True only when user
+        selects the 'Raw' display option from the combo-box.
+
+        """
         CANacondaMessage = CANacondaRxMsg_queue.get()
         if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
             return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
@@ -181,7 +191,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
         # The serialCAN thread was initialized without error
         if type(self.serialCAN) != int:
-            self.dataBack.canTranscoderGUI.parsedMsgPut.connect(self.updateUi)
+            self.dataBack.canTranscoderGUI.parsedMsgPut.connect(self.updateMessageStream)
             self.dataBack.canTranscoderGUI.parsedMsgPut.connect(
                                                self.ui.filterTable.updateValueInTable)
             self.dataBack.canTranscoderGUI.newMessageUp.connect(self.ui.filterTable.populateTable)
@@ -274,8 +284,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # populate the 'transmission' combobox
         self.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
-        self.displayCombo.setDisabled(False)
-        self.displayCombo.setCurrentIndex(DECODED)
+        self.ui.displayCombo.setDisabled(False)
+        self.ui.displayCombo.setCurrentIndex(DECODED)
 
 
     # When the metadata file is loaded, the name appears at the upper right corner of UI
@@ -290,7 +300,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Before updating the text, make sure we are not currently logging, in which
         # case the button should read "End Logging", and therefore should not be updated.
         if not self.dataBack.logflag:
-            self.ui.loggingButton.setText("Start logging as " + self.displayCombo.currentText())
+            self.ui.loggingButton.setText("Start logging as " + self.ui.displayCombo.currentText())
             # Also, re-enable the DisplayAs combobox
 
 
@@ -326,7 +336,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
     def setOutput(self):
         if self.dataBack.logflag:
             return
-        currentIndex = self.displayCombo.currentIndex()
+        currentIndex = self.ui.displayCombo.currentIndex()
         if currentIndex == CSV:
             self.dataBack.GUI_CSVflag = True
             self.dataBack.GUI_rawFlag = False
