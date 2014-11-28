@@ -53,15 +53,13 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
 
     def insertWidgets(self):
+        """
+        Insert the widgets into the mainWindow that we imported in the loadUi() call.
+        """
         # First the comports code
         self.mainWindow.menuChoose_port = QtWidgets.QMenu(self.mainWindow.menuAction) 
         self.mainWindow.menuChoose_port.setObjectName("menuChoose_port")
         self.mainWindow.menuChoose_port.setTitle("Choose Port")
-        for com in comports():
-            _port = QtWidgets.QAction(self.mainWindow)
-            _port.setText(com[0])
-            _port.triggered.connect(self.comportSelect)
-            self.mainWindow.menuChoose_port.addAction(_port)
         self.mainWindow.menuAction.addAction(self.mainWindow.menuChoose_port.menuAction())
 
         # Here we set up one of the tabs
@@ -86,9 +84,21 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.loggingButton.clicked.connect(self.saveToFile)
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.setOutput)
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText)
+        self.mainWindow.menuAction.aboutToShow.connect(self.setChoose_port_Actions)
 
 
+    def setChoose_port_Actions(self):
+        """
+        Populate the list of available comports. Called each time user clicks on 'Action' menu
+        """
+        # If there are already QActions for comports, remove them.
+        self.mainWindow.menuChoose_port.clear()
 
+        for com in comports():
+            _port = QtWidgets.QAction(self.mainWindow)
+            _port.setText(com[0])
+            _port.triggered.connect(self.comportSelect)
+            self.mainWindow.menuChoose_port.addAction(_port)
 
     def updateMessageStream(self):
         """
@@ -115,6 +125,9 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
     def setBaud(self):
+        """
+        Set the baud rate for the CANusb device (does not affect serial connection)
+        """
         self.setHourGlass()
         text = self.sender().text()
         
