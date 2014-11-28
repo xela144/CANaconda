@@ -9,8 +9,6 @@ Both the CLI and GUI versions are launched from within this script.
 import argparse
 import pdb
 
-# original imports from before refactor...
-# some of these will have to be removed -- use IDE to find errors
 import threading
 import xml.etree.ElementTree as ET
 import sys
@@ -236,8 +234,8 @@ def pyserialGuiInit(dataBack):
 
 def canacondaGuiRun(dataBack):
     # Call the wrapper class that inserts widgets into the pyuic5-generated GUI code from Qt Designer
-    import canaconda_GUI
-    ui = canaconda_GUI.Ui_CANaconda_GUI(dataBack)
+     import canaconda_GUI
+     ui = canaconda_GUI.Ui_CANaconda_GUI(dataBack)
 
 
 if __name__ == "__main__":
