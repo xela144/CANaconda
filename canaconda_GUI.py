@@ -56,7 +56,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         """
         Insert the widgets into the mainWindow that we imported in the loadUi() call.
         """
-        # First the comports code
+        # First the comports menu
         self.mainWindow.menuChoose_port = QtWidgets.QMenu(self.mainWindow.menuAction) 
         self.mainWindow.menuChoose_port.setObjectName("menuChoose_port")
         self.mainWindow.menuChoose_port.setTitle("Choose Port")
@@ -78,6 +78,11 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget(self.mainWindow.transmitWidget)
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
+
+        if self.dataBack.args.messages != None:
+            self.commandLineLoadFilter()
+        if self.dataBack.args.port != None:
+            self.comportSelect()
 
         # start connecting signals and slots
         self.mainWindow.actionLoad_Filters_From_File.triggered.connect(self.loadFilter)
@@ -290,7 +295,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
-        self.transmitGrid.populateTxMessageInfoCombo()
+        self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
