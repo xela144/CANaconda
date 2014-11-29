@@ -81,8 +81,11 @@ class FilterTable(QtWidgets.QWidget):
         for row, tuple in enumerate(displayList):
             messageInfoName, fieldName = tuple
             checkBoxItem = QtWidgets.QTableWidgetItem()
-            checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
-            checkBoxItem.setToolTip("<font color=black>Check box to display message</font>")
+            # This is for when the message is not in the metadata. Just make a new row with the
+            # ID and PGN only; 'setCheckState' does not apply.
+            if tuple[0] in self.dataBack.messages:
+                checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
+                checkBoxItem.setToolTip("<font color=black>Check box to display message</font>")
             self.tableWidget.setItem(row, CHECKBOX, checkBoxItem)
             ##
             nameItem = QtWidgets.QTableWidgetItem(messageInfoName)
@@ -100,7 +103,14 @@ class FilterTable(QtWidgets.QWidget):
             valueItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, VALUE, valueItem)
             ##
-            fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
+            # Add the latest value to the table. Note that if the message is not in the metadata,
+            # we are processing a raw message.
+            try:
+                fieldData = self.dataBack.messages[messageInfoName].fields[fieldName]
+            except (KeyError, AttributeError):
+                # Since the message is not in the metadata, make a special row that spans all columns
+                self.tableWidget.setSpan(row, MESSAGE, 1, RATE - MESSAGE + 1)
+                continue
             ##
             if not fieldData.byValue[ACTIVE]:
                 byValueText = ''
