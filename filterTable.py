@@ -110,8 +110,6 @@ class FilterTable(QtWidgets.QWidget):
             byValue.setToolTip("<font color=black>Enter comma-separated values to match, with =, &lt;, or &gt;. Example: \'<4,>9,=5.5\' Use a null character to stop active filtering.</font>")
             self.tableWidget.setItem(row, FILTER, byValue)
             ##
-            if fieldData.units == 'CEL':
-                pass
             try:
                 prettyUnits = unitStringMap[fieldData.units]
             except KeyError:

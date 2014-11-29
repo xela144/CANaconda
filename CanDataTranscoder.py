@@ -12,7 +12,6 @@ a raw message is popped it gets decoded with CANacondaMessageParse() and then pr
 Notes:
 
 CANacondaMessageParse -- main parser
-hexToVal --------------- converts the payload data
 
 A Regex Match object is passed to this parsing function contained in this file.
 Example parsed message:
@@ -133,6 +132,8 @@ class CanTranscoderCLI(CanTranscoder):
 
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
+# Parameters... mactch: a regex match object... newCanMessage: an empty CANacondaMessage object...
+# dataBack: The God Object.
 def CANacondaMessageParse(match, newCanMessage, dataBack):
     metaData = dataBack.messages
     # Parse out the ID from the regex Match object. Keep it an integer!
@@ -372,7 +373,7 @@ def formatPayloadFromInts(payload):
 
 
 def ParseBody(payloadString):
-    """Parse out an array of integers from a string of hex chars"""
+    """Parse out an array of integers from a string of hex chars. Return the raw value, not human-readable"""
     # Set the size of the output array
     payloadSize = len(payloadString) // 2
 
