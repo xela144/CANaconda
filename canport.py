@@ -198,7 +198,6 @@ class CANPort():
                 while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
                     msg = self.dataBack.CANacondaTxMsg_queue.get()
                     serialCAN.write(bytes(msg, 'UTF-8'))
-                    #print("tx thread:", bytes(msg, 'UTF-8'), "written to serial")
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
@@ -239,7 +238,6 @@ class CANPort():
                 while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
                     msg = self.dataBack.CANacondaTxMsg_queue.get()
                     serialCAN.write(bytes(msg, 'UTF-8'))
-                    print("tx thread:", bytes(msg, 'UTF-8'), "written to serial")
 
     def getCanBaud(self):
         return self.canBaudrate

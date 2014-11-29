@@ -505,7 +505,6 @@ def generateMessage(dataBack, payload, messageName):
 
     # And return the transmit message as a properly formatted message.
     outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
-    print(outStr)
     return outStr
 
 

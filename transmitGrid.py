@@ -92,7 +92,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # move to separate function
         self.firstTxFreq.setDisabled(False)
         self.firstTxButton.setDisabled(False)
-        for messageInfoName in self.dataBack.messages.keys():
+
+        # Populate the combobox in alphabetical order
+        for messageInfoName in sorted(self.dataBack.messages.keys(), key=lambda s: s.lower()):
             self.firstTxMessageInfo.addItem(messageInfoName)
         self.populateTxField()
         self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
@@ -333,7 +335,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
     def pushToTransmitQueue(self):
         self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
-        #print("pushed, qsize:", self.dataBack.CANacondaTxMsg_queue.qsize())
 
     def disconnectTimer(self):
         try:

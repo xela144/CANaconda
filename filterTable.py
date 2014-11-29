@@ -228,7 +228,7 @@ class FilterTable(QtWidgets.QWidget):
     def getDisplayList(self):
         messages_dict = self.dataBack.messagesSeenSoFar
         displayList = []
-        for messageInfo in messages_dict:
+        for messageInfo in sorted(messages_dict.keys(), key=lambda s: s.lower()):
             for field in messages_dict[messageInfo]:
                 displayList.append((messageInfo, field))
         return displayList
