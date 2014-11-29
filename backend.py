@@ -71,10 +71,8 @@ class CanData():
         # Multithreading queue for transmitting messages tot he bus
         self.CANacondaTxMsg_queue = queue.Queue()
 
-        # FIXME
         # Storage for the outgoing message in hex, ascii format (for serial):
         self.asciiBucket = '' 
-
 
         # A nested dictionary of 'messageInfo'->'field'->'latest message'
         self.latest_CANacondaMessages = {}
