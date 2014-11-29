@@ -167,13 +167,14 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
     # If newCanMessage.name is still None, then the  message is not in the xml 
     # file and is not of interest:
     if not newCanMessage.name:
+        CANacondaMessageParse_raw(newCanMessage, match)
         return
     
     # In order to continue assigning values to newCanMessage, we need access to the
     # corresponding MessageInfo object. First, try with filter ID. Then PGN.
     try:
         currentMessageInfo = metaData[dataBack.id_to_name[newCanMessage.id]]
-    except:
+    except KeyError:
         currentMessageInfo = metaData[dataBack.pgn_to_name[str(newCanMessage.pgn)]]
     if newCanMessage.id not in dataBack.IDencodeMap.values():
         dataBack.IDencodeMap[newCanMessage.name] = newCanMessage.id
@@ -199,6 +200,14 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
 
         # Add the frequency to the 'latest_frequencies' dictionary:
         dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
+
+
+def CANacondaMessageParse_raw(newCanMessage, match):
+    """Parse a a message that does not show up in the metadata file. Only sets name of message to 'Unknown message ID... ' and gives ID and PGN. No other data (payload, frequency, etc) will be accessible"""
+    newCanMessage.name = "Unknown message ID: 0x{0:X} PGN: {1:d}".format(newCanMessage.id, newCanMessage.pgn)
+    # The following two assignments are not actually used -- yet.
+    newCanMessage.payload = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
+    newCanMessage.body['Raw data'] = newCanMessage.payload
 
 
 # A helper function that further parses the payloadData for the newCanacondaMessage
