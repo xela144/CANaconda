@@ -36,7 +36,9 @@ def xmlImport(dataBack, fileName):
         # Now set the function stack size to what it was when we started.
 
         for message in root.findall('messageInfo'):
-            newMessageInfo = MessageInfo(message, dataBack, fileName)
+            #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
+            newMessageInfo = MessageInfo()
+            newMessageInfo.create(message, dataBack, fileName)
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -62,7 +64,17 @@ def xmlImport(dataBack, fileName):
 # dataBack.messages dictionary.
 ##
 class MessageInfo():
-    def __init__(self, messageInfo, dataBack, fileName):
+    def __init__(self):
+        self.name = None
+        self.desc = None
+        self.format = None
+        self.id = None
+        self.pgn = None
+        self.size = 0
+        self.fields = {}
+
+    def create(self, messageInfo, dataBack, fileName):
+
         # Initialize some base values
         self.freqQueue = queue.Queue()
         self.freq = 0
@@ -121,7 +133,8 @@ class MessageInfo():
         newFields = messageInfo.findall('field')
         for xmlField in newFields:
             name = xmlField.get('name')
-            self.fields[name] = Field(self.name, xmlField, fileName)
+            self.fields[name] = Field()
+            self.fields[name].create(self.name, xmlField, fileName)
 
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
@@ -147,7 +160,19 @@ class MessageInfo():
 class Field():
     # 'parent' is a string with the name of the message this field is a member of
     # 'field' is an ElementTree object
-    def __init__(self, parent, field, fileName):
+    def __init__(self):
+        self.name = None
+        self.type = None
+        self.length = 0
+        self.offset = 0   
+        self.signed = 'no'
+        self.units = None
+        self.scaling = 1
+        self.endian = None
+        self.unitsConversion = None 
+        self.byValue = {ACTIVE:False, EQUAL:None, LT:None, GT:None}
+        
+    def create(self, parent, field, fileName):
         # Initialize some fields to default values
 
         # The 'byValue' dictionary will have three entries:

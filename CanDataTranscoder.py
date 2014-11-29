@@ -167,7 +167,7 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
     # If newCanMessage.name is still None, then the  message is not in the xml 
     # file and is not of interest:
     if not newCanMessage.name:
-        CANacondaMessageParse_raw(newCanMessage, match)
+        CANacondaMessageParse_raw(newCanMessage, match, dataBack)
         return
     
     # In order to continue assigning values to newCanMessage, we need access to the
@@ -202,12 +202,37 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
 
 
-def CANacondaMessageParse_raw(newCanMessage, match):
+def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
     """Parse a a message that does not show up in the metadata file. Only sets name of message to 'Unknown message ID... ' and gives ID and PGN. No other data (payload, frequency, etc) will be accessible"""
+    
     newCanMessage.name = "Unknown message ID: 0x{0:X} PGN: {1:d}".format(newCanMessage.id, newCanMessage.pgn)
     # The following two assignments are not actually used -- yet.
-    newCanMessage.payload = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
-    newCanMessage.body['Raw data'] = newCanMessage.payload
+    newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
+    newCanMessage.body['Raw Data'] = newCanMessage.payload
+
+    # Since this messages was not given in the metadata, we must create the MessageInfo and 
+    # and then insert them into dataBack.messages dictionary
+    if newCanMessage.name not in dataBack.messages:
+        import messageInfo
+        #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
+
+        newMessageInfo = messageInfo.MessageInfo()
+        newMessageInfo.name = newCanMessage.name
+        newMessageInfo.fields['Raw Data'] = messageInfo.Field()
+        newMessageInfo.fields['Raw Data'].name = 'Raw Data'
+        dataBack.messages[newMessageInfo.name] = newMessageInfo
+
+    if not dataBack.nogui:
+        # Now to calculate message frequency:
+        calcFrequency(newCanMessage, dataBack)
+
+        # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
+        dataBack.latest_CANacondaMessages[newCanMessage.name] = newCanMessage.body
+
+        # Add the frequency to the 'latest_frequencies' dictionary:
+        dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
+
+
 
 
 # A helper function that further parses the payloadData for the newCanacondaMessage
