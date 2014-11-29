@@ -58,6 +58,10 @@ class CanData():
         # Populated with messageInfo objects
         self.messages = {}
 
+        # threading.Thread objects
+        self.serialRxThread = None
+        self.serialTxThread = None
+
         # Multithreading queue for passing decoded CAN messages
         self.CANacondaRxMsg_queue = queue.Queue()
 
@@ -67,7 +71,7 @@ class CanData():
         # Multithreading queue for transmitting messages tot he bus
         self.CANacondaTxMsg_queue = queue.Queue()
 
-#### Change this later on ####
+        # FIXME
         # Storage for the outgoing message in hex, ascii format (for serial):
         self.asciiBucket = '' 
 
@@ -145,8 +149,6 @@ class CanData():
 
         # For raw output in GUI mode
         self.GUI_rawFlag = False
-
-        self.serialThread = None
 
     # when a messageInfo is removed from the treeview:
     # deletes from memory, but does not change xml file.

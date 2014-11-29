@@ -187,13 +187,18 @@ class CANPort():
     # FIXME: serialCAN.closed being False may not be a sufficient condition, because when
     # serial is re-established, the CanUSB device does not immediately open...
     def getMessages(self, serialCAN):
-        #time.sleep(2)
         while True:
             if not self.live:
                 # This return here should exit the getMessages thread
                 return
             if self.live:
+                # serialParse blocks thread
                 self.serialParse(serialCAN)
+                
+                while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
+                    msg = self.dataBack.CANacondaTxMsg_queue.get()
+                    serialCAN.write(bytes(msg, 'UTF-8'))
+                    #print("tx thread:", bytes(msg, 'UTF-8'), "written to serial")
 
     # parse the serial string, create the CANacondaMessage object, and print it.
     def serialParse(self, serialCAN):
@@ -225,6 +230,17 @@ class CANPort():
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
 
+    # Not is use at the moment because of massive resource usage.
+    def sendMessages(self, serialCAN):
+        while True:
+            if not self.live:
+                return
+            if self.live:
+                while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
+                    msg = self.dataBack.CANacondaTxMsg_queue.get()
+                    serialCAN.write(bytes(msg, 'UTF-8'))
+                    print("tx thread:", bytes(msg, 'UTF-8'), "written to serial")
+
     def getCanBaud(self):
         return self.canBaudrate
 
@@ -249,7 +265,6 @@ try:
             QObject.__init__(self)
 
         def serialParse(self, serialCAN):
-            dataBack = self.dataBack
             matchedmsg = self.getMatchObject(serialCAN)
             newCANacondaMessage = CANacondaMessage()
             if matchedmsg: 

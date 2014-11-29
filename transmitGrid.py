@@ -199,9 +199,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
            # self.txTypeErrorFlag = True
 
         # The transmission frequency entered by the user. Check that the frequency is valid
-        freq = self.firstTxFreq.text()
-        freq = self.checkTypeAndConvert(freq)
-        if freq == None:
+        frequencyString = self.firstTxFreq.text()
+        frequencyInt = self.checkTypeAndConvert(frequencyString)
+        if frequencyInt == None:
             self.txTypeErrorFlag = True
 
         # For redundancy, insert the values back into the QLineEdits. Necessary
@@ -219,6 +219,8 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # too big or too small for the data field length. Error message is too generic
         # Use the same logic as the error messages from generateMessage().
         if self.txTypeErrorFlag or self.txBoundErrorFlag:
+            # Before creating the warning dialog, stop current transmission
+            self.disconnectTimer()
             self.txTypeError()
             return
 
@@ -228,12 +230,16 @@ class TransmitGridWidget(QtWidgets.QDialog):
         try:
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
         except Exception as e:
+            # Before creating the warning dialog, stop current transmission
+            self.disconnectTimer()
             self.transmissionWarn(str(e))
             return
-        if freq == 0:
+        if frequencyInt == 0:
             # Broadcast message only once. Skip messagTxInit step and directly push to queue
+            self.disconnectTimer()
             self.pushToTransmitQueue()
         else:
+            freq = 1/frequencyInt
             self.messageTxInit(freq)
 
     # getPayloadsFromLineEdits: This is a helper function that does the actual
@@ -295,6 +301,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
         # Now try to convert the value to integers first, and then finally a float.
         # If none of these succeed, the final
+        # FIXME Does not catch '1/3'.
         try:
             return int(value, 10)
         except ValueError:
@@ -317,7 +324,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         try:
             self.TxTimer.timeout.disconnect()
 
-        except AttributeError:
+        except (AttributeError, TypeError):
             self.TxTimer = QtCore.QTimer()
 
         freq = freq * 1000  # use milliseconds

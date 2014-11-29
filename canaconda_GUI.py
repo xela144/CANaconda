@@ -99,6 +99,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # If there are already QActions for comports, remove them.
         self.mainWindow.menuChoose_port.clear()
 
+        # Now add the current list of serial ports, obtained from list returned by comports() call.
         for com in comports():
             _port = QtWidgets.QAction(self.mainWindow)
             _port.setText(com[0])
@@ -129,6 +130,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
             return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
         return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
+    # FIXME This code didn't get ported over with .ui switch. Need to add QMenu to .ui file
     def setBaud(self):
         """
         Set the baud rate for the CANusb device (does not affect serial connection)
@@ -149,15 +151,15 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         
         # Now that the CanUSB baud has changed, we can start a new serial
         # thread using the CANPort class.
-        self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
-        self.serialThread.daemon = True
+        self.serialRxThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
+        self.serialRxThread.daemon = True
 
         # Set the canPort.live flag back to True, otherwise the thread 
         # will return immediately after starting it.
         self.dataBack.canPort.live = True
 
         # Now start the thread
-        self.serialThread.start()
+        self.serialRxThread.start()
         self.removeHourGlass()
 
 
@@ -232,12 +234,25 @@ class Ui_CANaconda_GUI(QtCore.QObject):
             self.dataBack.args.port = None
             return False
 
+
     def pyserialRun(self):
-        self.serialThread = threading.Thread(target=self.dataBack.canPort.getMessages, args=(self.serialCAN,))
-        self.serialThread.daemon = True
-        self.serialThread.start()
+        """
+        Creates and starts the serial thread(s). While we're at it, start the 
+        decode/encode thread as well.
+        """
+        self.serialRxThread = threading.Thread(target=self.dataBack.canPort.getMessages, 
+                                                args=(self.serialCAN,))
+        self.serialRxThread.daemon = True
+        self.serialRxThread.name = 'serialRxThread'
+        self.serialRxThread.start()
+#        self.serialTxThread = threading.Thread(target=self.dataBack.canPort.sendMessages, 
+#                                                args=(self.serialCAN,))
+#        self.serialTxThread.daemon = True
+#        self.serialTxThread.name = 'serialTxThread'
+#        self.serialTxThread.start()
         self.transcoderThread = threading.Thread(target=self.dataBack.canTranscoderGUI.CanTranscoderRun)
         self.transcoderThread.daemon = True
+        self.transcoderThread.name = 'transcoderThread'
         self.transcoderThread.start()
 
     def loadFilter(self):
