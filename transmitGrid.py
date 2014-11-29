@@ -333,7 +333,13 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
     def pushToTransmitQueue(self):
         self.dataBack.CANacondaTxMsg_queue.put(self.dataBack.asciiBucket)
+        #print("pushed, qsize:", self.dataBack.CANacondaTxMsg_queue.qsize())
 
+    def disconnectTimer(self):
+        try:
+            self.TxTimer.timeout.disconnect()
+        except AttributeError:
+            pass
 
     def txTypeError(self):
         errormsg = QtWidgets.QMessageBox()
