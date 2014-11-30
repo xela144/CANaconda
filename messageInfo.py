@@ -38,7 +38,7 @@ def xmlImport(dataBack, fileName):
         for message in root.findall('messageInfo'):
             #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
             newMessageInfo = MessageInfo()
-            newMessageInfo.create(message, dataBack, fileName)
+            newMessageInfo.createNew(message, dataBack, fileName)
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -62,7 +62,6 @@ def xmlImport(dataBack, fileName):
 ##
 # xmlimport is responsible for creating entries in the
 # dataBack.messages dictionary.
-##
 class MessageInfo():
     def __init__(self):
         self.name = None
@@ -73,9 +72,7 @@ class MessageInfo():
         self.size = 0
         self.fields = {}
 
-    def create(self, messageInfo, dataBack, fileName):
-
-        # Initialize some base values
+    def createNew(self, messageInfo, dataBack, fileName):
         self.freqQueue = queue.Queue()
         self.freq = 0
         # Most of the rest of the data is pulled directly from the XML data.
@@ -134,7 +131,7 @@ class MessageInfo():
         for xmlField in newFields:
             name = xmlField.get('name')
             self.fields[name] = Field()
-            self.fields[name].create(self.name, xmlField, fileName)
+            self.fields[name].createNew(self.name, xmlField, fileName)
 
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
@@ -155,11 +152,8 @@ class MessageInfo():
         return self.name + str(self.fields)
 
 
-# This class gets instantiated and added to the fields dictionary
-# of the Filter class.
+# This object gets assigned to one of the 'fields' dictionary of a MessageInfo object.
 class Field():
-    # 'parent' is a string with the name of the message this field is a member of
-    # 'field' is an ElementTree object
     def __init__(self):
         self.name = None
         self.type = None
@@ -171,10 +165,10 @@ class Field():
         self.endian = None
         self.unitsConversion = None 
         self.byValue = {ACTIVE:False, EQUAL:None, LT:None, GT:None}
-        
-    def create(self, parent, field, fileName):
-        # Initialize some fields to default values
 
+    # 'parent' is a string with the name of the message this field is a member of
+    # 'field' is an ElementTree object
+    def createNew(self, parent, field, fileName):
         # The 'byValue' dictionary will have three entries:
         self.byValue = {ACTIVE:False, EQUAL:None, LT:None, GT:None}
 

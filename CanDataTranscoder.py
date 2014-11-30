@@ -29,7 +29,8 @@ import time
 import sys
 from math import ceil
 
-from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT, ZERO
+from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT, ZERO, MessageInfo, Field
+
 
 class CanTranscoder():
     def __init__(self, dataBack):
@@ -203,22 +204,17 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
 
 
 def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
-    """Parse a a message that does not show up in the metadata file. Only sets name of message to 'Unknown message ID... ' and gives ID and PGN. No other data (payload, frequency, etc) will be accessible"""
-    
+    """Parse a a message that does not show up in the metadata file.  Create a CANacondaMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages. This step is necessary to access the message later on."""
     newCanMessage.name = "Unknown message ID: 0x{0:X} PGN: {1:d}".format(newCanMessage.id, newCanMessage.pgn)
-    # The following two assignments are not actually used -- yet.
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
 
     # Since this messages was not given in the metadata, we must create the MessageInfo and 
     # and then insert them into dataBack.messages dictionary
     if newCanMessage.name not in dataBack.messages:
-        import messageInfo
-        #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
-
-        newMessageInfo = messageInfo.MessageInfo()
+        newMessageInfo = MessageInfo()
         newMessageInfo.name = newCanMessage.name
-        newMessageInfo.fields['Raw Data'] = messageInfo.Field()
+        newMessageInfo.fields['Raw Data'] = Field()
         newMessageInfo.fields['Raw Data'].name = 'Raw Data'
         dataBack.messages[newMessageInfo.name] = newMessageInfo
 
@@ -231,8 +227,6 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
 
         # Add the frequency to the 'latest_frequencies' dictionary:
         dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
-
-
 
 
 # A helper function that further parses the payloadData for the newCanacondaMessage
