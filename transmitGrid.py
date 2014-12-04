@@ -157,14 +157,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
     # Like above but checks the boundary on the data, making sure that the user-entered
     # data is within the bounds of the CAN message
     def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo):
-        # Rescale the payload so that we can check to see if it is within the bounds
-        # given by the bit length of its data field
-        if fieldInfo.scaling == 1:
-            payload = int(payload)
-        else:
-            payload = payload / fieldInfo.scaling
-
-        # And check that the payload value is within the bounds of this field
         if payload >= fieldInfo.bounds[0] and payload <= fieldInfo.bounds[1]:
             return True
         else:
@@ -205,15 +197,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
         frequencyInt = self.checkTypeAndConvert(frequencyString)
         if frequencyInt == None:
             self.txTypeErrorFlag = True
-
-        # For redundancy, insert the values back into the QLineEdits. Necessary
-        # if user left the LineEdits blank, which caused a default 0 to be added.
-        for pair in self.txQLabel_LineContainer:
-            # First get the name of the field from the QLabel
-            fieldName = pair[0].text()
-            fieldDataLineEdit = pair[1]
-            # Then set the text from the label to the QLineEdit
-            fieldDataLineEdit.setText(str(payload[fieldName]))
 
         # We messed up earlier but are returning here
         # after the Line Edits were cleaned up.
@@ -269,7 +252,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
                 self.errContainer.append(Label_Line_pair[1])
                 continue
 
-            # Now that we know the payload is has been converted to an integer or a float,
+            # Now that we know the payload has been converted to an integer or a float,
             # assign the value to the payload dictionary where it will be actually used
             payload[fieldName] = valueNumeric
             currentField = currentMessageInfo.fields[fieldName]
@@ -297,26 +280,26 @@ class TransmitGridWidget(QtWidgets.QDialog):
         This will return either an integer or float datatype. If parsing
         fails, a ValueError will be raised
         """
+        # FIXME: Does not catch '1/3'.
+
         # Assume empty fields are 0
         if len(value) == 0:
             return 0
 
-        # Now try to convert the value to integers first, and then finally a float.
-        # If none of these succeed, the final
-        # FIXME Does not catch '1/3'.
-        try:
+        # Only support other bases with prefixes, otherwise it's ambiguous.
+        if value.startswith('0x') or value.startswith('0X'):
+            return int(value, 16)
+        elif value.startswith('0o') or value.startswith('0O'):
+            return int(value, 8)
+        elif value.startswith('0b') or value.startswith('0B'):
+            return int(value, 2)
+        elif value.startswith('0o') or value.startswith('0O'):
             return int(value, 10)
-        except ValueError:
+        else:
             try:
-                return int(value, 16)
+                return int(value, 10)
             except ValueError:
-                try:
-                    return int(value, 8)
-                except ValueError:
-                    try:
-                        return int(value, 2)
-                    except ValueError:
-                        return float(value)
+                return float(value)
 
 
     # Push the encoded message to the transmit queue, and send a signal

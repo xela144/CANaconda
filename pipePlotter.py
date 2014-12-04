@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 This is the matplotlib plotting program that takes
 CSV formatted input from stdin and plots in real time.

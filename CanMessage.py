@@ -4,9 +4,13 @@ The data structures for the CANacondaMessage object.
 
 
 class CanMessage():
+    # Constants for what type of CAN message this is: standard has 11-bit IDs, extended has 29-bit IDs
+    StandardType, ExtendedType = range(2)
+
     def __init__(self):
         self.pgn = 0 # The Parameter Group Number of the CAN message. Only applies to extended packets and only makes sense for NMEA2000 messages. Decoded from the message id.
         self.id = 0 # The message id.
+        self.type = CanMessage.StandardType
         self.payload = [] # The payload of the CAN message. Should be between 0 and 8 in length. Each element is a byte.
         self.payloadBitstring = '' # This is a bit-string representation of the
                                    # payload data. This is actually used in
