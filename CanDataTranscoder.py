@@ -140,8 +140,10 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
         newCanMessage.id = int(match.group(1), 16)
+        newCanMessage.type = CanMessage.StandardType
     elif match.group(2):
         newCanMessage.id = int(match.group(2), 16)
+        newCanMessage.type = CanMessage.ExtendedType
 
     payloadSize = int(match.group(3))
 
