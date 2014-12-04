@@ -49,8 +49,7 @@ class CanTranscoder():
     def CanTranscoderRun(self):
         while True:
             msg = self.CanacondaRx_TranscodeQueue.get()
-            newCanMessage = CANacondaMessage()
-            CANacondaMessageParse(msg, newCanMessage, self.dataBack)
+            newCanMessage = CANacondaMessageParse(msg, self.dataBack)
             # Pretty-print the message to the terminal. Note that this is used only in the command-line version
             self.PrintMessage(newCanMessage)
 
@@ -72,8 +71,7 @@ try:
         def CanTranscoderRun(self):
             while True:
                 matchedMsg = self.CanacondaRx_TranscodeQueue.get()
-                newCanMessage = CANacondaMessage()
-                CANacondaMessageParse(matchedMsg, newCanMessage, self.dataBack)
+                newCanMessage = CANacondaMessageParse(matchedMsg, self.dataBack)
                 self.dataBack.CANacondaRxMsg_queue.put(newCanMessage)
                 self.parsedMsgPut.emit()
                 # If not present already, add the message's messageInfo
@@ -133,10 +131,14 @@ class CanTranscoderCLI(CanTranscoder):
 
 # The goal here is to fill in all of the following:
 # name, pgn, id, body (aka 'payload'), raw
-# Parameters... mactch: a regex match object... newCanMessage: an empty CANacondaMessage object...
+# Parameters... mactch: a regex match object...
 # dataBack: The God Object.
-def CANacondaMessageParse(match, newCanMessage, dataBack):
+def CANacondaMessageParse(match, dataBack):
+    """Parses the fields of a Regex Match object into a CANacondaMessage object that is then returned."""
     metaData = dataBack.messages
+
+    newCanMessage = CANacondaMessage()
+
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
         newCanMessage.id = int(match.group(1), 16)
@@ -167,12 +169,13 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         if metaData[key].pgn == str(newCanMessage.pgn) or metaData[key].id == newCanMessage.id:
             newCanMessage.name = metaData[key].name
             break
-    # If newCanMessage.name is still None, then the  message is not in the xml 
-    # file and is not of interest:
+
+    # If newCanMessage.name is still None, then there is no metadata for this
+    # message, so give it a special name and bail.
     if not newCanMessage.name:
         CANacondaMessageParse_raw(newCanMessage, match, dataBack)
-        return
-    
+        return newCanMessage
+
     # In order to continue assigning values to newCanMessage, we need access to the
     # corresponding MessageInfo object. First, try with filter ID. Then PGN.
     try:
@@ -204,6 +207,7 @@ def CANacondaMessageParse(match, newCanMessage, dataBack):
         # Add the frequency to the 'latest_frequencies' dictionary:
         dataBack.latest_frequencies[newCanMessage.name] = newCanMessage.freq
 
+    return newCanMessage
 
 def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
     """Parse a a message that does not show up in the metadata file.  Create a CANacondaMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages. This step is necessary to access the message later on."""
