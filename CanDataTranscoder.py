@@ -27,7 +27,7 @@ from CanMessage import *
 from outmessage import *
 import time
 import sys
-from math import ceil
+from math import ceil, fmod
 
 from messageInfo import CAN_FORMAT_EXTENDED, ACTIVE, EQUAL, LT, GT, ZERO, MessageInfo, Field
 
@@ -574,16 +574,28 @@ def encodePayload(payload, dataFilter, fillValue=0):
     else:
         pay = bin(int(payload/scaling))[2:]
 
-    # Initialize an array of zeros (or ones for N2K)
-    fieldData = [fillValue]*length
+    # Make sure the binary string is the correct length
+    pay = '0' * (length - len(pay)) + pay
 
-    for i in range(len(pay)):
-        try:
-            # Fill in fieldData
-            fieldData[i] = int(pay[i])
-        except IndexError: #  payload scaled up and has become too big for data type
-            raise Exception ("The value {} is too large for the {} field, which is scaled by {}.\nUse a number of length {} bits.".format(payload, dataFilter.name, 1/scaling,length))
-    return fieldData
+    # If the value is little endian and greater than a byte, reverse the byte-order,
+    # as the usbcan protocol is big-endian on the wire.
+    if endian == 'little' and len(pay) > 8:
+        # Don't handle the unlikely, and tricky, edge cases
+        if fmod(len(pay), 8) != 0:
+            raise Exception("Cannot reverse byte-order for fields that aren't an integer multiple of bytes")
+
+        count = len(pay)
+        dataflipped = ""
+        while count > 0:
+            # this flips the order of all the hex bits to switch from little
+            # to big endian
+            dataflipped = dataflipped + pay[count-8:count]
+            count -= 8
+
+        pay = dataflipped
+
+    # Return an array of bits instead of a string of '0's and '1's
+    return [int(x) for x in pay]
 
 
 def debugMode():
