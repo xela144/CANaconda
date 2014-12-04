@@ -535,8 +535,7 @@ def generateMessage(dataBack, payload, messageName):
         payloadHexString = payloadHexString.zfill(bodylength)
 
     # And return the transmit message as a properly formatted message.
-    outStr = formatString.format(id, messageInfo.size, int(payloadHexString, 16))
-    return outStr
+    return formatString.format(id, messageInfo.size, int(payloadHexString, 16))
 
 
 # Need to check for return value length. Should be same as 'length'
