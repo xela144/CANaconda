@@ -157,14 +157,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
     # Like above but checks the boundary on the data, making sure that the user-entered
     # data is within the bounds of the CAN message
     def checkBoundsOnPayload(self, payload, messageInfo, fieldInfo):
-        # Rescale the payload so that we can check to see if it is within the bounds
-        # given by the bit length of its data field
-        if fieldInfo.scaling == 1:
-            payload = int(payload)
-        else:
-            payload = payload / fieldInfo.scaling
-
-        # And check that the payload value is within the bounds of this field
         if payload >= fieldInfo.bounds[0] and payload <= fieldInfo.bounds[1]:
             return True
         else:
