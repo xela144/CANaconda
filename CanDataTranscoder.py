@@ -65,7 +65,7 @@ try:
             CanTranscoder.__init__(self, dataBack)
             QObject.__init__(self)
 
-        # Continuously pop from the transcode queue, parse, and put to the 'RxMsg_queue' 
+        # Continuously pop from the transcode queue, parse, and put to the 'RxMsg_queue'
         # for access to the CANacondaMessage objects from within the GUI thread.
         # This queue separates the serial layer from the rest of the program.
         def CanTranscoderRun(self):
@@ -117,7 +117,7 @@ class CanTranscoderCLI(CanTranscoder):
                 # Prepend timestamp to millisecond precision if the user requested it.
                 if self.args.time:
                     outmsg = "{0:0.3f} ".format(time.time())
-                
+
                 # And then output the raw message data.
                 outmsg += str(canacondamessage)
 
@@ -185,11 +185,11 @@ def CANacondaMessageParse(match, dataBack):
     if newCanMessage.id not in dataBack.IDencodeMap.values():
         dataBack.IDencodeMap[newCanMessage.name] = newCanMessage.id
     # grab the values from the data field(s)
-    for fieldName in currentMessageInfo.fields: 
+    for fieldName in currentMessageInfo.fields:
         #dataFilter is a MessageInfo.Field object. Used for parsing field data.
-        dataFilter = currentMessageInfo.fields[fieldName]  
+        dataFilter = currentMessageInfo.fields[fieldName]
 
-        # The field data may be an int or a bitfield, depending on the type 
+        # The field data may be an int or a bitfield, depending on the type
         # specified in metadata.
         payloadData = getBodyFieldData(dataFilter, newCanMessage)
         if dataFilter.type == 'bitfield':
@@ -220,7 +220,7 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
 
-    # Since this messages was not given in the metadata, we must create the MessageInfo and 
+    # Since this messages was not given in the metadata, we must create the MessageInfo and
     # and then insert them into dataBack.messages dictionary
     if newCanMessage.name not in dataBack.messages:
         newMessageInfo = MessageInfo()
@@ -283,7 +283,7 @@ def filterPayloadByValue(payloadData, dataFilter):
 
 
 # Same as 'filterPayloadByValue()' but for bitfields
-def bitfieldFilterPayloadByValue(payloadData, dataFilter):    
+def bitfieldFilterPayloadByValue(payloadData, dataFilter):
     bitfieldLength = len(payloadData) - 2 # To account for the '0b'
     # Format the bitfield as an int to do the comparisons
     payloadData = int(payloadData, 2)
@@ -302,7 +302,7 @@ def bitfieldFilterPayloadByValue(payloadData, dataFilter):
     return '0b' + (bin(filteredPayload)[2:]).zfill(bitfieldLength)
 
 
-# Retrieves the data field from the CAN message body and does any units 
+# Retrieves the data field from the CAN message body and does any units
 # conversion and/or filtering specified by the user during runtime.
 def getBodyFieldData(dataFilter, newCanMessage):
     payloadBits = newCanMessage.payloadBitstring
@@ -361,7 +361,7 @@ def calcFrequency(newCanMessage, dataBack):
 
 
 # getByteSubArray: Before using the int.from_bytes function, we must format the data
-# into this array. 
+# into this array.
 # parameters:
 #    offset and length are from the messageInfo field objects for the current field
 #    payloadBits is the bit array for the current CanMessage object. It is a string.
@@ -417,7 +417,7 @@ def ParseBody(payloadString):
     payloadSize = len(payloadString) // 2
 
     # Parse out each byte from the payload string into an integer array
-    payload = [None] * payloadSize 
+    payload = [None] * payloadSize
     for i in range(payloadSize):
         charIndex = 2 * i
         payload[i] = (int(payloadString[charIndex], 16) << 4) + int(payloadString[charIndex + 1], 16)
@@ -426,7 +426,7 @@ def ParseBody(payloadString):
 
 
 # ParseBodyBits
-# 'hexData' is the string of bytes that represent the message body. This function 
+# 'hexData' is the string of bytes that represent the message body. This function
 # changes the endianness of this hex string and changes its representation to bits.
 def ParseBodyBits(hexData):
     count = len(hexData)
@@ -488,7 +488,7 @@ def flipNibbles(count, hexData):
 # 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
 def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
-    # Construct a string that we will use to .format() later on. 'formatString' needs to 
+    # Construct a string that we will use to .format() later on. 'formatString' needs to
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
     bodylength = messageInfo.size*2
     bodyFormatter = "0" + str(bodylength) + "X"
@@ -498,7 +498,7 @@ def generateMessage(dataBack, payload, messageName):
 
     # This will work only if the node is connected and broadcasting.
     try:
-        id = dataBack.IDencodeMap[messageName]  
+        id = dataBack.IDencodeMap[messageName]
     except KeyError:
         # We assumed the node was connected and broadcasting but it was not.
         # Need to use the Nmea11783Encode version of the ID instead.
@@ -524,7 +524,7 @@ def generateMessage(dataBack, payload, messageName):
         stop  = dataFilter.offset + dataFilter.length
         payloadArray[start:stop] = fieldData
 
-    # Collapse 
+    # Collapse
     payloadString = ''.join(map(str,payloadArray))
     payloadInt = int(payloadString, 2)
     payloadHexString = hex(payloadInt)[2:]
@@ -564,7 +564,7 @@ def encodePayload(payload, dataFilter, fillValue=0):
         payload = -payload
         Negative = True
 
-    # If the user has entered a negative number for an unsigned field, error out.    
+    # If the user has entered a negative number for an unsigned field, error out.
     elif not _signed and payload < 0:
         raise Exception ("The value {} is not allowed for the {} field, because its data type is unsigned. Use a positive number.".format(payload, dataFilter.name))
 
@@ -574,7 +574,7 @@ def encodePayload(payload, dataFilter, fillValue=0):
     else:
         pay = bin(int(payload/scaling))[2:]
 
-    # Initialize an array of zeros (or ones for N2K) 
+    # Initialize an array of zeros (or ones for N2K)
     fieldData = [fillValue]*length
 
     for i in range(len(pay)):
