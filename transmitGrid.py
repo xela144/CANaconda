@@ -198,15 +198,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
         if frequencyInt == None:
             self.txTypeErrorFlag = True
 
-        # For redundancy, insert the values back into the QLineEdits. Necessary
-        # if user left the LineEdits blank, which caused a default 0 to be added.
-        for pair in self.txQLabel_LineContainer:
-            # First get the name of the field from the QLabel
-            fieldName = pair[0].text()
-            fieldDataLineEdit = pair[1]
-            # Then set the text from the label to the QLineEdit
-            fieldDataLineEdit.setText(str(payload[fieldName]))
-
         # We messed up earlier but are returning here
         # after the Line Edits were cleaned up.
         # FIXME: Give a detailed error message here... try entering a value that is
