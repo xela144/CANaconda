@@ -490,7 +490,7 @@ def generateMessage(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
     # Construct a string that we will use to .format() later on. 'formatString' needs to
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
-    bodylength = messageInfo.size*2
+    bodylength = messageInfo.size*2 # Body length in nibbles
     bodyFormatter = "0" + str(bodylength) + "X"
     formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
     if messageInfo.format == CAN_FORMAT_EXTENDED:
@@ -513,12 +513,13 @@ def generateMessage(dataBack, payload, messageName):
         dataFilter = dataBack.messages[messageName].fields[field]
 
         if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
-            # The length of the stringified binary represenation of the number, after
+            # The length of the stringified binary representation of the number, after
             # the ceiling function is applied (rounding up to nearest integer). The '- 2'
             # accounts for the '0b' at the beginning of the string. This must be longer than
             # the length specified in the metaData.
             raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
         fieldData = encodePayload(payload[field], dataFilter)
+
         # Find appropriate array indices, and insert fieldData into the payloadArray
         start = dataFilter.offset
         stop  = dataFilter.offset + dataFilter.length
