@@ -138,13 +138,14 @@ void Ecan1Init(uint32_t f_osc, uint32_t f_baud)
 int Ecan1Receive(CanMessage *msg, uint8_t *messagesLeft)
 {
     int foundOne = CB_ReadMany(&ecan1RxCBuffer, msg, sizeof (CanMessage));
+    if (foundOne) {
+        --receivedMessagesPending;
+    }
 
+    // If the caller wants to know how many messages are left, return that value. Note that this
+    // value could be > 0 even if no message was found during this call.
     if (messagesLeft) {
-        if (foundOne) {
-            *messagesLeft = --receivedMessagesPending;
-        } else {
-            *messagesLeft = 0;
-        }
+        *messagesLeft = receivedMessagesPending;
     }
 
     return foundOne;
@@ -351,7 +352,9 @@ void _ISR _C1Interrupt(void)
         CB_WriteMany(&ecan1RxCBuffer, &message, sizeof (CanMessage), true);
 
         // Increase the number of messages stored in the buffer
-        ++receivedMessagesPending;
+        if (receivedMessagesPending < 255) {
+            ++receivedMessagesPending;
+        }
 
         // Be sure to clear the interrupt flag.
         C1INTFbits.RBIF = 0;
