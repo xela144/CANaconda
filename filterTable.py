@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 import time
 
 # Columns:
-CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
+CHECKBOX, MESSAGE, FIELD, OFFSET, VALUE, FILTER, UNITS, RATE = range(8)
 
 from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
@@ -72,7 +72,7 @@ class FilterTable(QtWidgets.QWidget):
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
-        headerList = ['', 'Message', 'Field', 'Latest value',
+        headerList = ['', 'Message', 'Field', 'Offset', 'Latest value',
                       'Filter', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
@@ -96,6 +96,13 @@ class FilterTable(QtWidgets.QWidget):
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             fieldItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, FIELD, fieldItem)
+            ##
+            # Get the offset from the dataBack singleton
+            offsetBits = self.dataBack.messages[messageInfoName].fields[fieldName].offset
+            offsetItem = QtWidgets.QTableWidgetItem(str(offsetBits))
+            offsetItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            offsetItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
+            self.tableWidget.setItem(row, OFFSET, offsetItem)
             ##
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
@@ -222,9 +229,13 @@ class FilterTable(QtWidgets.QWidget):
         messages_dict = self.dataBack.messagesSeenSoFar
         displayList = []
         for messageInfo in sorted(messages_dict.keys(), key=lambda s: s.lower()):
-            for field in messages_dict[messageInfo]:
+            orderedFields = self.getFieldsByOffset(self.dataBack.messages[messageInfo])
+            for field in orderedFields:
                 displayList.append((messageInfo, field))
         return displayList
+
+    def getFieldsByOffset(self, messageInfo):
+        return self.parent.mainWindow.transmitGrid.getFieldsByOffset(messageInfo)
 
     # This function needs to be modified so that if an invalid
     # entry occurs, a dialog window warns the user.
