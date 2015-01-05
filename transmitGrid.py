@@ -99,6 +99,10 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.populateTxField()
         self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
 
+        #self.populateByOffset(self.dataBack.messages, self.firstTxMessageInfo)
+
+    # Once the combo box has been filled with 'messageInfo' items, we have to populate each
+    # messageInfo with its field type.
     def populateTxField(self):
         # First delete the old contents
         rowcount = self.txGrid.rowCount()
@@ -121,8 +125,10 @@ class TransmitGridWidget(QtWidgets.QDialog):
         currentMessageInfo = self.firstTxMessageInfo.currentText()
         row = 1   # counter for adding to txGrid row
         # Add all of the widgets to the transmission QGridLayout
+        # Order of the field items should match the offset in the meta data
         try:
-            for currentfield in self.dataBack.messages[currentMessageInfo].fields.keys():
+            fieldsByOffset = self.getFieldsByOffset(self.dataBack.messages[currentMessageInfo])
+            for currentfield in fieldsByOffset:
                 newLabel = QtWidgets.QLabel()
                 newLabel.setText(currentfield)
                 newLineEdit = QtWidgets.QLineEdit()
@@ -142,6 +148,21 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # For one iteration, 'key' will be '' and we want to ignore this error.
         except KeyError:
             pass
+
+
+    # Get a list of Field objects sorted by offset, rather than alphabetical order
+    def getFieldsByOffset(self, messageInfo):
+        unorderedDict = {}
+        # Map the offset to a field name
+        for fieldName in messageInfo.fields.keys():
+            unorderedDict[messageInfo.fields[fieldName].offset] = fieldName
+        # Create a list of the offsets, from least to greatest
+        order = sorted(unorderedDict)
+        orderedList = []
+        # Append the field items, ordered by offset
+        for offset in order:
+            orderedList.append(unorderedDict[offset])
+        return orderedList
 
     # This is used to calculate the default text for the user to see bounds on the
     # payload values for transmitting CAN messages.
