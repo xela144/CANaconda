@@ -46,34 +46,42 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         self.treeWidget.clear()
         self.treeWidget.setItemsExpandable(True)
 
-        for messageInfo in self.messages:
-            # Create a top-level messageName
-            messageName = QtWidgets.QTreeWidgetItem(self.treeWidget)
-            messageName.setText(0, self.messages[messageInfo].name)
-            if self.messages[messageInfo].pgn:
-                messageName.setText(1, "PGN: {}".format(self.messages[messageInfo].pgn))
+        for messageName in self.messages:
+            # Create a top-level widget for the  message name
+            messageNameWidget = QtWidgets.QTreeWidgetItem(self.treeWidget)
+            messageNameWidget.setText(0, self.messages[messageName].name)
+            if self.messages[messageName].pgn:
+                messageNameWidget.setText(1, "PGN: {}".format(self.messages[messageName].pgn))
             else:
-                if self.messages[messageInfo].format == CAN_FORMAT_EXTENDED:
-                    messageName.setText(1, "ID: 0x{:08X}".format(self.messages[messageInfo].id))
+                if self.messages[messageName].format == CAN_FORMAT_EXTENDED:
+                    messageNameWidget.setText(1, "ID: 0x{:08X}".format(self.messages[messageName].id))
                 else:
-                    messageName.setText(1, "ID: 0x{:03X}".format(self.messages[messageInfo].id))
+                    messageNameWidget.setText(1, "ID: 0x{:03X}".format(self.messages[messageName].id))
             # Include the size of the payload, in bytes
-            messageName.setText(2, str(self.messages[messageInfo].size))
+            messageNameWidget.setText(2, str(self.messages[messageName].size))
             # Set the description
-            messageName.setText(3, self.messages[messageInfo].desc)
+            messageNameWidget.setText(3, self.messages[messageName].desc)
     # container will be a map from messageInfo name to its widgetmessageNames.
-            self.dataBack.container[messageName.text(0)] = []
-            for field in self.messages[messageInfo]:
+            self.dataBack.container[messageNameWidget.text(0)] = []
+            orderedList = self.getFieldsByOffset(self.messages[messageName])
+            #for field in self.messages[messageName]:
+            for fieldName in orderedList:
                 # Create a mid-level node 
-                child = QtWidgets.QTreeWidgetItem(messageName)
-                child.setText(0, field)
-                self.insertFieldAttributes(self.messages[messageInfo].fields[field],
+                fieldInfo = self.messages[messageName].fields[fieldName]
+                child = QtWidgets.QTreeWidgetItem(messageNameWidget)
+                child.setText(0, fieldName)
+                self.insertFieldAttributes(self.messages[messageName].fields[fieldName],
                                                                         child)
-                self.dataBack.container[messageName.text(0)].append(child)
-            self.treeWidget.expandItem(messageName)
+                self.dataBack.container[messageNameWidget.text(0)].append(child)
+            messageNameWidget.sortChildren(2, 0) 
+            self.treeWidget.expandItem(messageNameWidget)
         self.treeWidget.resizeColumnToContents(0)
         if not self.singleshot:
             self.parent.filterTable.populateTable()
+
+    def getFieldsByOffset(self, messageInfo):
+        return self.parent.transmitGrid.getFieldsByOffset(messageInfo)
+
 
     def insertFieldAttributes(self, field, child):
         attr = QtWidgets.QTreeWidgetItem(child)

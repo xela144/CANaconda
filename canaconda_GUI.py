@@ -76,7 +76,9 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
         # Now set up the transmit grid
         self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget(self.mainWindow.transmitWidget)
-        self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack)
+        # Sending 'self' as an explicit parameter to retain reference to mainWindow, otherwise
+        # reference is overwritten and mainWindow cannot be reached from transmitGrid....
+        self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
 
         if self.dataBack.args.messages != None:
@@ -315,6 +317,21 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
 
+    # Get a list of field names sorted by offset, rather than alphabetical order. Useful for
+    # when user needs to find field data within large CAN messages.
+    def getFieldsByOffset(self, messageInfo):
+        unorderedDict = {}
+        # Map the offset to a field name
+        for fieldName in messageInfo.fields.keys():
+            unorderedDict[messageInfo.fields[fieldName].offset] = fieldName
+        # Create a list of the offsets, from least to greatest
+        offsetList = sorted(unorderedDict)
+        orderedList = []
+        # Append the field names, ordered by offset
+        for offset in offsetList:
+            orderedList.append(unorderedDict[offset])
+        # Return a list of field names that are ordered by offset.
+        return orderedList
 
     # When the metadata file is loaded, the name appears at the upper right corner of UI
     # updateFileNameQLabel handles this.

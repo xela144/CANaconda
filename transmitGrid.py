@@ -8,9 +8,10 @@ baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
 class TransmitGridWidget(QtWidgets.QDialog):
 
-    def setup(self, parent, dataBack, singleshot=False):
+    def setup(self, parent, dataBack, realParent, singleshot=False):
         super(TransmitGridWidget, self).__init__()
         self.dataBack = dataBack
+        self.realParent = realParent
         self.parent = parent
         self.singleshot = singleshot
         # Create the grid and a label to go along with it
@@ -149,20 +150,9 @@ class TransmitGridWidget(QtWidgets.QDialog):
         except KeyError:
             pass
 
-
     # Get a list of Field objects sorted by offset, rather than alphabetical order
     def getFieldsByOffset(self, messageInfo):
-        unorderedDict = {}
-        # Map the offset to a field name
-        for fieldName in messageInfo.fields.keys():
-            unorderedDict[messageInfo.fields[fieldName].offset] = fieldName
-        # Create a list of the offsets, from least to greatest
-        order = sorted(unorderedDict)
-        orderedList = []
-        # Append the field items, ordered by offset
-        for offset in order:
-            orderedList.append(unorderedDict[offset])
-        return orderedList
+        return self.realParent.getFieldsByOffset(self.dataBack.messages[messageInfo.name])
 
     # This is used to calculate the default text for the user to see bounds on the
     # payload values for transmitting CAN messages.
