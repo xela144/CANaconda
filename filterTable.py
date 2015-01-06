@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 import time
 
 # Columns:
-CHECKBOX, MESSAGE, FIELD, OFFSET, VALUE, FILTER, UNITS, RATE = range(8)
+CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
 from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
@@ -72,7 +72,7 @@ class FilterTable(QtWidgets.QWidget):
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
-        headerList = ['', 'Message', 'Field', 'Offset', 'Latest value',
+        headerList = ['', 'Message', 'Field', 'Latest value',
                       'Filter', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
@@ -96,13 +96,6 @@ class FilterTable(QtWidgets.QWidget):
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             fieldItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, FIELD, fieldItem)
-            ##
-            # Get the offset from the dataBack singleton
-            offsetBits = self.dataBack.messages[messageInfoName].fields[fieldName].offset
-            offsetItem = QtWidgets.QTableWidgetItem(str(offsetBits))
-            offsetItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
-            offsetItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
-            self.tableWidget.setItem(row, OFFSET, offsetItem)
             ##
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
