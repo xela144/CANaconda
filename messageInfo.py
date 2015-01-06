@@ -71,6 +71,7 @@ class MessageInfo():
         self.pgn = None
         self.size = 0
         self.fields = {}
+        self.anonymous = False
 
     def createNew(self, messageInfo, dataBack, fileName):
         self.freqQueue = queue.Queue()

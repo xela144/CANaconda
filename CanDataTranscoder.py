@@ -210,13 +210,13 @@ def CANacondaMessageParse(match, dataBack):
     return newCanMessage
 
 def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
-    """Parse a a message that does not show up in the metadata file.  Create a CANacondaMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages. This step is necessary to access the message later on."""
+    """Parse a a message that does not show up in the metadata file.  Create a CANacondaMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages, with messageInfo.anonymous = True. This step is necessary to access the message later on."""
     # Generate a pretty name with the header info
     if newCanMessage.type == CanMessage.ExtendedType:
         newCanMessage.name = "Extended message 0x{0:X} (PGN: {1:d})".format(newCanMessage.id, newCanMessage.pgn)
     else:
         newCanMessage.name = "Standard message 0x{0:X}".format(newCanMessage.id)
-
+    newCanMessage.anonymous = True
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
 
