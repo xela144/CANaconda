@@ -257,15 +257,27 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.transcoderThread.name = 'transcoderThread'
         self.transcoderThread.start()
 
-    def loadFilter(self):
-        # These "reset" statements should actually be moved to a
-        # reset function that can be called from anywhere in the code.
+    # Clear the backend meta data
+    def resetAllMetadata(self):
+        # Get rid of the messageInfo filter objects, and update UI and backend accordingly
         self.dataBack.messages = {}
-        self.dataBack.messageInfo_to_fields = {}
-        self.dataBack.messagesSeenSoFar = {}
-        self.dataBack.id_to_name = {}
-        self.dataBack.pgn_to_name = {}
         self.dataBack.messageInfoFlag = False
+        self.fileName = 'None loaded'   # Normally this gets overwritten immediately
+        self.updateFileNameQLabel()  
+        
+        # The map from message name to the fields contained with that message
+        self.dataBack.messageInfo_to_fields = {}
+        
+        # The set of all messages seen on the bus
+        self.dataBack.messagesSeenSoFar = {}
+
+        # A map from message ID to its name
+        self.dataBack.id_to_name = {}
+
+        # A map from message PGN to its name
+        self.dataBack.pgn_to_name = {}
+
+    def loadFilter(self):
         fileName = None
         while fileName is None:
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
@@ -276,18 +288,18 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Now process our XML file, handling any errors that arise by alerting
         # the user and returning.
         try:
+            self.resetAllMetadata()
             xmlImport(self.dataBack, fileName)
             # self.dataBack.messageInfoFlag set to true in xmlImport
         except Exception as e:
             self.warnXmlImport(str(e))
             return
-
         # Save the filename for updating the UI
         self.fileName = fileName
 
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
+       # self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()

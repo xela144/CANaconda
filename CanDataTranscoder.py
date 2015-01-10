@@ -216,7 +216,6 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         newCanMessage.name = "Extended message 0x{0:X} (PGN: {1:d})".format(newCanMessage.id, newCanMessage.pgn)
     else:
         newCanMessage.name = "Standard message 0x{0:X}".format(newCanMessage.id)
-    newCanMessage.anonymous = True
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
 
@@ -228,6 +227,8 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         newMessageInfo.fields['Raw Data'] = Field()
         newMessageInfo.fields['Raw Data'].name = 'Raw Data'
         dataBack.messages[newMessageInfo.name] = newMessageInfo
+        # The 'anonymous' flag tells us that the message is not in any meta data
+        dataBack.messages[newMessageInfo.name].anonymous = True
 
     if not dataBack.nogui:
         # Now to calculate message frequency:

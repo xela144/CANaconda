@@ -47,6 +47,9 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         self.treeWidget.setItemsExpandable(True)
 
         for messageName in self.messages:
+            # We don't want to use anonymous messages, so skip them.
+            if self.messages[messageName].anonymous:
+                continue
             # Create a top-level widget for the  message name
             messageNameWidget = QtWidgets.QTreeWidgetItem(self.treeWidget)
             messageNameWidget.setText(0, self.messages[messageName].name)
