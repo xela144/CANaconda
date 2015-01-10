@@ -151,7 +151,6 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.setHourGlass()
         text = self.sender().text()
         baudrate = BAUDMAP[text]
-
         # Setting this flag to False will cause the canPort serial thread
         # to return, ending the thread. The serial connection will still
         # be open.
@@ -288,6 +287,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # A map from message PGN to its name
         self.dataBack.pgn_to_name = {}
 
+    # Load metadata after user has selected that option from the menu
     def loadFilter(self):
         fileName = None
         while fileName is None:
@@ -307,17 +307,14 @@ class Ui_CANaconda_GUI(QtCore.QObject):
             return
         # Save the filename for updating the UI
         self.fileName = fileName
-
+        # The current metadata file needs to be displayed in the UI
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-       # self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
-                                            # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
-
 
     # If --messages argument was given, this function loads the metadata file.
     def commandLineLoadFilter(self):
@@ -332,8 +329,6 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.fileName = fileName
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-        #self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
-                                            # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
