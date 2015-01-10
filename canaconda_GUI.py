@@ -93,6 +93,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText)
         self.mainWindow.menuAction.aboutToShow.connect(self.setChoose_port_Actions)
 
+        # Clear the message stream window on button push
+        self.mainWindow.buttonClearMessageStream.clicked.connect(self.clearTextBrowser)
 
     def setChoose_port_Actions(self):
         """
