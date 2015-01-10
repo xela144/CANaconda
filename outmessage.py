@@ -36,7 +36,7 @@ def noGuiParse(dataBack, message):
             return str(message)
         else:
             return
-    # Build a text string that gets put to screen.
+    # Build a text string called 'outmsg' that gets put to screen.
     outmsg = ""
     for field in message.body:
         if field in dataBack.messageInfo_to_fields[message.name]:
@@ -44,11 +44,11 @@ def noGuiParse(dataBack, message):
     else:
         return
     dataFound = False
-    # Print the timestamp of the message first
+    # Print the timestamp of the message first, per user request
     if dataBack.args.time:
         outmsg += "\nTime: {0:0.3f}".format(time.time())
     
-    # Then the message name as specified in the metadata
+    # Append the message name as specified in the metadata
     if message.name:
         outmsg += "\n" + message.name
     
@@ -58,18 +58,19 @@ def noGuiParse(dataBack, message):
         outmsg += "\nPGN: " + str(message.pgn)
     
     # Then the raw bytes of the message
-    # Note: This is required for GUI operation and always empty in the command-line interface.
+    # Note: This is required for GUI operation and is always empty in the command-line interface.
     if dataBack.displayList[RAW]:
         outmsg += " " + str(message)
         dataFound = True
     
-    # Now finally pretty-print the internal data if metadata exists for this message
+    # Append the message ID
     if dataBack.displayList[ID]:
         outmsg += "\nID: " + hex(message.id)
-    # if displayList is empty, display all:
+
+    # Finally, pretty-print the internal data if metadata exists for this message
     if dataBack.displayList[BODY]:
         for field in message.body:
-            # If filtering, and no match, message.body[field] will be None, and we do a hard break.
+            # If there is no match, message.body[field] will be None, so return.
             if message.body[field] == None:
                 dataFound = False
                 return
@@ -92,8 +93,16 @@ def noGuiParse(dataBack, message):
                     else:
                         # Since there is no units conversion, there is no reason to format the body
                         body = message.body[field]
+                        #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
+                    # We need to know how long to make the 'body' string, depending on 
+                    # signed-ness, type (float or int) and scaling. Calculate that here.
+                    #fieldInfo = dataBack.messages[message.name].fields[field]
+                    #formatChar = getFormatForBody(fieldInfo.type, fieldInfo.scaling, fieldInfo.signed, fieldInfo.length, body)
                     prettyUnits = unitStringMap[units]
-                    outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
+                    try:
+                        outmsg += '\n{0}: {1:g} {2}'.format(field, body, prettyUnits)
+                    except ValueError:
+                        outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
                 # This will produce a KeyError for unspecified names or names that do
                 # not need to be changed. Error won't show up as a stack trace since this
                 # is in its own thread FIXME
@@ -101,6 +110,25 @@ def noGuiParse(dataBack, message):
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:
         return outmsg
+
+# This will return the length of the payload string. Not being used for the moment.
+def getFormatForBody(type, scaling, signed, length, body):
+    if type != 'int':
+        return length
+    
+    tot = 0
+
+    # Add a spot for the negative sign
+    if signed == 'yes':
+        tot += 1
+    
+    # The actual length of the number
+    tot += len(str(2**length))
+
+    # Add a space for the decimal point
+    if float(scaling) != 1:
+        tot += 1
+    print(tot)
 
 
 # For CSV output. First column is time stamp.
