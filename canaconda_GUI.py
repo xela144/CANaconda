@@ -87,10 +87,19 @@ class Ui_CANaconda_GUI(QtCore.QObject):
             self.comportSelect()
 
         # start connecting signals and slots
+        # Load metadata filter on menu item click
         self.mainWindow.actionLoad_Filters_From_File.triggered.connect(self.loadFilter)
+
+        # Log message stream to file on pushbutton click
         self.mainWindow.loggingButton.clicked.connect(self.saveToFile)
+
+        # Change display type in message stream based on combo box index
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.setOutput)
+
+        # Update logging button text based on combo box index
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText)
+
+        # Cause available serial ports to be scanned when user opens menu
         self.mainWindow.menuAction.aboutToShow.connect(self.setChoose_port_Actions)
 
         # Clear the message stream window on button push
@@ -141,8 +150,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         """
         self.setHourGlass()
         text = self.sender().text()
-        
         baudrate = BAUDMAP[text]
+
         # Setting this flag to False will cause the canPort serial thread
         # to return, ending the thread. The serial connection will still
         # be open.
