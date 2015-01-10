@@ -120,12 +120,12 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
     def getMessage(self, CANacondaRxMsg_queue):
         """
-        Called by updateMessageStream. 'messageInfoFlag' is set when the metadata is loaded
+        Called by updateMessageStream. 'messageInfoFlag' is set to True when the metadata is loaded.
         GUI_rawFlag is set to False when program initalizes, but is set to True only when user
         selects the 'Raw' display option from the combo-box.
-
         """
         CANacondaMessage = CANacondaRxMsg_queue.get()
+        # Switch statement depending on current UI settings
         if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
             return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
         elif self.dataBack.GUI_CSVflag:
@@ -321,7 +321,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.fileName = fileName
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
+        #self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
                                             # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
@@ -367,21 +367,25 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         warn.setInformativeText("Make sure you have already begun streaming messages")
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
-        
 
     def comportUnavailable(self):
         pass
-
+    
     # Set the messageInfo_to_fields for correct message stream output
+    # This is done by determining which message/field pair the user has selected in the
+    # filterTable widget.
     def update_messageInfo_to_fields(self):
         self.dataBack.messageInfo_to_fields = {}
+        # Iterate through all the rows in the table
         for row in range(0,self.mainWindow.filterTable.tableWidget.rowCount()):
+            # If the checkbox has been checked, store the name and field associated with row
             if self.mainWindow.filterTable.tableWidget.item(
                     row, filterTable.CHECKBOX).checkState() == QtCore.Qt.Checked:
                 name = self.mainWindow.filterTable.tableWidget.item(
                                                 row, filterTable.MESSAGE).text()
                 field = self.mainWindow.filterTable.tableWidget.item(
                                                 row, filterTable.FIELD).text()
+                # Update dataBack accordingly
                 if name in self.dataBack.messageInfo_to_fields:
                     self.dataBack.messageInfo_to_fields[name].append(field)
                 else:

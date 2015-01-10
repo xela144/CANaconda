@@ -58,8 +58,8 @@ try:
     from PyQt5.QtCore import pyqtSignal, QObject
 
     class CanTranscoderGUI(QObject):
-        parsedMsgPut = pyqtSignal()
-        newMessageUp = pyqtSignal()
+        parsedMsgPut = pyqtSignal()  # A new CANacondaMessage has been pushed to the queue
+        newMessageUp = pyqtSignal()  # A message type has been seen for the first time
 
         def __init__(self, dataBack):
             CanTranscoder.__init__(self, dataBack)
