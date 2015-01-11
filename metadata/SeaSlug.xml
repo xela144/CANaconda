@@ -27,21 +27,16 @@
         type = "bitfield"
         offset = "48"
         length = "3"
-        signed = "no"
         />
         <field
         name = "Starboard limit"
         type = "boolean"
         offset = "53"
-        length = "1"
-        signed = "no"
         />
         <field
         name = "Port limit"
         type = "boolean"
         offset = "55"
-        length = "1"
-        signed = "no"
         />
     </messageInfo>
     <messageInfo name = "Set rudder status" id = "0x81" size="1" endian = 'little'>
@@ -96,21 +91,16 @@
         type = "bitfield"
         offset = "48"
         length = "3"
-        signed = "no"
         />
         <field
         name = "Starboard limit"
         type = "boolean"
         offset = "53"
-        length = "1"
-        signed = "no"
         />
         <field
         name = "Port limit"
         type = "boolean"
         offset = "55"
-        length = "1"
-        signed = "no"
         />
     </messageInfo>
     <messageInfo name = "Set rudder status" id = "0x86" size="1" endian = 'little'>
@@ -176,14 +166,12 @@
         type = "bitfield"
         offset = "32"
         length = "16"
-        signed = "no"
         />
         <field
         name = "Errors"
         type = "bitfield"
         offset = "48"
         length = "16"
-        signed = "no"
         />
     </messageInfo>
 </metaData>
