@@ -195,13 +195,24 @@ class Field():
         # If the 'type' for a field is not specified, assume int (as that will be the most common).
         # This SHOULD be explicitly set by the user, so warn them via stderr.
         self.type = field.get('type')
-        if self.type not in ('int', 'bitfield'):
+        if self.type not in ('int', 'bitfield', 'boolean'):
             print("Specified type for '{}.{}' was not specified, assuming int.".format(parent.name, self.name), file=sys.stderr)
             self.type = 'int'
 
-        self.length = int(field.get('length'))
+        # The length of the field data, as specified by user. Allow for user to omit length if type is boolean.
+        try:
+            self.length = int(field.get('length'))
+        except TypeError:  # Could not convert NoneType to string
+            if self.type == 'boolean':
+                self.length = 1
+            else:
+                raise Exception("Parsing failed for XML file '{}'. Check that field '{}.{}' has correct length.".format(fileName, parent.name, self.name))
+
+        # The offset and signed-ness of the field
         self.offset = int(field.get('offset'))
         self.signed = field.get('signed')
+
+        # The field units
         units_ = field.get('units')
         try:
             if units_ == 'm/s':
@@ -209,13 +220,14 @@ class Field():
             else:
                 self.units = units_.upper()
         except AttributeError:
+            # No units were specified
             self.units = ''
 
+        # Get the scalar, if none is specified set to 1.
         scalar = field.get('scaling')
         if scalar is None:
             scalar = 1
         self.scaling = float(scalar)
-        self.unitsConversion = None
 
         # For decoding messages only. This is never displayed to user
         self.endian = parent.endian
