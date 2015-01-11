@@ -71,12 +71,14 @@ class Ui_CANaconda_GUI(QtCore.QObject):
     
         # set up the other tab
         self.mainWindow.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
-        self.mainWindow.filtersTreeWidget.setup(self.mainWindow, self.dataBack)
+        # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
+        # reference is overwritten and mainWindow cannot be reached from filtersTreeWidget....
+        self.mainWindow.filtersTreeWidget.setup(self.mainWindow, self.dataBack, self)
         self.mainWindow.tabWidget.addTab(self.mainWindow.filtersTreeWidget, "View Meta Data")
 
         # Now set up the transmit grid
         self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget(self.mainWindow.transmitWidget)
-        # Sending 'self' as an explicit parameter to retain reference to mainWindow, otherwise
+        # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
         # reference is overwritten and mainWindow cannot be reached from transmitGrid....
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")

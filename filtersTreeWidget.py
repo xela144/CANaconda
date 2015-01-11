@@ -10,10 +10,11 @@ from messageInfo import CAN_FORMAT_EXTENDED
 
 class FiltersTreeWidget(QtWidgets.QDialog):
     
-    def setup(self, parent, dataBack, singleshot=False):
+    def setup(self, parent, dataBack, realParent=None, singleshot=False):
         super(FiltersTreeWidget, self).__init__()
         self.dataBack = dataBack
         self.parent = parent
+        self.realParent = realParent  # An explicit reference to the UI_CANaconda_GUI widget
         self.singleshot = singleshot
         treeLabel = QtWidgets.QLabel("Select message data for display")
         self.treeWidget = QtWidgets.QTreeWidget()
@@ -83,7 +84,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
             self.parent.filterTable.populateTable()
 
     def getFieldsByOffset(self, messageInfo):
-        return self.parent.transmitGrid.getFieldsByOffset(messageInfo)
+        return self.realParent.getFieldsByOffset(messageInfo)
 
 
     def insertFieldAttributes(self, field, child):
@@ -99,9 +100,9 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         attr.setText(0, "Units: " + field.units)
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Scaling: " + str(field.scaling))
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Endian: " + field.endian)
 
     def pdbset(self):
         QtCore.pyqtRemoveInputHook()
         pdb.set_trace()
+
+

@@ -493,9 +493,9 @@ def generateMessage(dataBack, payload, messageName):
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
     bodylength = messageInfo.size*2 # Body length in nibbles
     bodyFormatter = "0" + str(bodylength) + "X"
-    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
+    formatString = 't{:03X}{:1d}{:' + bodyFormatter + '}\r'
     if messageInfo.format == CAN_FORMAT_EXTENDED:
-        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
+        formatString = 'T{:08X}{:1d}{:' + bodyFormatter + '}\r'
 
     # This will work only if the node is connected and broadcasting.
     try:
@@ -504,9 +504,14 @@ def generateMessage(dataBack, payload, messageName):
         # We assumed the node was connected and broadcasting but it was not.
         # Need to use the Nmea11783Encode version of the ID instead.
         id = dataBack.messages[messageInfo.name].fakeID
-
     # Initialize an array of 0's of length equal to number of bits in message body
-    payloadArray = [0]*messageInfo.size*8
+    protocol = dataBack.messages[messageName].protocol
+    if protocol == 'nmea2000':
+        payloadArray = [1]*messageInfo.size*8
+    elif protocol == 'somePrototcol':
+        pass
+    else:
+        payloadArray = [0]*messageInfo.size*8
 
     # For each of the fields, populate the corresponding entries in payloadArray with
     # the bits that are obtained from 'encodePayload'

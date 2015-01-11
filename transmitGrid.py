@@ -225,6 +225,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # is now redundant
         try:
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
+            print(self.dataBack.asciiBucket)
         except Exception as e:
             # Before creating the warning dialog, stop current transmission
             self.disconnectTimer()
