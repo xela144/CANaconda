@@ -46,8 +46,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         self.messages = self.dataBack.messages
         self.treeWidget.clear()
         self.treeWidget.setItemsExpandable(True)
-
-        for messageName in self.messages:
+        for messageName in sorted(self.messages):
             # We don't want to use anonymous messages, so skip them.
             if self.messages[messageName].anonymous:
                 continue
@@ -86,7 +85,6 @@ class FiltersTreeWidget(QtWidgets.QDialog):
     def getFieldsByOffset(self, messageInfo):
         return self.realParent.getFieldsByOffset(messageInfo)
 
-
     def insertFieldAttributes(self, field, child):
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Type:   " + str(field.type))
@@ -94,12 +92,17 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         attr.setText(0, "Length: " + str(field.length))
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Offset: " + str(field.offset))
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Signed: " + field.signed)
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Units: " + field.units)
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Scaling: " + str(field.scaling))
+        if field.type == 'int':
+            attr = QtWidgets.QTreeWidgetItem(child)
+            try:
+                attr.setText(0, "Signed: " + field.signed)
+            except TypeError:  # Couldn't convert 'NoneType' to string
+                attr.setText(0, "Signed: no")
+            if field.units == None:
+                attr = QtWidgets.QTreeWidgetItem(child)
+                attr.setText(0, "Units: " + field.units)
+            attr = QtWidgets.QTreeWidgetItem(child)
+            attr.setText(0, "Scaling: " + str(field.scaling))
 
     def pdbset(self):
         QtCore.pyqtRemoveInputHook()
