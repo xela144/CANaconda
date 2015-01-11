@@ -1,5 +1,5 @@
 <metaData>
-    <messageInfo name = "System Time" pgn = "126992" size = "8">
+    <messageInfo name = "System Time" pgn = "126992" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -7,7 +7,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Source"
@@ -15,7 +14,6 @@
         offset = "8"
         length = "4"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Days since epoch"
@@ -24,7 +22,6 @@
         length = "16"
         signed = "no"
         units = "days"
-        endian = "little"
         />
         <field
         name = "Seconds since midnight"
@@ -34,10 +31,9 @@
         signed = "no"
         units = "s"
         scaling = "0.0001"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Rudder" pgn = "127245" size = "6">
+    <messageInfo name = "Rudder" pgn = "127245" size = "6" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "Instance"
@@ -45,7 +41,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Direction Order"
@@ -53,7 +48,6 @@
         offset = "8"
         length = "2"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Angle Order"
@@ -62,7 +56,6 @@
         length = "16"
         signed = "yes"
         units = "rad"
-        endian = "little"
         scaling = "0.0001"
         />
         <field
@@ -73,10 +66,9 @@
         signed = "yes"
         units = "rad"
         scaling = "0.0001"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Speed" pgn = "128259" size = "8">
+    <messageInfo name = "Speed" pgn = "128259" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -84,17 +76,14 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Speed Water Referenced"
         type = "int"
         offset = "8"
-        length = "16"
-        signed = "no"
+        length = "16" signed = "no"
         units = "m/s"
         scaling = "0.01"
-        endian = "little"
         />
         <field
         name = "Speed Ground Referenced"
@@ -104,7 +93,6 @@
         signed = "no"
         units = "m/s"
         scaling = "0.01"
-        endian = "little"
         />
         <field
         name = "Water Referenced Type"
@@ -112,10 +100,9 @@
         offset = "40"
         length = "4"
         signed = "no"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Water Depth" pgn = "128267" size = "8">
+    <messageInfo name = "Water Depth" pgn = "128267" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -123,7 +110,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Depth"
@@ -133,7 +119,6 @@
         signed = "no"
         units = "m"
         scaling = "0.01"
-        endian = "little"
         />
         <field
         name = "Offset"
@@ -143,10 +128,9 @@
         signed = "yes"
         units = "m"
         scaling = "0.001"
-        endian = "little"
         />
 	</messageInfo>
-	<messageInfo name = "Position, Rapid Update" pgn = "129025" size = "6">
+	<messageInfo name = "Position, Rapid Update" pgn = "129025" size = "6" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "Latitude"
@@ -156,7 +140,6 @@
         signed = "yes"
         units = "deg"
         scaling = "0.0000001"
-        endian = "little"
         />
         <field
         name = "Longitude"
@@ -166,10 +149,9 @@
         signed = "yes"
         units = "deg"
         scaling = "0.0000001"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "COG &amp; SOG, Rapid Update" pgn = "129026" size = "7">
+    <messageInfo name = "COG &amp; SOG, Rapid Update" pgn = "129026" size = "7" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -177,7 +159,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "COG Reference"
@@ -185,7 +166,6 @@
         offset = "8"
         length = "2"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "COG"
@@ -195,7 +175,6 @@
         signed = "no"
         units = "rad"
         scaling = "0.0001"
-        endian = "little"
         />
         <field
         name = "SOG"
@@ -205,10 +184,9 @@
         signed = "no"
         units = "m/s"
         scaling = "0.01"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "GNSS DOPs" pgn = "129539" size = "8">
+    <messageInfo name = "GNSS DOPs" pgn = "129539" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -216,7 +194,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Desired Mode"
@@ -224,7 +201,6 @@
         offset = "8"
         length = "3"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Actual Mode"
@@ -232,7 +208,6 @@
         offset = "11"
         length = "3"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "HDOP - Horizontal dilution of precision"
@@ -241,7 +216,6 @@
         length = "16"
         signed = "no"
         scaling = "0.01"
-        endian = "little"
         />
         <field
         name = "VDOP - Vertical dilution of precision"
@@ -250,7 +224,6 @@
         length = "16"
         signed = "no"
         scaling = "0.01"
-        endian = "little"
         />
         <field
         name = "TDOP - Time dilution of precision"
@@ -259,10 +232,9 @@
         length = "16"
         signed = "yes"
         scaling = "0.01"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Wind Data" pgn = "130306" size = "6">
+    <messageInfo name = "Wind Data" pgn = "130306" size = "6" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -270,7 +242,6 @@
         offset = "0"
         length = "8"
         signed = "no"
-        endian = "little"
         />
         <field
         name = "Wind speed"
@@ -280,7 +251,6 @@
         signed = "no"
         units = "m/s"
         scaling = ".01"
-        endian = "little"
         />
         <field
         name = "Wind direction"
@@ -290,7 +260,6 @@
         signed = "no"
         units = "rad"
         scaling = ".0001"
-        endian = "little"
         />
         <field
         name = "Wind reference"
@@ -298,10 +267,9 @@
         offset = "40"
         length = "3"
         signed = "no"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Environmental Parameters #1" pgn = "130310" size = "7">
+    <messageInfo name = "Environmental Parameters #1" pgn = "130310" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -310,7 +278,6 @@
         length = "8"
         signed = "no"
         units = ""
-        endian = "little"
         />
         <field
         name = "Water Temperature"
@@ -320,7 +287,6 @@
         signed = "no"
         units = "K"
         scaling = ".01"
-        endian = "little"
         />
         <field
         name = "Outside Ambient Air Temperature"
@@ -330,7 +296,6 @@
         signed = "no"
         units = "K"
         scaling = ".01"
-        endian = "little"
         />
         <field
         name = "Atmospheric Pressure"
@@ -339,17 +304,15 @@
         length = "16"
         signed = "no"
         units = "hPa"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Environmental Parameters #2"  pgn = "130311" size = "8">
+    <messageInfo name = "Environmental Parameters #2"  pgn = "130311" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "Instance"
         type = "int"
         offset = "8"
         length = "6"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -362,10 +325,9 @@
         signed = "no"
         units = "%"
         scaling = ".004"
-        endian = "little"
         />
     </messageInfo>
-    <messageInfo name = "Temperature"  pgn = "130312" size = "8">
+    <messageInfo name = "Temperature"  pgn = "130312" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -374,14 +336,12 @@
         length = "8"
         signed = "no"
         units = ""
-        endian = "little"
         />
         <field
         name = "Temperature Instance"
         type = "int"
         offset = "8"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -391,7 +351,6 @@
         type = "enum"
         offset = "12"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -404,7 +363,6 @@
         signed = "no"
         units = "K"
         scaling = ".01"
-        endian = "little"
         />
         <field
         name = "Set Temperature"
@@ -414,10 +372,9 @@
         signed = "no"
         units = "K"
         scaling = ".01"
-        endian = "little"
         />
 	</messageInfo>
-    <messageInfo name = "Humidity"  pgn = "130313" size = "8">
+    <messageInfo name = "Humidity"  pgn = "130313" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -426,14 +383,12 @@
         length = "8"
         signed = "no"
         units = ""
-        endian = "little"
         />
         <field
         name = "Humidity Instance"
         type = "int"
         offset = "8"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -443,7 +398,6 @@
         type = "enum"
         offset = "12"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -456,7 +410,6 @@
         signed = "no"
         units = "%"
         scaling = ".004"
-        endian = "little"
         />
         <field
         name = "Set Humidity"
@@ -466,10 +419,9 @@
         signed = "no"
         units = "%"
         scaling = ".004"
-        endian = "little"
         />
 	</messageInfo>
-    <messageInfo name = "Actual Pressure"  pgn = "130314" size = "8">
+    <messageInfo name = "Actual Pressure"  pgn = "130314" size = "8" protocol = "nmea2000">
         <desc></desc>
         <field
         name = "SID"
@@ -478,14 +430,12 @@
         length = "8"
         signed = "no"
         units = ""
-        endian = "little"
         />
         <field
         name = "Pressure Instance"
         type = "int"
         offset = "8"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -495,7 +445,6 @@
         type = "enum"
         offset = "12"
         length = "4"
-        endian = "little"
         signed = "no"
         units = ""
         scaling = "1"
@@ -508,7 +457,6 @@
         signed = "no"
         units = "Pa"
         scaling = ".1"
-        endian = "little"
         />
         <field
         name = "Set Pressure"
@@ -518,7 +466,6 @@
         signed = "no"
         units = "Pa"
         scaling = ".1"
-        endian = "little"
         />
 	</messageInfo>
 </metaData>
