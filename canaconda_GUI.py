@@ -71,12 +71,14 @@ class Ui_CANaconda_GUI(QtCore.QObject):
     
         # set up the other tab
         self.mainWindow.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
-        self.mainWindow.filtersTreeWidget.setup(self.mainWindow, self.dataBack)
+        # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
+        # reference is overwritten and mainWindow cannot be reached from filtersTreeWidget....
+        self.mainWindow.filtersTreeWidget.setup(self.mainWindow, self.dataBack, self)
         self.mainWindow.tabWidget.addTab(self.mainWindow.filtersTreeWidget, "View Meta Data")
 
         # Now set up the transmit grid
         self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget(self.mainWindow.transmitWidget)
-        # Sending 'self' as an explicit parameter to retain reference to mainWindow, otherwise
+        # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
         # reference is overwritten and mainWindow cannot be reached from transmitGrid....
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
@@ -87,12 +89,23 @@ class Ui_CANaconda_GUI(QtCore.QObject):
             self.comportSelect()
 
         # start connecting signals and slots
+        # Load metadata filter on menu item click
         self.mainWindow.actionLoad_Filters_From_File.triggered.connect(self.loadFilter)
+
+        # Log message stream to file on pushbutton click
         self.mainWindow.loggingButton.clicked.connect(self.saveToFile)
+
+        # Change display type in message stream based on combo box index
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.setOutput)
+
+        # Update logging button text based on combo box index
         self.mainWindow.displayCombo.currentIndexChanged.connect(self.updateButtonLoggingText)
+
+        # Cause available serial ports to be scanned when user opens menu
         self.mainWindow.menuAction.aboutToShow.connect(self.setChoose_port_Actions)
 
+        # Clear the message stream window on button push
+        self.mainWindow.buttonClearMessageStream.clicked.connect(self.clearTextBrowser)
 
     def setChoose_port_Actions(self):
         """
@@ -120,12 +133,12 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
     def getMessage(self, CANacondaRxMsg_queue):
         """
-        Called by updateMessageStream. 'messageInfoFlag' is set when the metadata is loaded
+        Called by updateMessageStream. 'messageInfoFlag' is set to True when the metadata is loaded.
         GUI_rawFlag is set to False when program initalizes, but is set to True only when user
         selects the 'Raw' display option from the combo-box.
-
         """
         CANacondaMessage = CANacondaRxMsg_queue.get()
+        # Switch statement depending on current UI settings
         if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
             return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
         elif self.dataBack.GUI_CSVflag:
@@ -139,7 +152,6 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         """
         self.setHourGlass()
         text = self.sender().text()
-        
         baudrate = BAUDMAP[text]
         # Setting this flag to False will cause the canPort serial thread
         # to return, ending the thread. The serial connection will still
@@ -257,15 +269,28 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.transcoderThread.name = 'transcoderThread'
         self.transcoderThread.start()
 
-    def loadFilter(self):
-        # These "reset" statements should actually be moved to a
-        # reset function that can be called from anywhere in the code.
+    # Clear the backend meta data
+    def resetAllMetadata(self):
+        # Get rid of the messageInfo filter objects, and update UI and backend accordingly
         self.dataBack.messages = {}
-        self.dataBack.messageInfo_to_fields = {}
-        self.dataBack.messagesSeenSoFar = {}
-        self.dataBack.id_to_name = {}
-        self.dataBack.pgn_to_name = {}
         self.dataBack.messageInfoFlag = False
+        self.fileName = 'None loaded'   # Normally this gets overwritten immediately
+        self.updateFileNameQLabel()  
+        
+        # The map from message name to the fields contained with that message
+        self.dataBack.messageInfo_to_fields = {}
+        
+        # The set of all messages seen on the bus
+        self.dataBack.messagesSeenSoFar = {}
+
+        # A map from message ID to its name
+        self.dataBack.id_to_name = {}
+
+        # A map from message PGN to its name
+        self.dataBack.pgn_to_name = {}
+
+    # Load metadata after user has selected that option from the menu
+    def loadFilter(self):
         fileName = None
         while fileName is None:
             fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
@@ -276,25 +301,22 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Now process our XML file, handling any errors that arise by alerting
         # the user and returning.
         try:
+            self.resetAllMetadata()
             xmlImport(self.dataBack, fileName)
             # self.dataBack.messageInfoFlag set to true in xmlImport
         except Exception as e:
             self.warnXmlImport(str(e))
             return
-
         # Save the filename for updating the UI
         self.fileName = fileName
-
+        # The current metadata file needs to be displayed in the UI
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
-                                            # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
-
 
     # If --messages argument was given, this function loads the metadata file.
     def commandLineLoadFilter(self):
@@ -309,8 +331,6 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.fileName = fileName
         self.updateFileNameQLabel()
         self.mainWindow.filtersTreeWidget.populateTree()
-        self.update_messageInfo_to_fields() # FIXME This is called from filterTable.py
-                                            # and may not be necessary here... test this
         # populate the 'transmission' combobox
         self.mainWindow.transmitGrid.populateTxMessageInfoCombo()
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
@@ -355,21 +375,25 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         warn.setInformativeText("Make sure you have already begun streaming messages")
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
-        
 
     def comportUnavailable(self):
         pass
-
+    
     # Set the messageInfo_to_fields for correct message stream output
+    # This is done by determining which message/field pair the user has selected in the
+    # filterTable widget.
     def update_messageInfo_to_fields(self):
         self.dataBack.messageInfo_to_fields = {}
+        # Iterate through all the rows in the table
         for row in range(0,self.mainWindow.filterTable.tableWidget.rowCount()):
+            # If the checkbox has been checked, store the name and field associated with row
             if self.mainWindow.filterTable.tableWidget.item(
                     row, filterTable.CHECKBOX).checkState() == QtCore.Qt.Checked:
                 name = self.mainWindow.filterTable.tableWidget.item(
                                                 row, filterTable.MESSAGE).text()
                 field = self.mainWindow.filterTable.tableWidget.item(
                                                 row, filterTable.FIELD).text()
+                # Update dataBack accordingly
                 if name in self.dataBack.messageInfo_to_fields:
                     self.dataBack.messageInfo_to_fields[name].append(field)
                 else:

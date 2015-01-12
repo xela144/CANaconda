@@ -130,6 +130,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="buttonClearMessageStream">
+          <property name="text">
+           <string>Clear message stream</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>

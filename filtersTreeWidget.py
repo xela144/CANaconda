@@ -10,10 +10,11 @@ from messageInfo import CAN_FORMAT_EXTENDED
 
 class FiltersTreeWidget(QtWidgets.QDialog):
     
-    def setup(self, parent, dataBack, singleshot=False):
+    def setup(self, parent, dataBack, realParent=None, singleshot=False):
         super(FiltersTreeWidget, self).__init__()
         self.dataBack = dataBack
         self.parent = parent
+        self.realParent = realParent  # An explicit reference to the UI_CANaconda_GUI widget
         self.singleshot = singleshot
         treeLabel = QtWidgets.QLabel("Select message data for display")
         self.treeWidget = QtWidgets.QTreeWidget()
@@ -45,8 +46,10 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         self.messages = self.dataBack.messages
         self.treeWidget.clear()
         self.treeWidget.setItemsExpandable(True)
-
-        for messageName in self.messages:
+        for messageName in sorted(self.messages):
+            # We don't want to use anonymous messages, so skip them.
+            if self.messages[messageName].anonymous:
+                continue
             # Create a top-level widget for the  message name
             messageNameWidget = QtWidgets.QTreeWidgetItem(self.treeWidget)
             messageNameWidget.setText(0, self.messages[messageName].name)
@@ -80,8 +83,7 @@ class FiltersTreeWidget(QtWidgets.QDialog):
             self.parent.filterTable.populateTable()
 
     def getFieldsByOffset(self, messageInfo):
-        return self.parent.transmitGrid.getFieldsByOffset(messageInfo)
-
+        return self.realParent.getFieldsByOffset(messageInfo)
 
     def insertFieldAttributes(self, field, child):
         attr = QtWidgets.QTreeWidgetItem(child)
@@ -90,15 +92,20 @@ class FiltersTreeWidget(QtWidgets.QDialog):
         attr.setText(0, "Length: " + str(field.length))
         attr = QtWidgets.QTreeWidgetItem(child)
         attr.setText(0, "Offset: " + str(field.offset))
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Signed: " + field.signed)
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Units: " + field.units)
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Scaling: " + str(field.scaling))
-        attr = QtWidgets.QTreeWidgetItem(child)
-        attr.setText(0, "Endian: " + field.endian)
+        if field.type == 'int':
+            attr = QtWidgets.QTreeWidgetItem(child)
+            try:
+                attr.setText(0, "Signed: " + field.signed)
+            except TypeError:  # Couldn't convert 'NoneType' to string
+                attr.setText(0, "Signed: no")
+            if field.units == None:
+                attr = QtWidgets.QTreeWidgetItem(child)
+                attr.setText(0, "Units: " + field.units)
+            attr = QtWidgets.QTreeWidgetItem(child)
+            attr.setText(0, "Scaling: " + str(field.scaling))
 
     def pdbset(self):
         QtCore.pyqtRemoveInputHook()
         pdb.set_trace()
+
+

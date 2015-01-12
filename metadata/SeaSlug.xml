@@ -1,5 +1,5 @@
 <metaData>
-    <messageInfo name = "Rudder details" id = "0x80" size="7">
+    <messageInfo name = "Rudder details" id = "0x80" size="7" endian = 'little'>
         <desc>Details on internal variables for the rudder node.</desc>
         <field
         name = "Potentiometer Value"
@@ -27,24 +27,19 @@
         type = "bitfield"
         offset = "48"
         length = "3"
-        signed = "no"
         />
         <field
         name = "Starboard limit"
         type = "boolean"
         offset = "53"
-        length = "1"
-        signed = "no"
         />
         <field
         name = "Port limit"
         type = "boolean"
         offset = "55"
-        length = "1"
-        signed = "no"
         />
     </messageInfo>
-    <messageInfo name = "Set rudder status" id = "0x81" size="1">
+    <messageInfo name = "Set rudder status" id = "0x81" size="1" endian = 'little'>
         <desc>Set the operating mode of the rudder node.</desc>
         <field
         name = "Calibrate"
@@ -68,7 +63,7 @@
         signed = "no"
         />
     </messageInfo>
-    <messageInfo name = "Ballast details" id = "0x85" size="7">
+    <messageInfo name = "Ballast details" id = "0x85" size="7" endian = 'little'>
         <desc>Details on internal variables for the ballast node.</desc>
         <field
         name = "Potentiometer Value"
@@ -96,24 +91,19 @@
         type = "bitfield"
         offset = "48"
         length = "3"
-        signed = "no"
         />
         <field
         name = "Starboard limit"
         type = "boolean"
         offset = "53"
-        length = "1"
-        signed = "no"
         />
         <field
         name = "Port limit"
         type = "boolean"
         offset = "55"
-        length = "1"
-        signed = "no"
         />
     </messageInfo>
-    <messageInfo name = "Set rudder status" id = "0x86" size="1">
+    <messageInfo name = "Set rudder status" id = "0x86" size="1" endian = 'little'>
         <desc>Set the operating mode of the ballast node.</desc>
         <field
         name = "Calibrate"
@@ -137,7 +127,7 @@
         signed = "no"
         />
     </messageInfo>
-    <messageInfo name = "status" id = "0x90" size="8">
+    <messageInfo name = "status" id = "0x90" size="8" endian = 'little'>
         <desc>The heartbeat status message for CANodes on the Autoboat.</desc>
         <field
         name = "node ID"
@@ -176,14 +166,12 @@
         type = "bitfield"
         offset = "32"
         length = "16"
-        signed = "no"
         />
         <field
         name = "Errors"
         type = "bitfield"
         offset = "48"
         length = "16"
-        signed = "no"
         />
     </messageInfo>
     <messageInfo name="IMU Orientation" id="0x102" size="6">

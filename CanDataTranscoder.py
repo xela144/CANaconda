@@ -58,8 +58,8 @@ try:
     from PyQt5.QtCore import pyqtSignal, QObject
 
     class CanTranscoderGUI(QObject):
-        parsedMsgPut = pyqtSignal()
-        newMessageUp = pyqtSignal()
+        parsedMsgPut = pyqtSignal()  # A new CANacondaMessage has been pushed to the queue
+        newMessageUp = pyqtSignal()  # A message type has been seen for the first time
 
         def __init__(self, dataBack):
             CanTranscoder.__init__(self, dataBack)
@@ -216,7 +216,6 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         newCanMessage.name = "Extended message 0x{0:X} (PGN: {1:d})".format(newCanMessage.id, newCanMessage.pgn)
     else:
         newCanMessage.name = "Standard message 0x{0:X}".format(newCanMessage.id)
-    newCanMessage.anonymous = True
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
 
@@ -228,6 +227,8 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         newMessageInfo.fields['Raw Data'] = Field()
         newMessageInfo.fields['Raw Data'].name = 'Raw Data'
         dataBack.messages[newMessageInfo.name] = newMessageInfo
+        # The 'anonymous' flag tells us that the message is not in any meta data
+        dataBack.messages[newMessageInfo.name].anonymous = True
 
     if not dataBack.nogui:
         # Now to calculate message frequency:
@@ -492,9 +493,9 @@ def generateMessage(dataBack, payload, messageName):
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
     bodylength = messageInfo.size*2 # Body length in nibbles
     bodyFormatter = "0" + str(bodylength) + "X"
-    formatString = 't{:03x}{:1d}{:' + bodyFormatter + '}\r'
+    formatString = 't{:03X}{:1d}{:' + bodyFormatter + '}\r'
     if messageInfo.format == CAN_FORMAT_EXTENDED:
-        formatString = 'T{:08x}{:1d}{:' + bodyFormatter + '}\r'
+        formatString = 'T{:08X}{:1d}{:' + bodyFormatter + '}\r'
 
     # This will work only if the node is connected and broadcasting.
     try:
@@ -503,9 +504,14 @@ def generateMessage(dataBack, payload, messageName):
         # We assumed the node was connected and broadcasting but it was not.
         # Need to use the Nmea11783Encode version of the ID instead.
         id = dataBack.messages[messageInfo.name].fakeID
-
     # Initialize an array of 0's of length equal to number of bits in message body
-    payloadArray = [0]*messageInfo.size*8
+    protocol = dataBack.messages[messageName].protocol
+    if protocol == 'nmea2000':
+        payloadArray = [1]*messageInfo.size*8
+    elif protocol == 'somePrototcol':
+        pass
+    else:
+        payloadArray = [0]*messageInfo.size*8
 
     # For each of the fields, populate the corresponding entries in payloadArray with
     # the bits that are obtained from 'encodePayload'
