@@ -6,11 +6,9 @@ CANaconda is a flexible, open source CAN network monitoring tool under developme
 
 
 ##System Requirements
-PC capable of running Python 3
+PC with Python version 3.3 or higher
 
-Lawicel CAN-USB bridge s/n P023
-
-Lawicel CAN-USB drivers available from http://www.can232.com/?page\_id=75
+Lawicel CAN-USB bridge 
 
 Installation of the pySerial package from http://pyserial.sourceforge.net/pyserial.html
 
@@ -21,10 +19,10 @@ Installation of Qt framework, version 5, available from qt-project.org (optional
 Installation of PyQt5 package from riverbankcomputing.com (optional - for GUI only)
 
 
-##Running CAN-aconda
+##Running CANaconda
 Connect USB and CAN cables. The CAN network must have its own power supply. Launch the program from the command line or by double clicking the canpython.py file.
 
-Load filters from an XML file by clicking action-> Load filters
+Load filters from an XML file by clicking action-> Load filters. See section on ![metadata](http://www.github.com/xela144/CANaconda/metadata) for specifiying these filters
 
 Choose a USB port by clicking action -> Choose Port (On Debian systems this will be /dev/ttyUSB0).
 
