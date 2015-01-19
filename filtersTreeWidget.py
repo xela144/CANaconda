@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtWidgets
 import pdb
 
 from messageInfo import CAN_FORMAT_EXTENDED
+from outmessage import unitStringMap
 
 
 class FiltersTreeWidget(QtWidgets.QDialog):
@@ -98,9 +99,14 @@ class FiltersTreeWidget(QtWidgets.QDialog):
                 attr.setText(0, "Signed: " + field.signed)
             except TypeError:  # Couldn't convert 'NoneType' to string
                 attr.setText(0, "Signed: no")
-            if field.units == None:
+            if field.units != '':
+                try:
+                    # Make the units look nicer, i.e. 'CEL' becomes '°C'
+                    units = unitStringMap[field.units]
+                except KeyError:
+                    units = field.units
                 attr = QtWidgets.QTreeWidgetItem(child)
-                attr.setText(0, "Units: " + field.units)
+                attr.setText(0, "Units: " + units)
             attr = QtWidgets.QTreeWidgetItem(child)
             attr.setText(0, "Scaling: " + str(field.scaling))
 
