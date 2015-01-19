@@ -70,8 +70,10 @@ class MessageInfo():
         self.id = None
         self.pgn = None
         self.size = 0
-        self.fields = {}
+        self.protocol = None
+        self.endian = None
         self.anonymous = False
+        self.fields = {}
 
     def createNew(self, messageInfo, dataBack, fileName):
         self.freqQueue = queue.Queue()
@@ -126,13 +128,23 @@ class MessageInfo():
         except:
             self.size = 0
 
+        # Get either the endianness or the protocol of the message.
+        protocol = messageInfo.get('protocol')
+        endian = messageInfo.get('endian')
+        if endian is None and protocol is None:
+            raise Exception("Parsing failed for XML file {}: Please specify either endian-ness or protocol.".format(fileName))
+        if endian is None or protocol == 'nmea2000':
+            endian = 'little'
+        self.protocol = protocol
+        self.endian = endian
+
         # get the fields
         self.fields = {}
         newFields = messageInfo.findall('field')
         for xmlField in newFields:
             name = xmlField.get('name')
             self.fields[name] = Field()
-            self.fields[name].createNew(self.name, xmlField, fileName)
+            self.fields[name].createNew(self, xmlField, fileName)
 
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
@@ -150,7 +162,10 @@ class MessageInfo():
         return iter(self.fields)
 
     def __str__(self):
-        return self.name + str(self.fields)
+        if self.protocol is not None:
+            return self.name + self.protocol + str(self.fields)
+        else:
+            return self.name + self.endian + "endian" + str(self.fields)
 
 
 # This object gets assigned to one of the 'fields' dictionary of a MessageInfo object.
@@ -163,7 +178,6 @@ class Field():
         self.signed = 'no'
         self.units = None
         self.scaling = 1
-        self.endian = None
         self.unitsConversion = None 
         self.byValue = {ACTIVE:False, EQUAL:None, LT:None, GT:None}
 
@@ -181,13 +195,24 @@ class Field():
         # If the 'type' for a field is not specified, assume int (as that will be the most common).
         # This SHOULD be explicitly set by the user, so warn them via stderr.
         self.type = field.get('type')
-        if self.type not in ('int', 'bitfield'):
-            print("Specified type for '{}.{}' was not specified, assuming int.".format(parent, self.name), file=sys.stderr)
+        if self.type not in ('int', 'bitfield', 'boolean'):
+            print("Specified type for '{}.{}' was not specified, assuming int.".format(parent.name, self.name), file=sys.stderr)
             self.type = 'int'
 
-        self.length = int(field.get('length'))
+        # The length of the field data, as specified by user. Allow for user to omit length if type is boolean.
+        try:
+            self.length = int(field.get('length'))
+        except TypeError:  # Could not convert NoneType to string
+            if self.type == 'boolean':
+                self.length = 1
+            else:
+                raise Exception("Parsing failed for XML file '{}'. Check that field '{}.{}' has correct length.".format(fileName, parent.name, self.name))
+
+        # The offset and signed-ness of the field
         self.offset = int(field.get('offset'))
         self.signed = field.get('signed')
+
+        # The field units
         units_ = field.get('units')
         try:
             if units_ == 'm/s':
@@ -195,17 +220,17 @@ class Field():
             else:
                 self.units = units_.upper()
         except AttributeError:
+            # No units were specified
             self.units = ''
 
+        # Get the scalar, if none is specified set to 1.
         scalar = field.get('scaling')
         if scalar is None:
             scalar = 1
         self.scaling = float(scalar)
-        endian = field.get('endian')
-        if endian is None:
-            endian = 'little'
-        self.endian = endian
-        self.unitsConversion = None
+
+        # For decoding messages only. This is never displayed to user
+        self.endian = parent.endian
 
         # Set the bounds for this field once, so we don't need to constantly recalculate them.
         # This is valid as the field range can only be changed in the XML file.
@@ -238,6 +263,6 @@ class Field():
 
     def __iter__(self):
         return iter([self.name, self.type, self.length, self.offset,
-                 self.signed, self.units, self.scaling, self.endian,
+                 self.signed, self.units, self.scaling,
                  self.unitsConversion, self.byValue])
 

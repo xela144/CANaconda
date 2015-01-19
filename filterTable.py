@@ -11,7 +11,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 import time
 
 # Columns:
-CHECKBOX, MESSAGE, FIELD, OFFSET, VALUE, FILTER, UNITS, RATE = range(8)
+CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
 from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
@@ -40,6 +40,11 @@ class FilterTable(QtWidgets.QWidget):
         self.tableWidget.verticalHeader().setVisible(False)
         tableLabel.setBuddy(self.tableWidget)
 
+        # Add a reset button for the table to clear old messages from disconnected nodes
+        self.buttonResetTable = QtWidgets.QPushButton()
+        self.buttonResetTable.setText("Clear table")
+        self.buttonResetTable.clicked.connect(self.resetTable)
+
         if self.dataBack.args.debug:
             self.buttonPdb = QtWidgets.QPushButton()
             self.buttonPdb.setText("pdb")
@@ -51,6 +56,7 @@ class FilterTable(QtWidgets.QWidget):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(tableLabel)
         vbox.addWidget(self.tableWidget)
+        vbox.addWidget(self.buttonResetTable)
 
         if self.dataBack.args.debug:
             vbox.addWidget(self.buttonPopulate)
@@ -72,7 +78,7 @@ class FilterTable(QtWidgets.QWidget):
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
         self.tableWidget.setRowCount(len(displayList))
-        headerList = ['', 'Message', 'Field', 'Offset', 'Latest value',
+        headerList = ['', 'Message', 'Field', 'Latest value',
                       'Filter', 'Units', 'Rate']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
@@ -96,13 +102,6 @@ class FilterTable(QtWidgets.QWidget):
             fieldItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             fieldItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
             self.tableWidget.setItem(row, FIELD, fieldItem)
-            ##
-            # Get the offset from the dataBack singleton
-            offsetBits = self.dataBack.messages[messageInfoName].fields[fieldName].offset
-            offsetItem = QtWidgets.QTableWidgetItem(str(offsetBits))
-            offsetItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
-            offsetItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
-            self.tableWidget.setItem(row, OFFSET, offsetItem)
             ##
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
@@ -167,6 +166,10 @@ class FilterTable(QtWidgets.QWidget):
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  
 
+    # Reset the table by clearing the set of messages seen, and then repopulating
+    def resetTable(self):
+        self.dataBack.messagesSeenSoFar = {}
+        self.populateTable()
 
     # Change units based on comboBox widget and update dataBack
     def changeUnits(self, text):
