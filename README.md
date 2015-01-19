@@ -22,7 +22,7 @@ Installation of PyQt5 package from riverbankcomputing.com (optional - for GUI on
 ##Running CANaconda
 Connect USB and CAN cables. The CAN network must have its own power supply. Launch the program from the command line or by double clicking the canpython.py file.
 
-Load filters from an XML file by clicking action-> Load filters. See section on ![metadata](http://www.github.com/xela144/CANaconda/metadata) for specifiying these filters
+Load filters from an XML file by clicking action-> Load filters. See README found in ![metadata](http://www.github.com/xela144/CANaconda/tree/master/metadata) directory for specifiying these filters.
 
 Choose a USB port by clicking action -> Choose Port (On Debian systems this will be /dev/ttyUSB0).
 
@@ -32,7 +32,7 @@ To stream messages in the Message Stream window, find the desired message in the
 
 Note that the current version only allows one serial connection per run. If you want to open a different port, close the program and restart.
 
-From the terminal, a command-line version can be run by giving argument '--nogui'
+From the terminal, a command-line version can be run by giving argument '--nogui', along with the serial port.
 
 Use the '--csv' argument to make the program output comma-separated-values. In addition to redirecting this to a .csv file, one can pipe to the 'pipePlotter.py' script for graphically viewing data in real-time. However, this script will take some configuration for specific sensors.
 
@@ -42,56 +42,11 @@ Use the '--csv' argument to make the program output comma-separated-values. In a
     ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.xml --filter='WSO100{airspeed},WSO200{wind_dir=2,velocity}' --csv --time --zero
 ```
 
-  This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' as the serial port. The messages to be decoded are specified in the 'xmltest.xml' file. The user has chosen to filter the output of the WSO100 device so that only airspeed data is shown. Likewise, for the WSO200 device, output is generated only for 'wind\_dir' and 'velocity'. Finally, the user has asked that the data be shown in 'csv' format with a time stamp, in 'zero-hold' mode.
+This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' as the serial port. The messages to be decoded are specified in the 'xmltest.xml' file. The user has chosen to filter the output of the WSO100 device so that only airspeed data is shown. Likewise, for the WSO200 device, output is generated only for 'wind\_dir' and 'velocity'. Finally, the user has asked that the data be shown in 'csv' format with a time stamp, in 'zero-hold' mode.
 
 
 ##Specifying Messages to be Parsed with the Metadata File
-Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'messages' file. The current format for specifying these messages are similar to that found at keversoft.com. An example:
-
-```xml
-<metaData>
-	<messageInfo name = "System Time" pgn = "126992" size = "8"> 
-		<desc></desc>
-		<field 
-		name = "SID"
-        type = "int"
-		offset = "0" 
-		length = "8" 
-		signed = "no" 
-		endian = "little"
-		/>
-		<field 
-		name = "Source" 
-        type = "bitfield"
-		offset = "8" 
-		length = "4" 
-		signed = "no" 
-		endian = "little"
-		/>
-		<field 
-		name = "Days since epoch" 
-        type = "int"
-		offset = "16" 
-		length = "16" 
-		signed = "no" 
-		units = "days" 
-		endian = "little"
-		/>
-		<field 
-		name = "Seconds since midnight" 
-        type = "int"
-		offset = "32" 
-		length = "32" 
-		signed = "no" 
-		units = "s" 
-        scaling = "0.0001"
-		endian = "little"
-		/>
-	</messageInfo>
-</metadata>
-```
-
-Alternatively, a 'pgn' can be specified in lieu of the 'id'. Note that specifying both 'id' and 'pgn' for a given filter will result in an error. This is because there is no one-to-one relation between id's and pgn's.
+In addition to standard and extended CAN (2.0A and 2.0B), CANaconda is being developed to view messages on the NMEA2000 standard. Future plans will include the CANopen standard. 
 
 #Installation for Linux
 
