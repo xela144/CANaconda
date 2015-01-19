@@ -75,7 +75,7 @@ def parserInit(parser):
     # for noGUI mode:
     parser.add_argument('--nogui', nargs=1, metavar='PORT',
             help="No GUI mode. Positional argument: port")
-    parser.add_argument('-m', '--messages', metavar="File",
+    parser.add_argument('-m', '--metadata', metavar="File",
             help="Specify the messages file")
     parser.add_argument('--filter', metavar="FilterID", nargs=1,
             help="Comma-separated list (CLI), eg --filter='WSO100{airspeed[mph],\
@@ -100,14 +100,14 @@ def parserInit(parser):
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args
     # '--filter' option must come with '--messages'
-    if args.filter and not args.messages:
+    if args.filter and not args.metadata:
         print("\nYou are selectively displaying messages",
             "without specifying a way to parse CAN",
             "messages.\n\t(Hint: Use option -m)")
         return
 
     # import filters, and return a boolean value as 'filtersNotImpoted'
-    fileName = dataBack.args.messages
+    fileName = dataBack.args.metadata
     if fileName is not None:
         xmlImport(dataBack, fileName)
 
@@ -153,12 +153,12 @@ def canacondaNoGuiInit(dataBack):
         createListAndDict_noFilter(dataBack)
 
     # refactor:
-    if args.messages and not args.csv:
+    if args.metadata and not args.csv:
         print("Filters to be displayed: ",
             str(sorted(dataBack.messageInfoList))[1:-1])
 
     # create displayList
-    if args.display and args.messages:
+    if args.display and args.metadata:
         for arg in args.display[0].split(','):
             dataBack.displayList[arg] = True
     else:
@@ -174,7 +174,7 @@ def canacondaNoGuiInit(dataBack):
     # For CSV mode:
     if args.csv:
         # Check argument syntax
-        if not args.messages:
+        if not args.metadata:
             print("Please specify a messages file.",
                 "Use option -m")
             return

@@ -83,7 +83,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
 
-        if self.dataBack.args.messages != None:
+        if self.dataBack.args.metadata != None:
             self.commandLineLoadFilter()
         if self.dataBack.args.port != None:
             self.comportSelect()
@@ -321,7 +321,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
     # If --messages argument was given, this function loads the metadata file.
     def commandLineLoadFilter(self):
         self.dataBack.messageInfoFlag = True
-        fileName = self.dataBack.args.messages
+        fileName = self.dataBack.args.metadata
         try:
             xmlImport(self.dataBack, fileName)
         except Exception as e:

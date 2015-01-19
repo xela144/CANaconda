@@ -109,7 +109,7 @@ class CanTranscoderCLI(CanTranscoder):
                                        canacondamessage)
         else:
             # If we have metadata for messages, pretty-print using it.
-            if self.args.messages is not None:
+            if self.args.metadata is not None:
                 outmsg = noGuiParse(self.dataBack,
                                     canacondamessage)
             # Otherwise just print out the raw message data
