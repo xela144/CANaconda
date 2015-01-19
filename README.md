@@ -22,7 +22,8 @@ Installation of PyQt5 package from riverbankcomputing.com (optional - for GUI on
 ##Running CANaconda
 Connect USB and CAN cables. The CAN network must have its own power supply. Launch the program from the command line or by double clicking the canpython.py file.
 
-Load filters from an XML file by clicking action-> Load filters. See README found in ![metadata](http://www.github.com/xela144/CANaconda/tree/master/metadata) directory for specifiying these filters.
+Load filters from an XML file by clicking action-> Load filters. See README found in [metadata](http://www.github.com/xela144/CANaconda/tree/master/metadata) directory for specifiying these filters.
+
 
 Choose a USB port by clicking action -> Choose Port (On Debian systems this will be /dev/ttyUSB0).
 
