@@ -69,10 +69,6 @@ Now our working example of the metadata file is:
         />
     </messageInfo>
     ...
-    <messageInfo  ... >
-        ...
-    </messageInfo>
-    ...
 </metadata>
 ```
 
