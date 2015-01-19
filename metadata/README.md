@@ -68,15 +68,11 @@ Now our working example of the metadata file is:
         ...
         />
     </messageInfo>
+    ...
     <messageInfo  ... >
-        <desc>...</desc>
-        <field
         ...
-        />
-        <field 
-        ...
-        />
     </messageInfo>
+    ...
 </metadata>
 ```
 
