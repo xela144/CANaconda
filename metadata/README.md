@@ -84,4 +84,4 @@ Finally, a user can specify other metadata files from within any metadata file. 
 ```
 
 
-With this brief tutorial, one should be able to construct a custom metadata file. If syntactical errors were included in a metadata file, the user will receive notification when the file is loaded at run-time.
+With this brief tutorial, one should be able to construct a custom metadata file. If syntactical errors were encountered in a metadata file, the user will receive notification when the file is loaded at run-time.
