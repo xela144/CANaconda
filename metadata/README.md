@@ -54,19 +54,28 @@ Now our working example of the metadata file is:
 ```xml
 <metadata>
     <messageInfo name = "name" id [or pgn] = "id [or pgn]" size = "size" [protocol = "protocol"]>
-    <desc>description goes here</desc>
-    <field
-    name = "name"
-    type = "type"
-    offset = "offset"
-    length = "length"
-    [signed = "signed"]
-    [scaling = "scaling"]
-    [units = "units"]
-    />
-    <field 
-    ...
-    />
+        <desc>description goes here</desc>
+        <field
+        name = "name"
+        type = "type"
+        offset = "offset"
+        length = "length"
+        [signed = "signed"]
+        [scaling = "scaling"]
+        [units = "units"]
+        />
+        <field 
+        ...
+        />
+    </messageInfo>
+    <messageInfo  ... >
+        <desc>...</desc>
+        <field
+        ...
+        />
+        <field 
+        ...
+        />
     </messageInfo>
 </metadata>
 ```
