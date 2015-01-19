@@ -1,18 +1,16 @@
 ##Specifying Messages to be Parsed with the Metadata File
-Currently CANaconda is being developed to view messages on the NMEA2000 standard. Custom CAN messages that follow the CAN 2.0A or 2.0B standard are also viewable with this tool. To view messages, the user will create an XML style 'metadata' file. The metadata file should include all CAN messages that the user is interested in viewing. If a CAN message is being broadcast on the bus, but the user does not wish to see it decoded, it can simply be ommitted from this file. Of course, even if it is included here, the user does not necesarily view its data in the message stream while the program is running. 
+For CANaconda to understand the data within the CAN messages, a metadata file must be provided in the form of an XML file. While CANaconda is completely usable without one of these files, it will be a lot harder to use, so generating these metadata files is recommended. All messages that can be encountered should be added to the metadata file, as filtering the output to emit only certain messages is supported by both the CLI and GUI.
 
-The current format for specifying these messages is similar to that found at keversoft.com. 
+The root level element in the metadata XML file is the **metadata** tag itself. It has no attributes.
 
-The structure of this file is as follows. Optional tags are shown between square brackets, i.e. [attribute = "*attribute*"]. First we discuss the top-level tag, which is the **metadata** tag itself. All metadata xml must be embedded within this tag.
-
-The next level is the **messageInfo** tag. Within the **messageInfo** tag are the following attributes: **name, pgn, id, size,** and **protocol**
- * **name** - The name of the CAN message, as it will appear in the program at run-time. 
- * **size** - The size of the message payload, in *bytes*
+Each CAN message is described by the **messageInfo** tag, which has the following attributes:
+ * **name** - A human-readable name of the CAN message, which will be shown to the user. 
+ * **size** - The size of the message payload, in *bytes*. Valid values: [0, 8].
  * Identifier *or* parameter group number (must be one of either):
-   * **id** - The identifier field of the CAN message, in hexadecimal form.
-   * **pgn** - The parameter group number of the message, as specified by the NMEA 2000 protocol. Note that for this application, a message will have either an ID or a PGN, but not both.
- * **endian** - The endianness of the CAN data.
- * **protocol** [optional] - Here the user can specify a higher level protocol. Currently, the only valid argument "*nmea200*". This attribute will effect the way the program interprets the endianness of the CAN messages.
+   * **id** - The identifier field of the CAN message, in hexadecimal form so should be prepended with "0x".
+   * **pgn** - The parameter group number of the message as a decimal value, as set by the NMEA2000 protocol. Note that for this application, a message will have either an ID or a PGN, but not both.
+ * **endian** - The endianness of the CAN data, either "*little*" or "*big*".
+ * **protocol** [optional] - Here the user can specify a higher level protocol. Currently, the only valid argument is "*nmea2000*". Setting this value currently only affects the **endian** setting, so if this is set, **endian** does not need to be set as well.
 
 Here it is instructive to see a working example for the metadata file so far:
 
@@ -24,30 +22,23 @@ Here it is instructive to see a working example for the metadata file so far:
 </metadata>
 ```
 
-At the next level of the xml heirarchy, we have two tags: **desc** and **field**. The **desc** tag simply allows the user to enter a brief description the information contained with a particular CAN message. This description shows up as a tooltip within the GUI.
+Within these **messageInfo** elements is exactly 1 descrption element named **desc**. This tag should contain a description of the message, possibly describing its purpose, expected transmission rate, etc. This text is viewable as a tooltip within the GUI.
 
-Next, we address the payload itself. A CAN message can have several pieces of information encoded within its payload. Therefore, we introduce the **field** tag. The attributes for this tag are as follows:
-
+The payload of a message is described by 1 or more **field** elements that describe the individual values contained within the , we address the payload itself. A CAN message can have several pieces of information encoded within its payload. The attributes for this tag are as follows:
  * **name** - The name of the field.
- * **type** [optional] - The data type of the field. Default value is 'int' Allowable data types are as follows:
-  * *int*
-  * *bitfield*
-  * *boolean*
-  * *enum*
- * **offset** - The number of *bits* that precede the field within the body of the CAN message.
- * **length** - The number of *bits* used to express the data of the current field.
- * **signed** [optional] - Allowable arguments here are either "*yes*" or "*no*". Defaults to unsigned.
- * **scaling** [optional] - The scaling used for the data. Analogous to precision. Defaults to scale factor of 1.
- * **units** [optional] - Some data will have units associated. Any units can be specified, and mostly these are decorative. However, if the data is in the form of one of the following, it is advisable to use the given format, since units conversion will be available:
-  * *MPS* or *m/s* for meters per second
-  * *MPH* for miles per hour
-  * *KNOT* for knots
-  * *RAD* for radians
-  * *DEG* for degrees
-  * *K* for Kelvins
-  * *CEL* for Celsius
-  * *FAR* for Fahrenheit
-
+ * **type** [optional] - The data type of the field. Default value is 'int'. Allowable data types are as follows:
+  * *int* - A fixed-point integer value.
+  * *bitfield* - A value where each bit represents a boolean value.
+  * *boolean* - A single boolean value.
+  * *enum* - Similar to an int, but values signify modes or states versus a numerical value.
+ * **offset** - The number of *bits* that precede the field within the body of the CAN message. Valid values: [0, 63]
+ * **length** - The number of *bits* used for the data of the current field. Valid values: [1, 64]
+ * **signed** [optional] - Allowable arguments here are either "*yes*" or "*no*". Defaults to "*no*".
+ * **scaling** [optional] - The fixed-point scaling for the data, analogous to precision. Defaults to 1. Only applicable to the *int* type.
+ * **units** [optional] - The units this field is in. Any string can be specified, but there is application support for certain units. If those units are specified, the user can easily convert between units in the GUI:
+  * Speed: *MPS* or *m/s* for meters per second, *MPH* for miles per hour, and *KNOT* for knots
+  * Angle: *RAD* for radians, *DEG* for degrees
+  * Temperature: *K* for Kelvin, *CEL* for Celsius, *FAR* for Fahrenheit
 
 Now our working example of the metadata file is:
 
@@ -72,7 +63,7 @@ Now our working example of the metadata file is:
 </metadata>
 ```
 
-Finally, a user can specify other metadata files from within any metadata file. This allows collections of messages to be partitioned by application or CAN bus. For example, our project has the following metadata file, called "AllMessages.xml". When loaded, the program loads the other files found within the **include** tag recursively.
+Additionally, a user can specify other metadata files from within any metadata file. This allows collections of messages to be partitioned by application or CAN bus. For example, this repository already contains the following metadata file "AllMessages.xml", which when loaded actually just loads the other files found within the **include** tag recursively . Circular dependencies between metadata files are not supported at this time.
 
 
 ```xml
@@ -84,4 +75,4 @@ Finally, a user can specify other metadata files from within any metadata file. 
 ```
 
 
-With this brief tutorial, one should be able to construct a custom metadata file. If syntactical errors were encountered in a metadata file, the user will receive notification when the file is loaded at run-time.
+If syntactical errors were encountered when parsing a metadata file, the user will receive notification when the file is loaded at run-time.
