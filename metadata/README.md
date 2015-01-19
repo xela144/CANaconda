@@ -1,5 +1,5 @@
 ##Specifying Messages to be Parsed with the Metadata File
-Currently CANaconda is being developed to view messages on the NMEA2000 standard. Custom CAN messages that follow the CAN 2.0A or 2.0B standard are also viewable with this tool. To view these messages, the user will create an XML style 'metadata' file. 
+Currently CANaconda is being developed to view messages on the NMEA2000 standard. Custom CAN messages that follow the CAN 2.0A or 2.0B standard are also viewable with this tool. To view messages, the user will create an XML style 'metadata' file. The metadata file should include all CAN messages that the user is interested in viewing. If a CAN message is being broadcast on the bus, but the user does not wish to see it decoded, it can simply be ommitted from this file. Of course, even if it is included here, the user does not necesarily view its data in the message stream while the program is running. 
 
 The current format for specifying these messages is similar to that found at keversoft.com. 
 
@@ -71,3 +71,12 @@ Now our working example of the metadata file is:
 ```
 
 With this brief tutorial, one should be able to construct a custom metadata file. If syntactical errors were included in a metadata file, the user will receive notification when the file is loaded at run-time.
+
+Finally, a user can specify other metadata files from within any metadata file. This allows collections of messages to be easily separated by application or CAN bus. For example, our project has the following metadata file, called "AllMessages.xml". When loaded, the program loads the other files found within the **include** tag recursively. An example is given here:
+
+```xml
+<metadata>
+    <include file="SeaSlug.xml" />
+    <include file="Nmea2000.xml" />
+</metadata>
+```
