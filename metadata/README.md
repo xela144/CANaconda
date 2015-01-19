@@ -1,5 +1,5 @@
 ##Specifying Messages to be Parsed with the Metadata File
-Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'metadata' file. 
+Currently CANaconda is being developed to view messages on the NMEA2000 standard. Custom CAN messages that follow the CAN 2.0A or 2.0B standard are also viewable with this tool. To view these messages, the user will create an XML style 'metadata' file. 
 
 The current format for specifying these messages is similar to that found at keversoft.com. 
 
@@ -29,15 +29,16 @@ At the next level of the xml heirarchy, we have two tags: **desc** and **field**
 Next, we address the payload itself. A CAN message can have several pieces of information encoded within its payload. Therefore, we introduce a new tag called **field**. The attributes for this tag are as follows:
 
  * **name** - The name of the field.
- * **type** - The data type of the field. Allowable data types are as follows:
+ * **type** [optional] - The data type of the field. Default value is 'int' Allowable data types are as follows:
   * *int*
   * *bitfield*
   * *boolean*
   * *enum*
  * **offset** - The number of *bits* that precede the field within the body of the CAN message.
- * **signed** - Allowable arguments here are either "*yes*" or "*no*"
- * **scaling** - The scaling used for the data. Analogous to precision.
- * **units** - Some data will have units associated. Any units can be specified, and mostly these are decorative. However, if the data is in the form of one of the following, it is advisable to use the given format, since units conversion will be available:
+ * **length** - The number of *bits* used to express the data of the current field.
+ * **signed** [optional] - Allowable arguments here are either "*yes*" or "*no*". Defaults to unsigned.
+ * **scaling** [optional] - The scaling used for the data. Analogous to precision. Defaults to scale factor of 1.
+ * **units** [optional] - Some data will have units associated. Any units can be specified, and mostly these are decorative. However, if the data is in the form of one of the following, it is advisable to use the given format, since units conversion will be available:
   * *MPS* or *m/s* for meters per second
   * *MPH* for miles per hour
   * *KNOT* for knots

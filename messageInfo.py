@@ -195,7 +195,7 @@ class Field():
         # If the 'type' for a field is not specified, assume int (as that will be the most common).
         # This SHOULD be explicitly set by the user, so warn them via stderr.
         self.type = field.get('type')
-        if self.type not in ('int', 'bitfield', 'boolean'):
+        if self.type not in ('int', 'bitfield', 'boolean', 'enum'):
             print("Specified type for '{}.{}' was not specified, assuming int.".format(parent.name, self.name), file=sys.stderr)
             self.type = 'int'
 
