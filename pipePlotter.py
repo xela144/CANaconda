@@ -17,7 +17,7 @@ tick intervals, etc.
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use('tkagg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pdb
 import time

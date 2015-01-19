@@ -45,6 +45,10 @@ Use the '--csv' argument to make the program output comma-separated-values. In a
 
 This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' as the serial port. The messages to be decoded are specified in the 'xmltest.xml' file. The user has chosen to filter the output of the WSO100 device so that only airspeed data is shown. Likewise, for the WSO200 device, output is generated only for 'wind\_dir' and 'velocity'. Finally, the user has asked that the data be shown in 'csv' format with a time stamp, in 'zero-hold' mode.
 
+##Plotting Data
+This is still in an experimental stage. Future work includes embedding this plot into a Qt widget to display to the user. Should a user wish to view data in real time, then the CANaconda application should be launched with the command line interface, with the --csv flag. The output at the terminal must be piped to the 'pipeplotter.py' script in this directory. This may take some configuration with the matplotlib backend. An example CLI launch of this script is shown here, with water speed data from the DST200 device.
+
+> python3 CANaconda.py --nogui /dev/ttyUSB0 --messages metadata/Nmea2000.xml --filter='Speed{Speed Water Referenced}' --csv --time | python3 pipePlotter.py 
 
 ##Specifying Messages to be Parsed with the Metadata File
 In addition to standard and extended CAN (2.0A and 2.0B), CANaconda is being developed to view messages on the NMEA2000 standard. Future plans will include the CANopen standard. 
