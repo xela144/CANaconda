@@ -49,7 +49,7 @@ This launches the CAN message viewer in command-line mode, with '/dev/ttyUSB0' a
 ##Specifying Messages to be Parsed with the Metadata File
 In addition to standard and extended CAN (2.0A and 2.0B), CANaconda is being developed to view messages on the NMEA2000 standard. Future plans will include the CANopen standard. 
 
-See README found in ![metadata](http://www.github.com/xela144/CANaconda/tree/master/metadata) directory for specifiying these filters.
+See README found in [metadata](http://www.github.com/xela144/CANaconda/tree/master/metadata) directory for specifiying these filters.
 
 #Installation for Linux
 
