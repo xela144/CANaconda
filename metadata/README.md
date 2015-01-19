@@ -1,11 +1,9 @@
-
-
 ##Specifying Messages to be Parsed with the Metadata File
 Currently CANaconda is being developed to view messages on the NMEA2000 standard. To view these messages, the user will create an XML style 'messages' file. The current format for specifying these messages are similar to that found at keversoft.com. An example:
 
 ```xml
 <metaData>
-	<messageInfo name = "System Time" pgn = "126992" size = "8"> 
+	<messageInfo name = "message_name" pgn = "xxx" size = "8"> 
 		<desc></desc>
 		<field 
 		name = "SID"
