@@ -3,11 +3,17 @@ Currently CANaconda is being developed to view messages on the NMEA2000 standard
 
 The current format for specifying these messages is similar to that found at keversoft.com. 
 
-The structure of this file is as follows. Optional tags are shown between square brackets, i.e. [attribute = "*attribute*"].
+The structure of this file is as follows. Optional tags are shown between square brackets, i.e. [attribute = "*attribute*"]. First we discuss the top-level tag, which is the metadata tag itself. All metadata xml must be embedded within this tag.
+
+The next level is the *messageInfo* tag. Within the *messageInfo* tag are the following attributes: *name, pgn, id, size,* and *protocol*
+ * *name* - The name of the CAN message, as it will appear in the program at run-time. 
+ * *size* - The size of the message payload, in **bytes**
+ * *id* - The identifier field of the CAN message, in hexadecimal form.
+ * *pgn* - The parameter group number of the message, as specified by the NMEA 2000 protocol. Note that for this application, a message will have either an ID or a PGN, but not both.
 
 ```xml
 <metadata>
-    <messageInfo name = "*name*" pgn = "*pgn*" size = "size">
+    <messageInfo name = "name" pgn = "pgn" size = "size">
 
     </messageInfo>
 </metadata>
