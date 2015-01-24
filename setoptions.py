@@ -1,4 +1,21 @@
 '''
+ * Copyright Bar Smith, Bryant Mairs, Alex Bardales 2015
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses.
+'''
+
+'''
 setoptions.py
 Function definitions that are used during the setup of the console 
 mode. Certain functions need to be re-written to make better use of
@@ -246,14 +263,3 @@ def setDisplayCSVmode(dataBack):
     else:
         print(out[:-1])
 
-''' this is how you iterate through all the filters/fields in dataBack.messages:
-
-        for filter in dataBack.messages:
-            print(filter)
-            for field in dataBack.messages[filter]:
-                print("\t",field)
-                for attrib in dataBack.messages[filter].fields[field]:
-                    print("\t\t", attrib)
-'''
-# example commandline launch
-# ./canpython.py --nogui /dev/ttyUSB0 -m xmltest.txt --filter='WSO100{airspeed},WSO200{wind_dir=2,vel}' --slow
