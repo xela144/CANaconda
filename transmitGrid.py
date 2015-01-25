@@ -23,6 +23,8 @@ from math import floor
 # from PyQt5.QtWidgets import QMessageBox
 baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
+MESSAGELABEL, MESSAGEINFO, FIELDLABEL, FIELDS, BODY, UNITSLABEL, FREQLABEL, FREQ, BUTTON = range(9)
+
 class TransmitGridWidget(QtWidgets.QDialog):
 
     def setup(self, parent, dataBack, realParent, singleshot=False):
@@ -74,14 +76,15 @@ class TransmitGridWidget(QtWidgets.QDialog):
 
         # Insert the widgets to the grid at their coordinates
         self.txGrid.addWidget(self.txLabel,              0, 3)
-        self.txGrid.addWidget(self.firstTxLabelMsg,      1, 0)
-        self.txGrid.addWidget(self.firstTxMessageInfo,   1, 1)
-        self.txGrid.addWidget(self.firstTxLabelField,    1, 2)
-        self.txGrid.addWidget(self.firstTxField1,        1, 3)
-        self.txGrid.addWidget(self.firstTxBody1,         1, 4)
-        self.txGrid.addWidget(self.firstTxLabelFreq,     1, 5)
-        self.txGrid.addWidget(self.firstTxFreq,          1, 6)
-        self.txGrid.addWidget(self.firstTxButton,        1, 7)
+        self.txGrid.addWidget(self.firstTxLabelMsg,      1, MESSAGELABEL)
+        self.txGrid.addWidget(self.firstTxMessageInfo,   1, MESSAGEINFO )
+        self.txGrid.addWidget(self.firstTxLabelField,    1, FIELDLABEL  )
+        self.txGrid.addWidget(self.firstTxField1,        1, FIELDS      )
+        self.txGrid.addWidget(self.firstTxBody1,         1, BODY        )
+        self.txGrid.addWidget(self.firstTxUnitsLabel,    1, UNITSLABEL  )
+        self.txGrid.addWidget(self.firstTxLabelFreq,     1, FREQLABEL   )
+        self.txGrid.addWidget(self.firstTxFreq,          1, FREQ        )
+        self.txGrid.addWidget(self.firstTxButton,        1, BUTTON      )
 
         # For stand-alone mode. If we don't add a layout then the window will come
         # up with nothing in it.
@@ -127,10 +130,13 @@ class TransmitGridWidget(QtWidgets.QDialog):
         for i in range(1, rowcount):
             try:
                 # Remove the old widgets from the grid, then delete
-                widget4 = self.txGrid.itemAtPosition(i, 4).widget()
-                widget3 = self.txGrid.itemAtPosition(i, 3).widget()
+                widget5 = self.txGrid.itemAtPosition(i,   UNITSLABEL).widget()
+                widget4 = self.txGrid.itemAtPosition(i,         BODY).widget()
+                widget3 = self.txGrid.itemAtPosition(i,       FIELDS).widget()
+                self.txGrid.removeWidget(widget5)
                 self.txGrid.removeWidget(widget4)
                 self.txGrid.removeWidget(widget3)
+                widget5.deleteLater()
                 widget4.deleteLater()
                 widget3.deleteLater()
             except AttributeError:
@@ -150,18 +156,24 @@ class TransmitGridWidget(QtWidgets.QDialog):
                 newLabel = QtWidgets.QLabel()
                 newLabel.setText(currentfield)
                 newLineEdit = QtWidgets.QLineEdit()
+                # Give the user the data range for the field, and set as place-holder text.
                 placeholder = self.getPlaceholderText(currentMessageInfo, currentfield, self.dataBack)
-                try:
-                    units = self.dataBack.messages[currentMessageInfo].fields[currentfield].units
-                    placeholder += ' [' + outmessage.unitStringMap[units] + ']'
-                except KeyError:
-                    pass
                 newLineEdit.setPlaceholderText(placeholder)
 
+                # Add a QLabel widget with the units, if they exist
+                newUnitsLabel = QtWidgets.QLabel()
+                try:
+                    units = self.dataBack.messages[currentMessageInfo].fields[currentfield].units
+                    unitsLabelText = ' [' + outmessage.unitStringMap[units] + ']'
+                    newUnitsLabel.setText(unitsLabelText)
+                except KeyError:
+                    pass
                 # Append to the following list to access from txActivateHandler.
                 self.txQLabel_LineContainer.append((newLabel, newLineEdit))
-                self.txGrid.addWidget(newLabel,      row, 3)
-                self.txGrid.addWidget(newLineEdit,   row, 4)
+                # Add the new widgets to the grid layout
+                self.txGrid.addWidget(newLabel,      row,      FIELDS)
+                self.txGrid.addWidget(newLineEdit,   row,        BODY)
+                self.txGrid.addWidget(newUnitsLabel, row,  UNITSLABEL)
                 row += 1
         # For one iteration, 'key' will be '' and we want to ignore this error.
         except KeyError:
