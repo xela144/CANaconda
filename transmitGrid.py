@@ -164,7 +164,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
                 newUnitsLabel = QtWidgets.QLabel()
                 try:
                     units = self.dataBack.messages[currentMessageInfo].fields[currentfield].units
-                    unitsLabelText = ' [' + outmessage.unitStringMap[units] + ']'
+                    unitsLabelText = outmessage.unitStringMap[units]
                     newUnitsLabel.setText(unitsLabelText)
                 except KeyError:
                     pass
