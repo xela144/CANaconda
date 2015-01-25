@@ -192,7 +192,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
             return '0 to {} bits'.format(fieldInfo.length)
 
         # Otherwise it's an integer, so get the range and tell them that
-        return '{} to {}'.format(fieldInfo.bounds[0], fieldInfo.bounds[1])
+        return '{:g} to {:g}'.format(fieldInfo.bounds[0], fieldInfo.bounds[1])
 
     # Like above but checks the boundary on the data, making sure that the user-entered
     # data is within the bounds of the CAN message
@@ -254,7 +254,6 @@ class TransmitGridWidget(QtWidgets.QDialog):
         # is now redundant
         try:
             self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
-            print(self.dataBack.asciiBucket)
         except Exception as e:
             # Before creating the warning dialog, stop current transmission
             self.disconnectTimer()
