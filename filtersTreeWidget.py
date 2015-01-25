@@ -1,3 +1,20 @@
+'''
+ * Copyright Alex Bardales 2015
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses.
+'''
+
 # FiltersTreeWidget class is instantiated in ui_mainwindow.py
 # Each time this widget is modified, the messageInfoTable widget gets updated.
 
@@ -6,6 +23,7 @@ from PyQt5 import QtCore, QtWidgets
 import pdb
 
 from messageInfo import CAN_FORMAT_EXTENDED
+from outmessage import unitStringMap
 
 
 class FiltersTreeWidget(QtWidgets.QDialog):
@@ -98,9 +116,14 @@ class FiltersTreeWidget(QtWidgets.QDialog):
                 attr.setText(0, "Signed: " + field.signed)
             except TypeError:  # Couldn't convert 'NoneType' to string
                 attr.setText(0, "Signed: no")
-            if field.units == None:
+            if field.units != '':
+                try:
+                    # Make the units look nicer, i.e. 'CEL' becomes '°C'
+                    units = unitStringMap[field.units]
+                except KeyError:
+                    units = field.units
                 attr = QtWidgets.QTreeWidgetItem(child)
-                attr.setText(0, "Units: " + field.units)
+                attr.setText(0, "Units: " + units)
             attr = QtWidgets.QTreeWidgetItem(child)
             attr.setText(0, "Scaling: " + str(field.scaling))
 

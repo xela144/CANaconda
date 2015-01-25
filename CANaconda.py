@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+'''
+ * Copyright Bar Smith, Bryant Mairs, Alex Bardales 2015
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses.
+'''
 
 '''
 This file is the top level implementation of the canpython script.
@@ -24,9 +40,12 @@ def main():
     parserInit(parser)
     args = parser.parse_args()
 
-
     # Create the dataBack singleton
-    dataBack = CanData(args)
+    try:
+        dataBack = CanData(args)
+    except Exception as e:
+        print("ERROR in data backend: " + str(e))
+        return
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         try:
@@ -73,9 +92,11 @@ def main():
 
 def parserInit(parser):
     # for noGUI mode:
-    parser.add_argument('--nogui', nargs=1, metavar='PORT',
-            help="No GUI mode. Positional argument: port")
-    parser.add_argument('-m', '--messages', metavar="File",
+    parser.add_argument('--nogui', action='store_true',
+            help="CLI mode")
+    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
+            help="Choose port from command line (required for CLI, optional for GUI)")
+    parser.add_argument('-m', '--metadata', metavar="File",
             help="Specify the messages file")
     parser.add_argument('--filter', metavar="FilterID", nargs=1,
             help="Comma-separated list (CLI), eg --filter='WSO100{airspeed[mph],\
@@ -90,8 +111,6 @@ def parserInit(parser):
             help="Give zero-order hold output for CSV mode (CLI)")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
-    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
-            help="Pre-select a port for GUI")
     parser.add_argument('--canbaud', nargs=1,# metavar='canbaud',
             help="Choose a baud for the CAN to USB device. Example: 100k, 125k, 250k, etc.\
                     Defaults to 250k, the maritime standard")
@@ -100,14 +119,14 @@ def parserInit(parser):
 def canacondaNoGuiInit(dataBack):
     args = dataBack.args
     # '--filter' option must come with '--messages'
-    if args.filter and not args.messages:
+    if args.filter and not args.metadata:
         print("\nYou are selectively displaying messages",
             "without specifying a way to parse CAN",
             "messages.\n\t(Hint: Use option -m)")
         return
 
     # import filters, and return a boolean value as 'filtersNotImpoted'
-    fileName = dataBack.args.messages
+    fileName = dataBack.args.metadata
     if fileName is not None:
         xmlImport(dataBack, fileName)
 
@@ -153,12 +172,12 @@ def canacondaNoGuiInit(dataBack):
         createListAndDict_noFilter(dataBack)
 
     # refactor:
-    if args.messages and not args.csv:
+    if args.metadata and not args.csv:
         print("Filters to be displayed: ",
             str(sorted(dataBack.messageInfoList))[1:-1])
 
     # create displayList
-    if args.display and args.messages:
+    if args.display and args.metadata:
         for arg in args.display[0].split(','):
             dataBack.displayList[arg] = True
     else:
@@ -174,7 +193,7 @@ def canacondaNoGuiInit(dataBack):
     # For CSV mode:
     if args.csv:
         # Check argument syntax
-        if not args.messages:
+        if not args.metadata:
             print("Please specify a messages file.",
                 "Use option -m")
             return

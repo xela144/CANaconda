@@ -1,8 +1,25 @@
-"""
+'''
+ * Copyright Bar Smith, Bryant Mairs, Alex Bardales 2015
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses.
+'''
+
+'''
 This is the GUI script. The general GUI setup is done using the  pyuic5-generated code
 that we get from Qt Designer. Once that setup function is called, we proceed to insert our
 own widgets, and our logic goes on top of that.
-"""
+'''
 
 
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
@@ -83,7 +100,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
 
-        if self.dataBack.args.messages != None:
+        if self.dataBack.args.metadata != None:
             self.commandLineLoadFilter()
         if self.dataBack.args.port != None:
             self.comportSelect()
@@ -289,12 +306,12 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # A map from message PGN to its name
         self.dataBack.pgn_to_name = {}
 
+
     # Load metadata after user has selected that option from the menu
     def loadFilter(self):
         fileName = None
-        while fileName is None:
-            fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
-        if fileName == '':
+        fileName = self.metadataOpenFileWindow()
+        if fileName == None:
             # If user canceled loading file, return
             return
 
@@ -303,7 +320,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         try:
             self.resetAllMetadata()
             xmlImport(self.dataBack, fileName)
-            # self.dataBack.messageInfoFlag set to true in xmlImport
+            # The dataBack.messageInfoFlag is set to true in xmlImport
         except Exception as e:
             self.warnXmlImport(str(e))
             return
@@ -318,10 +335,22 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
 
+    # Create a 'Open File' dialog window to choose the metadata file, with .xml format
+    def metadataOpenFileWindow(self):
+        fileName = None
+        fileWindow = QtWidgets.QFileDialog(self.mainWindow)
+        fileWindow.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+        fileWindow.setNameFilter('*.xml')
+        fileWindow.setDirectory('./metadata')
+        fileWindow.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        if fileWindow.exec():
+            fileName = fileWindow.selectedFiles()[0]
+        return fileName
+
     # If --messages argument was given, this function loads the metadata file.
     def commandLineLoadFilter(self):
         self.dataBack.messageInfoFlag = True
-        fileName = self.dataBack.args.messages
+        fileName = self.dataBack.args.metadata
         try:
             xmlImport(self.dataBack, fileName)
         except Exception as e:

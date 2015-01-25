@@ -1,4 +1,21 @@
 '''
+ * Copyright Bar Smith, Bryant Mairs, Alex Bardales 2015
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses.
+'''
+
+'''
 For init'ing the MessageInfo and Field objects that make up the
 CANacondaMessage object. MessageInfo is the outer layer of data
 abstraction, and Field is contained within.
@@ -38,7 +55,10 @@ def xmlImport(dataBack, fileName):
         for message in root.findall('messageInfo'):
             #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
             newMessageInfo = MessageInfo()
-            newMessageInfo.createNew(message, dataBack, fileName)
+            try:
+                newMessageInfo.createNew(message, dataBack, fileName)
+            except:
+                raise Exception("Parsing failed for XML file '{}'. See README for correct XML structure".format(fileName))
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -48,9 +68,6 @@ def xmlImport(dataBack, fileName):
             messageCount += 1
     except ET.ParseError as e:
         raise Exception("Parsing failed for XML file '{}'. Check that file exists and is proper XML.".format(fileName))
-    # FIXME what is this?
-    except Exception as e:
-        raise e
     
     if messageCount:
         dataBack.messageInfoFlag = True
@@ -195,7 +212,7 @@ class Field():
         # If the 'type' for a field is not specified, assume int (as that will be the most common).
         # This SHOULD be explicitly set by the user, so warn them via stderr.
         self.type = field.get('type')
-        if self.type not in ('int', 'bitfield', 'boolean'):
+        if self.type not in ('int', 'bitfield', 'boolean', 'enum'): # Future work: map enum's to human-readable strings
             print("Specified type for '{}.{}' was not specified, assuming int.".format(parent.name, self.name), file=sys.stderr)
             self.type = 'int'
 
