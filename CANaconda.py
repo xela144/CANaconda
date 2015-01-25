@@ -40,9 +40,12 @@ def main():
     parserInit(parser)
     args = parser.parse_args()
 
-
     # Create the dataBack singleton
-    dataBack = CanData(args)
+    try:
+        dataBack = CanData(args)
+    except Exception as e:
+        print("ERROR in data backend: " + str(e))
+        return
     # If the user doesn't want a GUI, run only the required things
     if args.nogui:
         try:
@@ -89,8 +92,10 @@ def main():
 
 def parserInit(parser):
     # for noGUI mode:
-    parser.add_argument('--nogui', nargs=1, metavar='PORT',
-            help="No GUI mode. Positional argument: port")
+    parser.add_argument('--nogui', action='store_true',
+            help="CLI mode")
+    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
+            help="Choose port from command line (required for CLI, optional for GUI)")
     parser.add_argument('-m', '--metadata', metavar="File",
             help="Specify the messages file")
     parser.add_argument('--filter', metavar="FilterID", nargs=1,
@@ -106,8 +111,6 @@ def parserInit(parser):
             help="Give zero-order hold output for CSV mode (CLI)")
     parser.add_argument('--debug', action='store_true',
                         help='Add debug buttons in GUI mode')
-    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',
-            help="Pre-select a port for GUI")
     parser.add_argument('--canbaud', nargs=1,# metavar='canbaud',
             help="Choose a baud for the CAN to USB device. Example: 100k, 125k, 250k, etc.\
                     Defaults to 250k, the maritime standard")

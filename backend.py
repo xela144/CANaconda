@@ -67,7 +67,10 @@ class CanData():
         self.logfile = None
         #This defines which COM port is used
         if args.nogui:
-            self.comport = args.nogui[0]
+            if not bool(args.port):
+                raise Exception("Please specify a port (using --port option)")
+            else:
+                self.comport = args.port[0]
         else:
             self.comport = None
 
