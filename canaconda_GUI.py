@@ -306,12 +306,12 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # A map from message PGN to its name
         self.dataBack.pgn_to_name = {}
 
+
     # Load metadata after user has selected that option from the menu
     def loadFilter(self):
         fileName = None
-        while fileName is None:
-            fileName = QtWidgets.QFileDialog.getOpenFileName()[0]
-        if fileName == '':
+        fileName = self.metadataOpenFileWindow()
+        if fileName == None:
             # If user canceled loading file, return
             return
 
@@ -320,7 +320,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         try:
             self.resetAllMetadata()
             xmlImport(self.dataBack, fileName)
-            # self.dataBack.messageInfoFlag set to true in xmlImport
+            # The dataBack.messageInfoFlag is set to true in xmlImport
         except Exception as e:
             self.warnXmlImport(str(e))
             return
@@ -334,6 +334,18 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
+
+    # Create a 'Open File' dialog window to choose the metadata file, with .xml format
+    def metadataOpenFileWindow(self):
+        fileName = None
+        fileWindow = QtWidgets.QFileDialog(self.mainWindow)
+        fileWindow.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+        fileWindow.setNameFilter('*.xml')
+        fileWindow.setDirectory('./metadata')
+        fileWindow.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        if fileWindow.exec():
+            fileName = fileWindow.selectedFiles()[0]
+        return fileName
 
     # If --messages argument was given, this function loads the metadata file.
     def commandLineLoadFilter(self):

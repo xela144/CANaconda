@@ -55,7 +55,10 @@ def xmlImport(dataBack, fileName):
         for message in root.findall('messageInfo'):
             #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
             newMessageInfo = MessageInfo()
-            newMessageInfo.createNew(message, dataBack, fileName)
+            try:
+                newMessageInfo.createNew(message, dataBack, fileName)
+            except:
+                raise Exception("Parsing failed for XML file '{}'. See README for correct XML structure".format(fileName))
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -65,9 +68,6 @@ def xmlImport(dataBack, fileName):
             messageCount += 1
     except ET.ParseError as e:
         raise Exception("Parsing failed for XML file '{}'. Check that file exists and is proper XML.".format(fileName))
-    # FIXME what is this?
-    except Exception as e:
-        raise e
     
     if messageCount:
         dataBack.messageInfoFlag = True
