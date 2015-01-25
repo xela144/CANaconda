@@ -174,7 +174,7 @@
         length = "16"
         />
     </messageInfo>
-    <messageInfo name="IMU Orientation" id="0x102" size="6">
+    <messageInfo name="IMU Orientation" id="0x102" size="6" endian="big">
         <desc>The yaw, pitch, and roll of the vehicle.</desc>
         <field
         name = "yaw"
@@ -184,7 +184,6 @@
         signed = "yes"
         units = "rad"
         scaling = "0.00012207"
-        endian = "big"
         />
         <field
         name = "pitch"
@@ -194,7 +193,6 @@
         signed = "yes"
         units = "rad"
         scaling = "0.00012207"
-        endian = "big"
         />
         <field
         name = "roll"
@@ -204,10 +202,9 @@
         signed = "yes"
         units = "rad"
         scaling = "0.00012207"
-        endian = "big"
         />
     </messageInfo>
-    <messageInfo name="IMU Angular Velocity" id="0x106" size="6">
+    <messageInfo name="IMU Angular Velocity" id="0x106" size="6" endian="big">
         <desc>The x, y, and z rotation rates of the vehicle.</desc>
         <field
         name = "x"
@@ -217,7 +214,6 @@
         signed = "yes"
         units = "rad/s"
         scaling = "0.00024414"
-        endian = "big"
         />
         <field
         name = "y"
@@ -227,7 +223,6 @@
         signed = "yes"
         units = "rad/s"
         scaling = "0.00024414"
-        endian = "big"
         />
         <field
         name = "z"
@@ -237,7 +232,6 @@
         signed = "yes"
         units = "rad/s"
         scaling = "0.00024414"
-        endian = "big"
         />
     </messageInfo>
 </metaData>
