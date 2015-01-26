@@ -34,7 +34,7 @@ The payload of a message is described by 1 or more **field** elements that descr
  * **offset** - The number of *bits* that precede the field within the body of the CAN message. Valid values: [0, 63]
  * **length** - The number of *bits* used for the data of the current field. Valid values: [1, 64]
  * **signed** [optional] - Allowable arguments here are either "*yes*" or "*no*". Defaults to "*no*".
- * **scaling** [optional] - The fixed-point scaling for the data, analogous to precision. Defaults to 1. Only applicable to the *int* type.
+ * **scaling** [optional] - The fixed-point scaling for the data, analogous to precision. Defaults to 1. Format should be in standard decimal format (0.0001), not exponential format. Only applicable to the *int* type.
  * **units** [optional] - The units this field is in. Any string can be specified, but there is application support for certain units. If those units are specified, the user can easily convert between units in the GUI:
   * Speed: *MPS* or *m/s* for meters per second, *MPH* for miles per hour, and *KNOT* for knots
   * Angle: *RAD* for radians, *DEG* for degrees

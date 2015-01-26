@@ -237,11 +237,16 @@ class Field():
             # No units were specified
             self.units = ''
 
-        # Get the scalar, if none is specified set to 1.
+        # Get the scaling factor, if none is specified set to 1.
         scalar = field.get('scaling')
         if scalar is None:
-            scalar = 1
-        self.scaling = float(scalar)
+            scalar = "1"
+        if 'e' in scalar:
+            raise Exception("Parsing failed for XML file '{}'. Field '{}.{}' has incorrect scaling. Exponential notation is not supported, please use standard decimal notation instead.".format(fileName, parent.name, self.name))
+        try:
+            self.scaling = float(scalar)
+        except ValueError:
+            raise Exception("Parsing failed for XML file '{}'. Field '{}.{}' has a non-numerical scaling.".format(fileName, parent.name, self.name))
 
         # For decoding messages only. This is never displayed to user
         self.endian = parent.endian
