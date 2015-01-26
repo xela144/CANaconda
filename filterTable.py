@@ -208,12 +208,12 @@ class FilterTable(QtWidgets.QWidget):
         # Use tableMap as {('filter','field'): row)}
         for tuple in self.tableMap:
             # first break apart the tuples:
-            messageInfo, field = tuple
+            message_name, field = tuple
             # next get the row:
             row = self.tableMap[tuple]
 
             # Get the latest freqency value
-            frequencyQueue = self.dataBack.frequencyMap[messageInfo]
+            frequencyQueue = self.dataBack.frequencyMap[message_name]
             newRate = 0
             try:
                 # If we haven't seen a new messages in the last 3 seconds,
@@ -221,7 +221,7 @@ class FilterTable(QtWidgets.QWidget):
                 if time.time() - frequencyQueue.queue[-1] > 3:
                     newRate = 0
                 else:
-                    newRate = self.dataBack.latest_frequencies[messageInfo]
+                    newRate = self.dataBack.latest_frequencies[message_name]
             # Will throw exception for first few runs; ignore.
             except IndexError:
                 pass
@@ -234,8 +234,7 @@ class FilterTable(QtWidgets.QWidget):
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
-                newValue = self.dataBack.latest_CANacondaMessages[
-                                                            messageInfo][field]
+                newValue = self.dataBack.latest_CANacondaMessages[message_name][field]
                 self.tableWidget.item(row, VALUE).setText(str(newValue))
                 self.tableWidget.item(row, RATE).setText(newRate)
             except KeyError:
