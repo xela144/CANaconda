@@ -242,7 +242,7 @@ class FilterTable(QtWidgets.QWidget):
                     value = str(newValue)
                 self.tableWidget.item(row, VALUE).setText(value)
                 self.tableWidget.item(row, RATE).setText(newRate)
-            except KeyError:
+            except (AttributeError, KeyError):
                 pass
         # if viewport() is not called, update is slow
         self.tableWidget.viewport().update()
