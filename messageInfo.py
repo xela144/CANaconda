@@ -272,6 +272,28 @@ class Field():
             upper_bound = bounds[1]
         self.bounds = (lower_bound, upper_bound)
 
+        # Set the display format for this field. A fixed-width implementation is used for all fields
+        self.disp_format = None
+        if self.type == 'int':
+            self.disp_format = "{:>"
+            if self.bounds[0] < 0:
+                self.disp_format += " "
+
+            # Pull the width portion from the bounds values
+            bounds_lengths = [len(str(x).split('.')[0]) for x in self.bounds]
+            self.disp_format += str(max(bounds_lengths))
+
+            # And pull the precision portion from the scaling factor
+            # For regular integers, we need to make sure we specify '.0' so there's
+            # no fractional value shown.
+            self.disp_format += '.'
+            try:
+                self.disp_format += str(len(scalar.split('.')[1]))
+            except:
+                self.disp_format += '0'
+
+            self.disp_format += "f}"
+
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
             raise Exception("Parsing failed for XML file '{}'. '{}' has leading or trailing space character".format(fileName, string))
