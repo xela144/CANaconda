@@ -55,10 +55,7 @@ def xmlImport(dataBack, fileName):
         for message in root.findall('messageInfo'):
             #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
             newMessageInfo = MessageInfo()
-            try:
-                newMessageInfo.createNew(message, dataBack, fileName)
-            except:
-                raise Exception("Parsing failed for XML file '{}'. See README for correct XML structure".format(fileName))
+            newMessageInfo.createNew(message, dataBack, fileName)
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -149,7 +146,7 @@ class MessageInfo():
         protocol = messageInfo.get('protocol')
         endian = messageInfo.get('endian')
         if endian is None and protocol is None:
-            raise Exception("Parsing failed for XML file {}: Please specify either endian-ness or protocol.".format(fileName))
+            raise Exception("Parsing failed in XML file '{}' for message '{}': Please specify either endian-ness or protocol.".format(fileName, self.name))
         if endian is None or protocol == 'nmea2000':
             endian = 'little'
         self.protocol = protocol
