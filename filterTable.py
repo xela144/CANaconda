@@ -234,8 +234,13 @@ class FilterTable(QtWidgets.QWidget):
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
+                disp_format = self.dataBack.messages[message_name].fields[field].disp_format
                 newValue = self.dataBack.latest_CANacondaMessages[message_name][field]
-                self.tableWidget.item(row, VALUE).setText(str(newValue))
+                try:
+                    value = disp_format.format(newValue)
+                except (ValueError, AttributeError) as e:
+                    value = str(newValue)
+                self.tableWidget.item(row, VALUE).setText(value)
                 self.tableWidget.item(row, RATE).setText(newRate)
             except KeyError:
                 pass
