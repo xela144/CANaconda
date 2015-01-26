@@ -228,9 +228,9 @@ class FilterTable(QtWidgets.QWidget):
 
             # If newRate < 1Hz, take reciprocal to give time period in seconds
             if newRate < 1 and newRate > 0:
-                newRate = "{:5.1f}s".format(1.0/newRate)
+                newRate = "{: 4.1f}s".format(1.0/newRate)
             else:
-                newRate = "{:5.1f}Hz".format(newRate)
+                newRate = "{: 4.1f}Hz".format(newRate)
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
