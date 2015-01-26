@@ -123,6 +123,7 @@ class FilterTable(QtWidgets.QWidget):
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             valueItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
+            valueItem.setTextAlignment(QtCore.Qt.AlignRight)
             self.tableWidget.setItem(row, VALUE, valueItem)
             ##
             # Add the latest value to the table. 
