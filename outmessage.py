@@ -21,14 +21,15 @@ For both the console mode and the GUI mode.
 '''
 
 import time
+import sys
 
 from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
 
 # FIXME: update this as more cases are discovered from use or by examining
 # the packetlogger text
 unitStringMap = {
-        'MPS':'m/s', 'KNOT':'knots', 'MPH':'MPH',
-        'RAD':'radians', 'DEG':'degrees',
+        'MPS':'m/s', 'KNOT':'kn', 'MPH':'mph',
+        'RAD':'rad', 'DEG':'deg',
         'CEL':'°C', 'FAR': '°F', 'K':'°K',
         'V':'V',
         '%':'%',
