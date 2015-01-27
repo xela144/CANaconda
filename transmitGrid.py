@@ -62,7 +62,7 @@ class TransmitGridWidget(QtWidgets.QDialog):
         self.firstTxBody1.setPlaceholderText('payload data')
         self.firstTxBody1.setDisabled(True)
         self.firstTxUnitsLabel = QtWidgets.QLabel()
-        self.firstTxUnitsLabel.setText('[..]')
+        self.firstTxUnitsLabel.setText('...')
         self.firstTxLabelFreq = QtWidgets.QLabel()
         self.firstTxLabelFreq.setText("Frequency [Hz]: ")
         self.firstTxFreq = QtWidgets.QLineEdit()
