@@ -123,6 +123,7 @@ class FilterTable(QtWidgets.QWidget):
             valueItem = QtWidgets.QTableWidgetItem()
             valueItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             valueItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
+            valueItem.setTextAlignment(QtCore.Qt.AlignRight)
             self.tableWidget.setItem(row, VALUE, valueItem)
             ##
             # Add the latest value to the table. 
@@ -207,12 +208,12 @@ class FilterTable(QtWidgets.QWidget):
         # Use tableMap as {('filter','field'): row)}
         for tuple in self.tableMap:
             # first break apart the tuples:
-            messageInfo, field = tuple
+            message_name, field = tuple
             # next get the row:
             row = self.tableMap[tuple]
 
             # Get the latest freqency value
-            frequencyQueue = self.dataBack.frequencyMap[messageInfo]
+            frequencyQueue = self.dataBack.frequencyMap[message_name]
             newRate = 0
             try:
                 # If we haven't seen a new messages in the last 3 seconds,
@@ -220,24 +221,28 @@ class FilterTable(QtWidgets.QWidget):
                 if time.time() - frequencyQueue.queue[-1] > 3:
                     newRate = 0
                 else:
-                    newRate = self.dataBack.latest_frequencies[messageInfo]
+                    newRate = self.dataBack.latest_frequencies[message_name]
             # Will throw exception for first few runs; ignore.
             except IndexError:
                 pass
 
             # If newRate < 1Hz, take reciprocal to give time period in seconds
             if newRate < 1 and newRate > 0:
-                newRate = "{:5.1f}s".format(1.0/newRate)
+                newRate = "{: 4.1f}s".format(1.0/newRate)
             else:
-                newRate = "{:5.1f}Hz".format(newRate)
+                newRate = "{: 4.1f}Hz".format(newRate)
 
             try:
                 # get the update values from dataBack.latest_CANacondaMessages
-                newValue = self.dataBack.latest_CANacondaMessages[
-                                                            messageInfo][field]
-                self.tableWidget.item(row, VALUE).setText(str(newValue))
+                disp_format = self.dataBack.messages[message_name].fields[field].disp_format
+                newValue = self.dataBack.latest_CANacondaMessages[message_name][field]
+                try:
+                    value = disp_format.format(newValue)
+                except (ValueError, AttributeError) as e:
+                    value = str(newValue)
+                self.tableWidget.item(row, VALUE).setText(value)
                 self.tableWidget.item(row, RATE).setText(newRate)
-            except KeyError:
+            except (AttributeError, KeyError):
                 pass
         # if viewport() is not called, update is slow
         self.tableWidget.viewport().update()

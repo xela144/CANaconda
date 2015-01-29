@@ -65,7 +65,7 @@ CLOSE = b'C\r'
 # CanPort is the thread which handles direct communication with the CAN device.
 # CanPort initializes the connection and then receives and parses standard CAN
 # messages. These messages are then passed to the CanTranscoder thread for parsing
-# into CANacondaMessage objects.
+# into CanMessage objects.
 class CANPort():
     '''
     Error constants to be returned by pyserialInit():
@@ -215,7 +215,7 @@ class CANPort():
                     msg = self.dataBack.CANacondaTxMsg_queue.get()
                     serialCAN.write(bytes(msg, 'UTF-8'))
 
-    # parse the serial string, create the CANacondaMessage object, and print it.
+    # parse the serial string, create the CanMessage object, and print it.
     def serialParse(self, serialCAN):
         # Sit and wait for all the bytes for an entire CAN message from the serial port.
         matchedmsg = self.getMatchObject(serialCAN)
@@ -280,7 +280,7 @@ try:
 
         def serialParse(self, serialCAN):
             matchedmsg = self.getMatchObject(serialCAN)
-            newCANacondaMessage = CANacondaMessage()
+            newCanMessage = CanMessage()
             if matchedmsg: 
                 self.dataBack.CANacondaRx_TranscodeQueue.put(matchedmsg)
                 self.parsedMsgPut.emit()
@@ -288,10 +288,10 @@ try:
                 # If not present already, add the message's messageInfo
                 # and field name to the dataBack.messagesSeenSoFar dict,
                 # and emit a signal for redrawing the messages table
-                if newCANacondaMessage.name not in self.dataBack.messagesSeenSoFar and newCANacondaMessage.name is not '':
-                    self.dataBack.messagesSeenSoFar[newCANacondaMessage.name] = []
-                    for field in newCANacondaMessage.body:
-                        self.dataBack.messagesSeenSoFar[newCANacondaMessage.name].append(field)
+                if newCanMessage.name not in self.dataBack.messagesSeenSoFar and newCanMessage.name is not '':
+                    self.dataBack.messagesSeenSoFar[newCanMessage.name] = []
+                    for field in newCanMessage.body:
+                        self.dataBack.messagesSeenSoFar[newCanMessage.name].append(field)
                     self.newMessageUp.emit()
 except ImportError:
     pass

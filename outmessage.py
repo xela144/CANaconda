@@ -21,14 +21,15 @@ For both the console mode and the GUI mode.
 '''
 
 import time
+import sys
 
 from messageInfo import CAN_FORMAT_STANDARD, CAN_FORMAT_EXTENDED
 
 # FIXME: update this as more cases are discovered from use or by examining
 # the packetlogger text
 unitStringMap = {
-        'MPS':'m/s', 'KNOT':'knots', 'MPH':'MPH',
-        'RAD':'radians', 'DEG':'degrees',
+        'MPS':'m/s', 'KNOT':'kn', 'MPH':'mph',
+        'RAD':'rad', 'DEG':'deg',
         'CEL':'°C', 'FAR': '°F', 'K':'°K',
         'V':'V',
         '%':'%',
@@ -102,22 +103,17 @@ def noGuiParse(dataBack, message):
                         conversion = True
                     else:
                         units = dataBack.messages[message.name].fields[field].units
+		    # And format the field according to a fixed format string
                     if conversion:
                         # Since there is a units conversion, there is a reason to format the body as a float
                         body = '{0.3f}'.format(message.body[field])
                     else:
-                        # Since there is no units conversion, there is no reason to format the body
-                        body = message.body[field]
-                        #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
-                    # We need to know how long to make the 'body' string, depending on 
-                    # signed-ness, type (float or int) and scaling. Calculate that here.
-                    #fieldInfo = dataBack.messages[message.name].fields[field]
-                    #formatChar = getFormatForBody(fieldInfo.type, fieldInfo.scaling, fieldInfo.signed, fieldInfo.length, body)
+                        disp_format = dataBack.messages[message.name].fields[field].disp_format
+                        body = disp_format.format(message.body[field])
+
                     prettyUnits = unitStringMap[units]
-                    try:
-                        outmsg += '\n{0}: {1:g} {2}'.format(field, body, prettyUnits)
-                    except ValueError:
-                        outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
+                    outmsg += '\n{0}: {1} {2}'.format(field, body, prettyUnits)
+
                 # This will produce a KeyError for unspecified names or names that do
                 # not need to be changed. Error won't show up as a stack trace since this
                 # is in its own thread FIXME
@@ -125,26 +121,6 @@ def noGuiParse(dataBack, message):
                     outmsg += "\n{0}: {1}".format(field, message.body[field])
     if dataFound:
         return outmsg
-
-# This will return the length of the payload string. Not being used for the moment.
-def getFormatForBody(type, scaling, signed, length, body):
-    if type != 'int':
-        return length
-    
-    tot = 0
-
-    # Add a spot for the negative sign
-    if signed == 'yes':
-        tot += 1
-    
-    # The actual length of the number
-    tot += len(str(2**length))
-
-    # Add a space for the decimal point
-    if float(scaling) != 1:
-        tot += 1
-    print(tot)
-
 
 # For CSV output. First column is time stamp.
 def noGuiParseCSV(dataBack, message):

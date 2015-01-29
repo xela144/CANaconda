@@ -40,6 +40,7 @@ import canport
 import time
 import os
 import xml.etree.ElementTree as ET
+import sys
 
 from canport import BAUDLIST, BAUDMAP
 
@@ -537,6 +538,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.dataBack.CSV_START_TIME = time.time()
 
     def warnXmlImport(self, errorString):
+        print(errorString, file=sys.stderr)
         warn = QtWidgets.QMessageBox()
         warn.setText("XML import error")
         warn.setInformativeText(errorString)

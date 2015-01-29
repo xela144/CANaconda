@@ -55,10 +55,7 @@ def xmlImport(dataBack, fileName):
         for message in root.findall('messageInfo'):
             #from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook(); import pdb; pdb.set_trace()
             newMessageInfo = MessageInfo()
-            try:
-                newMessageInfo.createNew(message, dataBack, fileName)
-            except:
-                raise Exception("Parsing failed for XML file '{}'. See README for correct XML structure".format(fileName))
+            newMessageInfo.createNew(message, dataBack, fileName)
             if newMessageInfo.pgn and newMessageInfo.id:
                 raise Exception("Both PGN and ID specified for message '{}', only one may be specified.".format(newMessageInfo.name))
             if not newMessageInfo.fields:
@@ -149,7 +146,7 @@ class MessageInfo():
         protocol = messageInfo.get('protocol')
         endian = messageInfo.get('endian')
         if endian is None and protocol is None:
-            raise Exception("Parsing failed for XML file {}: Please specify either endian-ness or protocol.".format(fileName))
+            raise Exception("Parsing failed in XML file '{}' for message '{}': Please specify either endian-ness or protocol.".format(fileName, self.name))
         if endian is None or protocol == 'nmea2000':
             endian = 'little'
         self.protocol = protocol
@@ -240,11 +237,16 @@ class Field():
             # No units were specified
             self.units = ''
 
-        # Get the scalar, if none is specified set to 1.
+        # Get the scaling factor, if none is specified set to 1.
         scalar = field.get('scaling')
         if scalar is None:
-            scalar = 1
-        self.scaling = float(scalar)
+            scalar = "1"
+        if 'e' in scalar:
+            raise Exception("Parsing failed for XML file '{}'. Field '{}.{}' has incorrect scaling. Exponential notation is not supported, please use standard decimal notation instead.".format(fileName, parent.name, self.name))
+        try:
+            self.scaling = float(scalar)
+        except ValueError:
+            raise Exception("Parsing failed for XML file '{}'. Field '{}.{}' has a non-numerical scaling.".format(fileName, parent.name, self.name))
 
         # For decoding messages only. This is never displayed to user
         self.endian = parent.endian
@@ -269,6 +271,28 @@ class Field():
         if bounds[1] != upper_bound:
             upper_bound = bounds[1]
         self.bounds = (lower_bound, upper_bound)
+
+        # Set the display format for this field. A fixed-width implementation is used for all fields
+        self.disp_format = None
+        if self.type == 'int':
+            self.disp_format = "{:>"
+            if self.bounds[0] < 0:
+                self.disp_format += " "
+
+            # Pull the width portion from the bounds values
+            bounds_lengths = [len(str(x).split('.')[0]) for x in self.bounds]
+            self.disp_format += str(max(bounds_lengths))
+
+            # And pull the precision portion from the scaling factor
+            # For regular integers, we need to make sure we specify '.0' so there's
+            # no fractional value shown.
+            self.disp_format += '.'
+            try:
+                self.disp_format += str(len(scalar.split('.')[1]))
+            except:
+                self.disp_format += '0'
+
+            self.disp_format += "f}"
 
     def checkFormat(self, string, fileName):
         if string[0] == ' ' or string[-1] == ' ':
