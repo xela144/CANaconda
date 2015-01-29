@@ -35,6 +35,7 @@ from backend import *
 import filtersTreeWidget
 import filterTable
 import transmitGrid
+import arbitraryTransmit
 import outmessage
 import canport
 import time
@@ -100,6 +101,10 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # reference is overwritten and mainWindow cannot be reached from transmitGrid....
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
         self.mainWindow.transmitGrid.setObjectName("transmitGrid")
+
+        self.mainWindow.arbitraryTransmitGrid = arbitraryTransmit.ArbitraryTransmitGridWidget(self.mainWindow.arbitraryTransmitWidget)
+        self.mainWindow.arbitraryTransmitGrid.setup(self.mainWindow.arbitraryTransmitWidget, self.dataBack, self)
+        self.mainWindow.transmitGrid.setObjectName("ArbitraryTransmitGrid")
 
         if self.dataBack.args.metadata != None:
             self.commandLineLoadFilter()

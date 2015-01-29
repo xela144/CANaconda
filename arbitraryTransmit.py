@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets
 import outmessage
-from CanDataTranscoder import generateMessage
+from CanMessage import TxCanMessage
 from math import floor
 
 # from PyQt5.QtWidgets import QMessageBox
@@ -12,10 +12,11 @@ IDLABEL, ID, LENGTHLABEL, LENGTH, BODYLINE, BYTE1, BYTE2, BYTE3, BYTE4, BYTE5, B
 
 class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
 
-    def setup(self, parent, dataBack, singleshot=False):
+    def setup(self, parent, dataBack, realParent, singleshot=False):
         super(ArbitraryTransmitGridWidget, self).__init__()
         self.dataBack = dataBack
         self.parent = parent
+        self.realParent = parent
         self.singleshot = singleshot
         # Create the grid and a label to go along with it
         self.txGrid = QtWidgets.QGridLayout(parent)
@@ -133,13 +134,18 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
             self.transmissionWarn(warnString)
         # Otherwise the data was good.
         else:
-            self.arbitraryPayload = self.getPayloadFromLineEdits()
+            # Create an outgoing message object
+            newTxCanMessage = TxCanMessage()
+            newTxCanMessage.CanMessageString = self.getPayloadFromLineEdits()
             freq = float(self.txFreq.text())
+            self.TxCanMessage = newTxCanMessage
             if freq == 0:
                 self.disconnectTimer()
-                self.pushToTransmitQueue()
+                newTxCanMessage.freq = 0
+                self.pushToTransmitQueue(newTxCanMessage.CanMessageString)
             else:
-                self.messageTxInit(1/freq)
+                newTxCanMessage.freq = 1/freq
+                self.messageTxInit(newTxCanMessage)
 
     # Simply tries to convert to float, and ensures frequency is positive. Then store the frequency.
     def checkFrequencyIntegrity(self, errContainer):
@@ -241,7 +247,7 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
 
 
     # Push the encoded message to the transmit queue, and send a signal
-    def messageTxInit(self, freq):
+    def messageTxInit(self, TxCanMessage):
         # If no timer has been used, create one. Otherwise, re-start it, 
         # but first disconnect from signals.
         try:
@@ -249,14 +255,15 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
             
         except AttributeError:
             self.TxTimer = QtCore.QTimer()
-
+        freq = TxCanMessage.freq
         freq = freq * 1000  # use milliseconds
         self.TxTimer.timeout.connect(self.pushToTransmitQueue)
         self.TxTimer.start(freq)
 
     def pushToTransmitQueue(self):
-        self.dataBack.CANacondaTxMsg_queue.put(self.arbitraryPayload)
+        self.dataBack.CANacondaTxMsg_queue.put(self.TxCanMessage.CanMessageString)
         self.changeColor()
+        print(self.TxCanMessage.CanMessageString)
 
     def changeColor(self):
         self.changeColorToGreen()
@@ -329,7 +336,7 @@ def main():
     messageInfo.xmlImport(dataBack, './metadata/AllMessages.xml')
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    ui = TransmitGridWidget()
+    ui = ArbitraryTransmitGridWidget()
     singleshot = True
     ui.setup(None, dataBack, singleshot)
     ui.show()
