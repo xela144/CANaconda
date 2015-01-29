@@ -60,7 +60,7 @@ class CanTranscoder():
         # A queue that has regex match objects that come off the serial port
         self.CanacondaRx_TranscodeQueue = dataBack.CANacondaRx_TranscodeQueue
 
-        # A queue that has CANacondaMessage objects that the UI will use
+        # A queue that has CanMessage objects that the UI will use
         self.CanacondaRxMsg_queue = dataBack.CANacondaRxMsg_queue
 
     def CanTranscoderRun(self):
@@ -75,7 +75,7 @@ try:
     from PyQt5.QtCore import pyqtSignal, QObject
 
     class CanTranscoderGUI(QObject):
-        parsedMsgPut = pyqtSignal()  # A new CANacondaMessage has been pushed to the queue
+        parsedMsgPut = pyqtSignal()  # A new CanMessage has been pushed to the queue
         newMessageUp = pyqtSignal()  # A message type has been seen for the first time
 
         def __init__(self, dataBack):
@@ -151,10 +151,10 @@ class CanTranscoderCLI(CanTranscoder):
 # Parameters... mactch: a regex match object...
 # dataBack: The God Object.
 def CANacondaMessageParse(match, dataBack):
-    """Parses the fields of a Regex Match object into a CANacondaMessage object that is then returned."""
+    """Parses the fields of a Regex Match object into a CanMessage object that is then returned."""
     metaData = dataBack.messages
 
-    newCanMessage = CANacondaMessage()
+    newCanMessage = CanMessage()
 
     # Parse out the ID from the regex Match object. Keep it an integer!
     if match.group(1):
@@ -227,7 +227,7 @@ def CANacondaMessageParse(match, dataBack):
     return newCanMessage
 
 def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
-    """Parse a a message that does not show up in the metadata file.  Create a CANacondaMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages, with messageInfo.anonymous = True. This step is necessary to access the message later on."""
+    """Parse a a message that does not show up in the metadata file.  Create a CanMessage object with name 'Unknown message ID... ' and set a single field to {'Raw Data': <raw data>}. Also create a MessageInfo object that gets stored in dataBack.messages, with messageInfo.anonymous = True. This step is necessary to access the message later on."""
     # Generate a pretty name with the header info
     if newCanMessage.type == CanMessage.ExtendedType:
         newCanMessage.name = "Extended message 0x{0:X} (PGN: {1:d})".format(newCanMessage.id, newCanMessage.pgn)
@@ -251,7 +251,7 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         # Now to calculate message frequency:
         calcFrequency(newCanMessage, dataBack)
 
-        # Add a copy of the CANacondaMessage to the 'latest_messages' dictionary:
+        # Add a copy of the CanMessage to the 'latest_messages' dictionary:
         dataBack.latest_CANacondaMessages[newCanMessage.name] = newCanMessage.body
 
         # Add the frequency to the 'latest_frequencies' dictionary:
