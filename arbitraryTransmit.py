@@ -25,6 +25,9 @@ class ArbitraryTransmitGridWidget(QObject):
         self.txGrid.setHorizontalSpacing(10)
         self.txGrid.setColumnStretch(1, 2)
         self.txGrid.setColumnStretch(3, 2)
+        ####FIXME#### gridlayouts don't behave the way we need. Use hbox layout instead.
+        self.txGrid.setRowMinimumHeight(1,25)
+        self.txGrid.setRowStretch(1,100)
 
         # A helper button that drops us into the python debugger
         if self.dataBack.args.debug:
@@ -34,14 +37,14 @@ class ArbitraryTransmitGridWidget(QObject):
             self.txGrid.addWidget(self.buttonPdb, 0,0)
 
         self.arbitraryIDlabel = QtWidgets.QLabel()
-        self.arbitraryIDlabel.setText("Enter an ID in hex:")
+        self.arbitraryIDlabel.setText("Enter a ID (hex):")
         self.arbitraryID = QtWidgets.QLineEdit()
 
         self.arbitraryBytes = QtWidgets.QLabel()
-        self.arbitraryBytes.setText("Enter bytes:")
+        self.arbitraryBytes.setText("bytes:")
 
         self.arbitraryLengthLabel = QtWidgets.QLabel()
-        self.arbitraryLengthLabel.setText("Enter length:")
+        self.arbitraryLengthLabel.setText("length:")
         self.arbitraryLength = QtWidgets.QLineEdit()
         self.arbitraryLength.setMaximumWidth(MAXWIDTH)
 
