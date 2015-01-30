@@ -27,30 +27,31 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QCursor
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
-from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
+
 import threading
-from serial.tools.list_ports import comports
-from CanDataTranscoder import generateMessage
-from backend import *
-import filtersTreeWidget
-import filterTable
-import transmitGrid
-import arbitraryTransmit
-import outmessage
-import canport
 import time
 import os
 import xml.etree.ElementTree as ET
 import sys
+from serial.tools.list_ports import comports
 
+import filtersTreeWidget
+import filterTable
+from backend import *
+from CanDataTranscoder import generateMessage
+import canport
 from canport import BAUDLIST, BAUDMAP
+import outMessageTableWidget
+import outmessage
+import transmitGrid
+import arbitraryTransmit
+from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 
 # displayList
 from outmessage import ID, PGN, BODY, RAW
 
 # Message stream enum
 DECODED, RAW_HEX, CSV = range(3)
-
 
 
 class Ui_CANaconda_GUI(QtCore.QObject):
@@ -87,7 +88,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.filterTable.setObjectName("filterTable")
         self.mainWindow.filterTable.populateTable()
         self.mainWindow.tabWidget.addTab(self.mainWindow.filterTable, "Units and filtering by value")
-    
+
         # set up the other tab
         self.mainWindow.filtersTreeWidget = filtersTreeWidget.FiltersTreeWidget()
         # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
