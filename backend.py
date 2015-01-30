@@ -57,9 +57,15 @@ class CanData():
     def __init__(self, args):
         # Store args from argparse:
         self.args = args
-        # An array which contains all of the most recent messages for
-        # each type seen so far
+
+        # An dictionary which contains all of the most recent messages for each type seen so far
+        # Usage: In 'filterTable.py', to display a message, it must be in this dict. Also, to clear
+        # the filterTable widget, clear this dict and then call 'populateTable'.
         self.messagesSeenSoFar = {}
+
+        # A dict used to track the outgoing messages over serial to the CAN bus.
+        # Usage: In 'outMessageTableWidget.py' the rows displayed depend on this dict.
+        self.messagesToSerial = {}
 
         #A flag to indicate if loging is enabled
         self.logflag = 0

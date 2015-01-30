@@ -94,10 +94,11 @@ class FilterTable(QtWidgets.QWidget):
         self.tableWidget.setSortingEnabled(False)
         # a list of all 'filter', 'field' pairs to be displayed in table:
         displayList = self.getDisplayList()
-        self.tableWidget.setRowCount(len(displayList))
         headerList = ['', 'Message', 'Field', 'Latest value',
                       'Filter', 'Units', 'Rate']
+        # Set the size of the table, column X row.
         self.tableWidget.setColumnCount(len(headerList))
+        self.tableWidget.setRowCount(len(displayList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         # a map from (filter,field) to row
         self.tableMap = {}

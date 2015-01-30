@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QObject, pyqtSignal
 import outmessage
 from CanMessage import TxCanMessage
 from math import floor
@@ -10,7 +11,8 @@ MAXWIDTH = 30
 
 IDLABEL, ID, LENGTHLABEL, LENGTH, BODYLINE, BYTE1, BYTE2, BYTE3, BYTE4, BYTE5, BYTE6, BYTE7, BYTE8, LABEL, FREQ, BUTTON = range(16)
 
-class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
+class ArbitraryTransmitGridWidget(QObject):
+    newOutMessageUp = pyqtSignal()
 
     def setup(self, parent, dataBack, realParent, singleshot=False):
         super(ArbitraryTransmitGridWidget, self).__init__()
@@ -136,6 +138,9 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
         else:
             # Create an outgoing message object
             newTxCanMessage = TxCanMessage()
+            newTxCanMessage.ID = self.arbitraryID.text()
+            newTxCanMessage.length = int(self.arbitraryLength.text())
+            newTxCanMessage.body = self.getBodyFromLineEdits()
             newTxCanMessage.CanMessageString = self.getPayloadFromLineEdits()
             freq = float(self.txFreq.text())
             self.TxCanMessage = newTxCanMessage
@@ -144,8 +149,10 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
                 newTxCanMessage.freq = 0
                 self.pushToTransmitQueue(newTxCanMessage.CanMessageString)
             else:
-                newTxCanMessage.freq = 1/freq
+                newTxCanMessage.freq = freq
                 self.messageTxInit(newTxCanMessage)
+            self.dataBack.messagesToSerial[newTxCanMessage.ID] = newTxCanMessage
+            self.newOutMessageUp.emit()
 
     # Simply tries to convert to float, and ensures frequency is positive. Then store the frequency.
     def checkFrequencyIntegrity(self, errContainer):
@@ -228,6 +235,18 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
         for byte in bytes[length:]:
             byte.setText('')
 
+    def getBodyFromLineEdits(self):
+        bodyString = ''
+        bodyString += self.byte1.text()
+        bodyString += self.byte2.text()
+        bodyString += self.byte3.text()
+        bodyString += self.byte4.text()
+        bodyString += self.byte5.text()
+        bodyString += self.byte6.text()
+        bodyString += self.byte7.text()
+        bodyString += self.byte8.text()
+        return bodyString
+
     # Capture all the text from the line edits. 
     def getPayloadFromLineEdits(self):
         #FIXME: Handle case for 't'
@@ -255,7 +274,7 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
             
         except AttributeError:
             self.TxTimer = QtCore.QTimer()
-        freq = TxCanMessage.freq
+        freq = 1/TxCanMessage.freq
         freq = freq * 1000  # use milliseconds
         self.TxTimer.timeout.connect(self.pushToTransmitQueue)
         self.TxTimer.start(freq)
@@ -319,31 +338,3 @@ class ArbitraryTransmitGridWidget(QtWidgets.QDialog):
         QtCore.pyqtRemoveInputHook()
         import pdb
         pdb.set_trace()
-
-
-def main():
-    import backend
-    import CANaconda
-    import argparse
-    import sys
-    import messageInfo
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    args.nogui = None
-    args.debug = True
-    dataBack = backend.CanData(args)
-    dataBack.alreadyStreaming = True
-    messageInfo.xmlImport(dataBack, './metadata/AllMessages.xml')
-    app = QtWidgets.QApplication(sys.argv)
-    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    ui = ArbitraryTransmitGridWidget()
-    singleshot = True
-    ui.setup(None, dataBack, singleshot)
-    ui.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
-
-

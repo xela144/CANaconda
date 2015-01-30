@@ -25,7 +25,7 @@ baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
 MESSAGELABEL, MESSAGEINFO, FIELDLABEL, FIELDS, BODY, UNITSLABEL, FREQLABEL, FREQ, BUTTON = range(9)
 
-class TransmitGridWidget(QtWidgets.QDialog):
+class TransmitGridWidget():
 
     def setup(self, parent, dataBack, realParent, singleshot=False):
         super(TransmitGridWidget, self).__init__()

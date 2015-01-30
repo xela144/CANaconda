@@ -96,15 +96,22 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.tabWidget.addTab(self.mainWindow.filtersTreeWidget, "View Meta Data")
 
         # Now set up the transmit grid
-        self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget(self.mainWindow.transmitWidget)
+        self.mainWindow.transmitGrid = transmitGrid.TransmitGridWidget()
         # Sending 'self' as an explicit parameter to retain reference to UI_CANaconda_GUI, otherwise
         # reference is overwritten and mainWindow cannot be reached from transmitGrid....
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
-        self.mainWindow.transmitGrid.setObjectName("transmitGrid")
 
-        self.mainWindow.arbitraryTransmitGrid = arbitraryTransmit.ArbitraryTransmitGridWidget(self.mainWindow.arbitraryTransmitWidget)
+        # Set up a widget for transmitting custom, arbitrary messages
+        self.mainWindow.arbitraryTransmitGrid = arbitraryTransmit.ArbitraryTransmitGridWidget()
         self.mainWindow.arbitraryTransmitGrid.setup(self.mainWindow.arbitraryTransmitWidget, self.dataBack, self)
-        self.mainWindow.transmitGrid.setObjectName("ArbitraryTransmitGrid")
+
+        # Outmessage table. Add to different tab. Here call 'addTab()' directly. Because pyqt is like that...
+        self.mainWindow.outMessageTableWidget = outMessageTableWidget.OutMessageTableWidget()
+        self.mainWindow.outMessageTableWidget.setup(self.dataBack, self)
+        self.mainWindow.tabWidget_2.addTab(self.mainWindow.outMessageTableWidget, "Send messages")
+        self.mainWindow.outMessageTableWidget.populateTable()
+
+        self.mainWindow.arbitraryTransmitGrid.newOutMessageUp.connect(self.mainWindow.outMessageTableWidget.populateTable)
 
         if self.dataBack.args.metadata != None:
             self.commandLineLoadFilter()
