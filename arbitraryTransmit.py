@@ -1,52 +1,48 @@
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QObject, pyqtSignal
-import outmessage
 from CanMessage import TxCanMessage
-from math import floor
+from PyQt5.QtCore import QObject, pyqtSignal
 
 # from PyQt5.QtWidgets import QMessageBox
 baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
 MAXWIDTH = 30
 
-IDLABEL, ID, LENGTHLABEL, LENGTH, BODYLINE, BYTE1, BYTE2, BYTE3, BYTE4, BYTE5, BYTE6, BYTE7, BYTE8, LABEL, FREQ, BUTTON = range(16)
+#IDLABEL, ID, LENGTHLABEL, LENGTH, BODYLINE, BYTE1, BYTE2, BYTE3, BYTE4, BYTE5, BYTE6, BYTE7, BYTE8, LABEL, FREQ, BUTTON = range(16)
 
-class ArbitraryTransmitGridWidget(QObject):
+class ArbitraryTransmitWidget(QObject):
     newOutMessageUp = pyqtSignal()
-
-    def setup(self, parent, dataBack, realParent, singleshot=False):
-        super(ArbitraryTransmitGridWidget, self).__init__()
+    def setup(self, parent, dataBack, singleshot=False):
+        super(ArbitraryTransmitWidget, self).__init__()
         self.dataBack = dataBack
         self.parent = parent
-        self.realParent = parent
         self.singleshot = singleshot
-        # Create the grid and a label to go along with it
-        self.txGrid = QtWidgets.QGridLayout(parent)
-        self.txGrid.setHorizontalSpacing(10)
-        self.txGrid.setColumnStretch(1, 2)
-        self.txGrid.setColumnStretch(3, 2)
-        ####FIXME#### gridlayouts don't behave the way we need. Use hbox layout instead.
-        self.txGrid.setRowMinimumHeight(1,25)
-        self.txGrid.setRowStretch(1,100)
 
-        # A helper button that drops us into the python debugger
-        if self.dataBack.args.debug:
-            self.buttonPdb = QtWidgets.QPushButton()
-            self.buttonPdb.setText("drop into pdb from here")
-            self.buttonPdb.clicked.connect(self.pdbset)
-            self.txGrid.addWidget(self.buttonPdb, 0,0)
+        # Create the layouts for this widget: two hboxs put into one vbox 
+        vbox = QtWidgets.QVBoxLayout(parent)
+        hbox1 = QtWidgets.QHBoxLayout()
+        hbox2 = QtWidgets.QHBoxLayout()
+
+        self.nameLabel = QtWidgets.QLabel()
+        self.nameLabel.setText("Enter a message description:")
+        self.name = QtWidgets.QLineEdit()
 
         self.arbitraryIDlabel = QtWidgets.QLabel()
-        self.arbitraryIDlabel.setText("Enter a ID (hex):")
+        self.arbitraryIDlabel.setText("Enter an ID (hex):")
         self.arbitraryID = QtWidgets.QLineEdit()
 
-        self.arbitraryBytes = QtWidgets.QLabel()
-        self.arbitraryBytes.setText("bytes:")
+        hbox1.addWidget(self.nameLabel)
+        hbox1.addWidget(self.name)
+        hbox1.addWidget(self.arbitraryIDlabel)
+        hbox1.addWidget(self.arbitraryID)
 
         self.arbitraryLengthLabel = QtWidgets.QLabel()
         self.arbitraryLengthLabel.setText("length:")
         self.arbitraryLength = QtWidgets.QLineEdit()
+        self.arbitraryLengthLabel.setBuddy(self.arbitraryLength)
         self.arbitraryLength.setMaximumWidth(MAXWIDTH)
+
+        self.arbitraryBytes = QtWidgets.QLabel()
+        self.arbitraryBytes.setText("bytes:")
 
         self.byte1 = QtWidgets.QLineEdit()
         self.byte2 = QtWidgets.QLineEdit()
@@ -72,37 +68,21 @@ class ArbitraryTransmitGridWidget(QObject):
         self.txFreq.setMaximumWidth(40)
         self.txFreq.setToolTip("<font color=black>For a single-shot timer, use \"0\"</font>")
         self.txButton = QtWidgets.QPushButton()
-        self.txButton.setText("Activate")
+        self.txButton.setText("Enable")
         #self.txButton.setDisabled(True)
         self.txButton.clicked.connect(self.arbitraryTxActivateHandler)
 
-        
-        # Insert the widgets to the grid at their coordinates
-        self.txGrid.addWidget(self.arbitraryIDlabel,    1,  IDLABEL)
-        self.txGrid.addWidget(self.arbitraryID,         1,       ID)
-        self.txGrid.addWidget(self.arbitraryLengthLabel,1,LENGTHLABEL)
-        self.txGrid.addWidget(self.arbitraryLength,     1,   LENGTH)
-        self.txGrid.addWidget(self.arbitraryBytes,      1, BODYLINE)
-        self.txGrid.addWidget(self.byte1,               1,    BYTE1)
-        self.txGrid.addWidget(self.byte2,               1,    BYTE2)
-        self.txGrid.addWidget(self.byte3,               1,    BYTE3)
-        self.txGrid.addWidget(self.byte4,               1,    BYTE4)
-        self.txGrid.addWidget(self.byte5,               1,    BYTE5)
-        self.txGrid.addWidget(self.byte6,               1,    BYTE6)
-        self.txGrid.addWidget(self.byte7,               1,    BYTE7)
-        self.txGrid.addWidget(self.byte8,               1,    BYTE8)
-        self.txGrid.addWidget(self.txFreqLabel,         1,    LABEL)
-        self.txGrid.addWidget(self.txFreq,              1,     FREQ)
-        self.txGrid.addWidget(self.txButton,            1,   BUTTON)
+        # Great there are a ton of widgets. Add them to a list
+        widgetl = [self.arbitraryLengthLabel, self.arbitraryLength, self.arbitraryBytes,
+                   self.byte1, self.byte2, self.byte3, self.byte4, self.byte5, self.byte6, self.byte7,
+                   self.byte8, self.txFreqLabel, self.txFreq, self.txButton]
+	# Now at the widgets to the horizontal layout
+        for widget in widgetl:
+            hbox2.addWidget(widget)
+	# Add the horizontal layouts to our top-level vertical layout. And we are done.
+        vbox.addLayout(hbox1)
+        vbox.addLayout(hbox2)
 
-        # For stand-alone mode. If we don't add a layout then the window will come
-        # up with nothing in it.
-        if singleshot:
-            vbox = QtWidgets.QVBoxLayout()
-            vbox.addLayout(self.txGrid)
-            if self.dataBack.args.debug:
-                vbox.addWidget(self.buttonPdb)
-            self.setLayout(vbox)
 
     # This is called when user clicks on 'activate' button. Error checking happens, then correct messages
     # are sent to the messageTxInit function, which pushes messages to a serial queue
@@ -141,6 +121,7 @@ class ArbitraryTransmitGridWidget(QObject):
         else:
             # Create an outgoing message object
             newTxCanMessage = TxCanMessage()
+            newTxCanMessage.name = self.name.text()
             newTxCanMessage.ID = self.arbitraryID.text()
             newTxCanMessage.length = int(self.arbitraryLength.text())
             newTxCanMessage.body = self.getBodyFromLineEdits()
@@ -337,7 +318,9 @@ class ArbitraryTransmitGridWidget(QObject):
         warn.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         warn.exec()
 
+
     def pdbset(self):
         QtCore.pyqtRemoveInputHook()
         import pdb
         pdb.set_trace()
+

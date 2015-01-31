@@ -57,7 +57,7 @@ class TxCanMessage():
         # Some flags/data used for record-keeping in the application
         self.metadata = False
         self.arbitrary = False
-        self.name = None
+        self.name = ""
         self.ID = None
         self.pgn = None
         self.length = None
@@ -65,3 +65,5 @@ class TxCanMessage():
         self.CanMessageString = ""
         self.freq = None
 
+    def __str__(self):
+        return self.name + ": " + self.CanMessageString

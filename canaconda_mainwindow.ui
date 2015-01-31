@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1095</width>
+    <width>1229</width>
     <height>778</height>
    </rect>
   </property>
@@ -90,7 +90,7 @@
     <item>
      <widget class="QFrame" name="frame">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -153,7 +153,7 @@
            <item>
             <widget class="QWidget" name="transmitWidget" native="true">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -161,7 +161,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>180</height>
+               <height>160</height>
               </size>
              </property>
              <property name="baseSize">
@@ -182,7 +182,7 @@
            <item>
             <widget class="QWidget" name="arbitraryTransmitWidget" native="true">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -190,13 +190,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>20</height>
+               <height>44</height>
               </size>
              </property>
              <property name="baseSize">
               <size>
                <width>0</width>
-               <height>15</height>
+               <height>60</height>
               </size>
              </property>
             </widget>
@@ -204,9 +204,6 @@
           </layout>
          </widget>
         </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -280,6 +277,12 @@
          </item>
          <item>
           <widget class="QLabel" name="label_4">
+           <property name="baseSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>Status:</string>
            </property>
@@ -311,7 +314,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1095</width>
+     <width>1229</width>
      <height>24</height>
     </rect>
    </property>

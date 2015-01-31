@@ -104,9 +104,8 @@ class FilterTable(QtWidgets.QWidget):
         self.tableMap = {}
         for row, tuple in enumerate(displayList):
             messageInfoName, fieldName = tuple
+            # The checkbox controls whether the message will be displayed in the message stream
             checkBoxItem = QtWidgets.QTableWidgetItem()
-            # This is for when the message is not in the metadata. Just make a new row with the
-            # ID and PGN only; 'setCheckState' does not apply.
             checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
             checkBoxItem.setToolTip("<font color=black>Check box to display message</font>")
             self.tableWidget.setItem(row, CHECKBOX, checkBoxItem)

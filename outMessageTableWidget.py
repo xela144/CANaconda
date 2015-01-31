@@ -4,7 +4,7 @@ import pdb
 import backend
 from PyQt5.QtCore import pyqtRemoveInputHook as pyqtrm
 
-IDCOL, LEN, BOD, FREQ, PER = range(5)
+CHK, NAME, IDCOL, LEN, BOD, FREQ = range(6)
 
 #class OutMessageTableWidget(QtWidgets.QWidget):
 class OutMessageTableWidget(QtWidgets.QWidget):
@@ -40,17 +40,29 @@ class OutMessageTableWidget(QtWidgets.QWidget):
 
     def populateTable(self):
         displayList = self.getDisplayList()
-        headerList = ['ID', 'Length', 'Body', 'Frequency', 'Time period?']
+        headerList = ['', 'Description', 'ID', 'Length', 'Body', 'Frequency']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setRowCount(len(displayList))
         self.tableWidget.setHorizontalHeaderLabels(headerList)
         for row, txCanMessage in enumerate(displayList):
             # Get the parameters for each message
+            name = txCanMessage.name
             ID = txCanMessage.ID
             length = str(txCanMessage.length)
             body = txCanMessage.body
             freq = str(txCanMessage.freq)
-            
+
+            # The checkBoxItem will control whether the message is being written to serial
+            checkBoxItem = QtWidgets.QTableWidgetItem()
+            checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
+            checkBoxItem.setToolTip("<font color=black>Check to send messages</font>")
+            self.tableWidget.setItem(row, CHK, checkBoxItem)
+
+            nameItem = QtWidgets.QTableWidgetItem(name)
+            nameItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
+            nameItem.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEnabled))
+            self.tableWidget.setItem(row, NAME, nameItem)
+
             # Create the table widget items
             IDitem = QtWidgets.QTableWidgetItem(ID)
             IDitem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))

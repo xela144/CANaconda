@@ -44,7 +44,8 @@ from canport import BAUDLIST, BAUDMAP
 import outMessageTableWidget
 import outmessage
 import transmitGrid
-import arbitraryTransmit
+#import arbitraryTransmit
+from arbitraryTransmit import ArbitraryTransmitWidget
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 
 # displayList
@@ -103,13 +104,13 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
 
         # Set up a widget for transmitting custom, arbitrary messages
-        self.mainWindow.arbitraryTransmitGrid = arbitraryTransmit.ArbitraryTransmitGridWidget()
+        self.mainWindow.arbitraryTransmitGrid = ArbitraryTransmitWidget()
         self.mainWindow.arbitraryTransmitGrid.setup(self.mainWindow.arbitraryTransmitWidget, self.dataBack, self)
 
         # Outmessage table. Add to different tab. Here call 'addTab()' directly. Because pyqt is like that...
         self.mainWindow.outMessageTableWidget = outMessageTableWidget.OutMessageTableWidget()
         self.mainWindow.outMessageTableWidget.setup(self.dataBack, self)
-        self.mainWindow.tabWidget_2.addTab(self.mainWindow.outMessageTableWidget, "Send messages")
+        self.mainWindow.tabWidget_2.addTab(self.mainWindow.outMessageTableWidget, "Transmit queue")
         self.mainWindow.outMessageTableWidget.populateTable()
 
         self.mainWindow.arbitraryTransmitGrid.newOutMessageUp.connect(self.mainWindow.outMessageTableWidget.populateTable)

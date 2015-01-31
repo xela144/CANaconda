@@ -70,7 +70,7 @@ class TransmitGridWidget():
         self.firstTxFreq.setMaximumWidth(40)
         self.firstTxFreq.setToolTip("<font color=black>For a single-shot timer, use \"0\"</font>")
         self.firstTxButton = QtWidgets.QPushButton()
-        self.firstTxButton.setText("Activate")
+        self.firstTxButton.setText("Enable")
         self.firstTxButton.setDisabled(True)
         self.firstTxButton.clicked.connect(self.txActivateHandler)
 
