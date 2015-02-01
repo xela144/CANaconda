@@ -16,7 +16,7 @@
 '''
 
 from PyQt5 import QtCore, QtWidgets
-import outmessage
+import printmessage
 from CanDataTranscoder import generateMessage
 from CanMessage import TxCanMessage
 from math import floor
@@ -103,17 +103,12 @@ class TransmitGridWidget(QtCore.QObject):
         except RuntimeError:
             # The widget has already been deleted
             pass
-        # move to separate function
-        #self.firstTxFreq.setDisabled(False)
-        #self.firstTxButton.setDisabled(False)
 
         # Populate the combobox in alphabetical order
         for messageInfoName in sorted(self.dataBack.messages.keys(), key=lambda s: s.lower()):
             self.firstTxMessageInfo.addItem(messageInfoName)
         self.populateTxField()
         self.firstTxMessageInfo.currentTextChanged.connect(self.populateTxField)
-
-        #self.populateByOffset(self.dataBack.messages, self.firstTxMessageInfo)
 
     # Once the combo box has been filled with 'messageInfo' items, we have to populate each
     # messageInfo with its field type.
@@ -157,7 +152,7 @@ class TransmitGridWidget(QtCore.QObject):
                 newUnitsLabel = QtWidgets.QLabel()
                 try:
                     units = self.dataBack.messages[currentMessageInfo].fields[currentfield].units
-                    unitsLabelText = outmessage.unitStringMap[units]
+                    unitsLabelText = printmessage.unitStringMap[units]
                     newUnitsLabel.setText(unitsLabelText)
                 except KeyError:
                     pass
