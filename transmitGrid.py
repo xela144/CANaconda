@@ -18,6 +18,7 @@
 from PyQt5 import QtCore, QtWidgets
 import outmessage
 from CanDataTranscoder import generateMessage
+from CanMessage import TxCanMessage
 from math import floor
 
 # from PyQt5.QtWidgets import QMessageBox
@@ -25,7 +26,8 @@ baseTuple = ('x', 'b', 'o', 'X', 'B', 'O')
 
 MESSAGELABEL, MESSAGEINFO, FIELDLABEL, FIELDS, BODY, UNITSLABEL, FREQLABEL, FREQ, BUTTON = range(9)
 
-class TransmitGridWidget():
+class TransmitGridWidget(QtCore.QObject):
+    newOutMessageUp = QtCore.pyqtSignal()
 
     def setup(self, parent, dataBack, realParent, singleshot=False):
         super(TransmitGridWidget, self).__init__()
@@ -86,15 +88,6 @@ class TransmitGridWidget():
         self.txGrid.addWidget(self.firstTxFreq,          1, FREQ        )
         self.txGrid.addWidget(self.firstTxButton,        1, BUTTON      )
 
-        # For stand-alone mode. If we don't add a layout then the window will come
-        # up with nothing in it.
-        if singleshot:
-            vbox = QtWidgets.QVBoxLayout()
-            vbox.addLayout(self.txGrid)
-            if self.dataBack.args.debug:
-                vbox.addWidget(self.buttonPdb)
-            self.setLayout(vbox)
-            self.populateTxMessageInfoCombo()
 
     # Called when a metadata file is loaded
     # populate the combobox with messageInfo/field names
@@ -111,8 +104,8 @@ class TransmitGridWidget():
             # The widget has already been deleted
             pass
         # move to separate function
-        self.firstTxFreq.setDisabled(False)
-        self.firstTxButton.setDisabled(False)
+        #self.firstTxFreq.setDisabled(False)
+        #self.firstTxButton.setDisabled(False)
 
         # Populate the combobox in alphabetical order
         for messageInfoName in sorted(self.dataBack.messages.keys(), key=lambda s: s.lower()):
@@ -230,7 +223,7 @@ class TransmitGridWidget():
         if len(self.errContainer) > 0:
             for lineEdit in self.errContainer:
                 lineEdit.setStyleSheet("QLineEdit{background: red;}")
-           # self.txTypeErrorFlag = True
+            self.txTypeErrorFlag = True
 
         # The transmission frequency entered by the user. Check that the frequency is valid
         frequencyString = self.firstTxFreq.text()
@@ -240,9 +233,6 @@ class TransmitGridWidget():
 
         # We messed up earlier but are returning here
         # after the Line Edits were cleaned up.
-        # FIXME: Give a detailed error message here... try entering a value that is
-        # too big or too small for the data field length. Error message is too generic
-        # Use the same logic as the error messages from generateMessage().
         if self.txTypeErrorFlag or self.txBoundErrorFlag:
             # Before creating the warning dialog, stop current transmission
             self.disconnectTimer()
@@ -253,7 +243,9 @@ class TransmitGridWidget():
         # At this point we have done our own error checking here, so the try except block
         # is now redundant
         try:
-            self.dataBack.asciiBucket = generateMessage(self.dataBack, payload, messageName)
+            newTxCanMessage = TxCanMessage() 
+            newTxCanMessage.name = messageName
+            newTxCanMessage = generateMessage(self.dataBack, payload, messageName, newTxCanMessage)
         except Exception as e:
             # Before creating the warning dialog, stop current transmission
             self.disconnectTimer()
@@ -265,7 +257,9 @@ class TransmitGridWidget():
             self.pushToTransmitQueue()
         else:
             freq = 1/frequencyInt
-            self.messageTxInit(freq)
+            newTxCanMessage.freq = freq
+            self.dataBack.messagesToSerial[newTxCanMessage.ID] = newTxCanMessage
+            self.newOutMessageUp.emit()
 
     # getPayloadsFromLineEdits: This is a helper function that does the actual
     # checking, converting, and error reporting of all the values entered by

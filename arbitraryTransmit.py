@@ -69,7 +69,7 @@ class ArbitraryTransmitWidget(QObject):
         self.txFreq.setToolTip("<font color=black>For a single-shot timer, use \"0\"</font>")
         self.txButton = QtWidgets.QPushButton()
         self.txButton.setText("Enable")
-        #self.txButton.setDisabled(True)
+        self.txButton.setDisabled(True)
         self.txButton.clicked.connect(self.arbitraryTxActivateHandler)
 
         # Great there are a ton of widgets. Add them to a list
@@ -90,9 +90,9 @@ class ArbitraryTransmitWidget(QObject):
         warnFlag = False
         self.payload = None
         # We shouldn't transmit anything if we are not streaming yet.
-        if not self.dataBack.alreadyStreaming:
-            self.notStreamingWarn()
-            return
+        #if not self.dataBack.alreadyStreaming:
+        #    self.notStreamingWarn()
+        #    return
         self.txTypeErrorFlag = False
         # A list to store QLineEdits that have bad data. If this list is non-empty, then an error occured.
         self.errContainer = []
@@ -134,7 +134,13 @@ class ArbitraryTransmitWidget(QObject):
                 self.pushToTransmitQueue(newTxCanMessage.CanMessageString)
             else:
                 newTxCanMessage.freq = freq
-                self.messageTxInit(newTxCanMessage)
+                #self.messageTxInit(newTxCanMessage)
+            # Whatever is here gets put to the the outmessage table, and is later accessible to the user
+            if newTxCanMessage.ID in self.dataBack.messagesToSerial:
+                print("Collision")
+                self.pdbset()
+                self.dataBack.messagesToSerial.pop(newTxCanMessage.ID)
+# Shouldn't be a dict, just a single value that gets overwritten each time
             self.dataBack.messagesToSerial[newTxCanMessage.ID] = newTxCanMessage
             self.newOutMessageUp.emit()
 

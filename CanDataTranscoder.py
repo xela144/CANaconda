@@ -500,11 +500,10 @@ def flipNibbles(count, hexData):
         i += 2
     return dataflipped
 
-
-# generateMessage: Creates a hex encoded message
+# generatemessage: creates a hex encoded message
 # 'payload' is a dictionary mapping of field names to payload data
-# 'messageName' is a string that came from the QComboBox (GUI) or a command-line argument (CLI)
-def generateMessage(dataBack, payload, messageName):
+# 'messagename' is a string that came from the qcombobox (gui) or a command-line argument (cli)
+def generateMessage_old(dataBack, payload, messageName):
     messageInfo = dataBack.messages[messageName]  # MessageInfo object
     # Construct a string that we will use to .format() later on. 'formatString' needs to
     # adjust itself for any CAN message body length; 'bodyFormatter' does this.
@@ -551,7 +550,7 @@ def generateMessage(dataBack, payload, messageName):
     # Collapse
     payloadString = ''.join(map(str,payloadArray))
     payloadInt = int(payloadString, 2)
-    payloadHexString = hex(payloadInt)[2:]
+    payloadHexString = hex(payloadInt)[2:].upper()
 
     # Pad the hex string with leading zeros, using zfill().
     if len(payloadHexString) < bodylength:
@@ -559,6 +558,77 @@ def generateMessage(dataBack, payload, messageName):
 
     # And return the transmit message as a properly formatted message.
     return formatString.format(id, messageInfo.size, int(payloadHexString, 16))
+
+# generatemessage: creates a hex encoded message
+# 'payload' is a dictionary mapping of field names to payload data
+# 'messagename' is a string that came from the qcombobox (gui) or a command-line argument (cli)
+def generateMessage(dataBack, payload, messageName, newTxCanMessage):
+    messageInfo = dataBack.messages[messageName]  # MessageInfo object
+    # Construct a string that we will use to .format() later on. 'formatString' needs to
+    # adjust itself for any CAN message body length; 'bodyFormatter' does this.
+    #bodylength = messageInfo.size*2 # Body length in nibbles
+ 
+    newTxCanMessage.length = messageInfo.size
+
+    newTxCanMessage.format = messageInfo.format
+    # This will work only if the node is connected and broadcasting.
+    try:
+        id = dataBack.IDencodeMap[messageName]
+    except KeyError:
+        # We assumed the node was connected and broadcasting but it was not.
+        # Need to use the Nmea11783Encode version of the ID instead.
+        id = dataBack.messages[messageInfo.name].fakeID
+    # Initialize an array of 0's of length equal to number of bits in message body
+
+    newTxCanMessage.id = hex(id).upper()[2:]
+
+    protocol = dataBack.messages[messageName].protocol
+    if protocol == 'nmea2000':
+        payloadArray = [1]*messageInfo.size*8
+    elif protocol == 'somePrototcol':
+        pass
+    else:
+        payloadArray = [0]*messageInfo.size*8
+
+    # For each of the fields, populate the corresponding entries in payloadArray with
+    # the bits that are obtained from 'encodePayload'
+    for field in messageInfo.fields:
+        dataFilter = dataBack.messages[messageName].fields[field]
+
+        if len(bin(ceil(abs(payload[field])))) - 2 > dataFilter.length:
+            # The length of the stringified binary representation of the number, after
+            # the ceiling function is applied (rounding up to nearest integer). The '- 2'
+            # accounts for the '0b' at the beginning of the string. This must be longer than
+            # the length specified in the metaData.
+            raise Exception ("{} field allows up to {} bits of data".format(field, dataFilter.length))
+        fieldData = encodePayload(payload[field], dataFilter)
+
+        # Find appropriate array indices, and insert fieldData into the payloadArray
+        start = dataFilter.offset
+        stop  = dataFilter.offset + dataFilter.length
+        payloadArray[start:stop] = fieldData
+
+    # Collapse
+    payloadString = ''.join(map(str,payloadArray))
+    payloadInt = int(payloadString, 2)
+    payloadHexString = hex(payloadInt)[2:].upper()  # txCanMessage.body
+    
+    # Pad the hex string with leading zeros, using zfill().
+    bodylength = messageInfo.size * 2
+    if len(payloadHexString) < bodylength:
+        payloadHexString = payloadHexString.zfill(bodylength)
+
+    newTxCanMessage.body = payloadHexString
+    newTxCanMessage.metadta = True
+    if newTxCanMessage.format == CAN_FORMAT_EXTENDED:
+        CanMessageString = 'T'
+    else:
+        CanMessageString = 't'
+    CanMessageString += newTxCanMessage.id + str(newTxCanMessage.length) + newTxCanMessage.body
+    newTxCanMessage.CanMessageString = CanMessageString
+
+    # And return the transmit message as a properly formatted message.
+    return newTxCanMessage
 
 
 # Need to check for return value length. Should be same as 'length'

@@ -44,7 +44,6 @@ from canport import BAUDLIST, BAUDMAP
 import outMessageTableWidget
 import outmessage
 import transmitGrid
-#import arbitraryTransmit
 from arbitraryTransmit import ArbitraryTransmitWidget
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 
@@ -57,6 +56,7 @@ DECODED, RAW_HEX, CSV = range(3)
 
 class Ui_CANaconda_GUI(QtCore.QObject):
     startHourGlass = pyqtSignal()
+    enableButtonsSig = pyqtSignal()
     outmsgSignal = pyqtSignal()
     def __init__(self, dataBack):
         QtCore.QObject.__init__(self) # Without this, the PyQt wrapper is created but the C++ object is not!!!
@@ -66,6 +66,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         app.setStyle(QStyleFactory.create("Fusion"))
         self.mainWindow = uic.loadUi('canaconda_mainwindow.ui')
 
+        self.enableButtonsSig.connect(self.enableButtons)
         self.dataBack = dataBack
         self.insertWidgets()
 
@@ -104,8 +105,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.transmitGrid.setup(self.mainWindow.transmitWidget, self.dataBack, self)
 
         # Set up a widget for transmitting custom, arbitrary messages
-        self.mainWindow.arbitraryTransmitGrid = ArbitraryTransmitWidget()
-        self.mainWindow.arbitraryTransmitGrid.setup(self.mainWindow.arbitraryTransmitWidget, self.dataBack, self)
+        self.mainWindow.arbitraryTransmit = ArbitraryTransmitWidget()
+        self.mainWindow.arbitraryTransmit.setup(self.mainWindow.arbitraryTransmitWidget, self.dataBack, self)
 
         # Outmessage table. Add to different tab. Here call 'addTab()' directly. Because pyqt is like that...
         self.mainWindow.outMessageTableWidget = outMessageTableWidget.OutMessageTableWidget()
@@ -113,7 +114,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.mainWindow.tabWidget_2.addTab(self.mainWindow.outMessageTableWidget, "Transmit queue")
         self.mainWindow.outMessageTableWidget.populateTable()
 
-        self.mainWindow.arbitraryTransmitGrid.newOutMessageUp.connect(self.mainWindow.outMessageTableWidget.populateTable)
+        self.mainWindow.arbitraryTransmit.newOutMessageUp.connect(self.mainWindow.outMessageTableWidget.populateTable)
+        self.mainWindow.transmitGrid.newOutMessageUp.connect(self.mainWindow.outMessageTableWidget.populateTable)
 
         if self.dataBack.args.metadata != None:
             self.commandLineLoadFilter()
@@ -138,7 +140,18 @@ class Ui_CANaconda_GUI(QtCore.QObject):
 
         # Clear the message stream window on button push
         self.mainWindow.buttonClearMessageStream.clicked.connect(self.clearTextBrowser)
+        
 
+    # Enable the two buttons that allow user to transmit messages
+    def enableButtons(self):
+        # To enable the metadata-generated messages, we need metadata + serial connection
+        if self.dataBack.alreadyStreaming and self.dataBack.messageInfoFlag:
+            self.mainWindow.transmitGrid.firstTxButton.setDisabled(False)
+            self.mainWindow.transmitGrid.firstTxFreq.setDisabled(False)
+        # To enable the arbitrary messages, we just need a serial connection
+        if self.dataBack.alreadyStreaming:
+            self.mainWindow.arbitraryTransmit.txButton.setDisabled(False)
+        
     def setChoose_port_Actions(self):
         """
         Populate the list of available comports. Called each time user clicks on 'Action' menu
@@ -208,7 +221,8 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         self.serialRxThread.start()
         self.removeHourGlass()
 
-
+    # Set the comport after user has selected from comports menu. Before returning, open serial connection
+    # in pyserialHandler().
     def comportSelect(self):
         if self.dataBack.args.port != None:
             self.dataBack.comport = self.dataBack.args.port[0]
@@ -238,6 +252,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Run the serial thread if it was created successfully
         if not alreadyStreaming and Success:
             self.pyserialRun()
+            self.enableButtonsSig.emit()
 
         # Use this timer as a watchdog for when a node on the bus is shut off.
         # Without it, frequency column won't go back to zero.
@@ -349,6 +364,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
+        self.enableButtonsSig.emit()
 
     # Create a 'Open File' dialog window to choose the metadata file, with .xml format
     def metadataOpenFileWindow(self):
@@ -380,6 +396,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         # Enable the combo box that allows user to select message stream format and set to 'decoded'
         self.mainWindow.displayCombo.setDisabled(False)
         self.mainWindow.displayCombo.setCurrentIndex(DECODED)
+        self.enableButtonsSig.emit()
 
     # Get a list of field names sorted by offset, rather than alphabetical order. Useful for
     # when user needs to find field data within large CAN messages.

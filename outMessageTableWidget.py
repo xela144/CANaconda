@@ -18,7 +18,7 @@ class OutMessageTableWidget(QtWidgets.QWidget):
         self.tableWidget = QtWidgets.QTableWidget()
         self.tableWidget.setObjectName("OutgoingTableWidget")
         # To hide row numbers, uncomment
-        self.tableWidget.verticalHeader().setVisible(False)
+        #self.tableWidget.verticalHeader().setVisible(False)
         tableLabel.setBuddy(self.tableWidget)
 
         if self.dataBack.args.debug:
@@ -39,7 +39,15 @@ class OutMessageTableWidget(QtWidgets.QWidget):
         #self.tableWidget.viewport().update()
 
     def populateTable(self):
-        displayList = self.getDisplayList()
+        try:
+            self.tableWidget.activated.disconnect(self.spaceBarHandler)
+            self.tableWidget.itemChanged.disconnect(self.serialHandler)
+        except TypeError:
+            pass
+        displayList = []
+       # displayList = self.getDisplayListtttt()
+        # Whatever is here gets put in the table
+        displayList += self.getDisplayList()
         headerList = ['', 'Description', 'ID', 'Length', 'Body', 'Frequency']
         self.tableWidget.setColumnCount(len(headerList))
         self.tableWidget.setRowCount(len(displayList))
@@ -51,11 +59,16 @@ class OutMessageTableWidget(QtWidgets.QWidget):
             length = str(txCanMessage.length)
             body = txCanMessage.body
             freq = str(txCanMessage.freq)
+            CanMessageString = txCanMessage.CanMessageString
+            data0, data1, data2 = QtCore.QTimer(), CanMessageString, txCanMessage.freq
 
             # The checkBoxItem will control whether the message is being written to serial
             checkBoxItem = QtWidgets.QTableWidgetItem()
             checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
+            #checkBoxItem.setTristate(False)
+            #checkBoxItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             checkBoxItem.setToolTip("<font color=black>Check to send messages</font>")
+            checkBoxItem.setData(0, (data0, data1, data2))
             self.tableWidget.setItem(row, CHK, checkBoxItem)
 
             nameItem = QtWidgets.QTableWidgetItem(name)
@@ -86,12 +99,99 @@ class OutMessageTableWidget(QtWidgets.QWidget):
 
         # The 'body' column should be large enough to accomodate 8 bytes
         self.tableWidget.setColumnWidth(BOD, 140)
+        self.tableWidget.itemChanged.connect(self.serialHandler)
+        self.tableWidget.activated.connect(self.spaceBarHandler)
+
+    def spaceBarHandler(self):
+        currentRow = self.sender().currentRow()
+        try:
+            CanMessageString = self.tableWidget.itemAt(0,currentRow).data(0)[1]
+        # This will be fixed when we figure out how to capture key press events
+        except IndexError:
+            return
+        self.dataBack.CANacondaTxMsg_queue.put(CanMessageString)
+        import sys
+        print("ERROR: Only row 0 gets written to serial: " +CanMessageString, file=sys.stderr)
+
 
     def getDisplayList(self):
         displayList = []
         for message in self.dataBack.messagesToSerial:
             displayList.append(self.dataBack.messagesToSerial[message])
         return displayList
+
+
+    def getDisplayListtttt(self):
+        displayList = []
+        import CanMessage
+        new1 = CanMessage.TxCanMessage()
+        new1.freq = .8
+        new1.arbitrary = True
+        new1.body = "BABECAFE"
+        new1.CanMessageString = "T28348BABEFEED"
+        new1.ID = '2834'
+        new1.length = 8
+        new1.name =  'new1'
+
+        new11 = CanMessage.TxCanMessage()
+        new11.freq = .888
+        new11.arbitrary = True
+        new11.CanMessageString = "              T28348DEAFCAFE"
+        new11.ID = 0xCAFE
+        new11.length = 8
+        new11.body = "DEAFECAFE"
+        new11.name =  'new11'
+        displayList = [new1, new11]
+        return displayList
+
+    # The user has checked or unchecked a message in the OutMessage table widget. This is where
+    # we handle that action. With the helper functions within this code, we either start sending
+    # messages to the serial thread, or stop messages from being sent.
+    def serialHandler(self):
+        #self.dataBack.messagesToSerial = {}
+        for row in range(0, self.tableWidget.rowCount()):
+            #self.pdbset()
+#Watch for ValueError here when fuzz testing
+            thisItem = self.tableWidget.item(row, CHK)
+            try:
+                thisTimer, thisMsg, thisFreq = thisItem.data(0) # data(0) is tuple: (qtimer, msg, freq)
+            except ValueError:
+                return
+            # If the timer is not in dataBack.timers, and the checkstate is 2 then add it and start it.
+            if thisItem.checkState() == QtCore.Qt.Checked:
+                if thisTimer.timerId() == -1:
+                    # The timer with ID == -1 is not being used. Start the timer here:
+                    self.timerHandler(thisTimer, thisFreq)
+                    # Add the timer to dataBack.timers.
+                    self.dataBack.timers[thisTimer.timerId()] = (thisTimer, thisMsg)
+                else:
+                    # The timer already has an ID, so it's already in use.
+                    continue
+            # Here the item has been unchecked but is still in dataBack.timers. Therefore, stop the timer.        
+            elif thisTimer.timerId() in self.dataBack.timers:
+                # Now remove the timer from our data backend
+                byebyeblob = self.dataBack.timers.pop(thisTimer.timerId())
+                # If the checkbox is not checked, and the timer is in dataBack.timers, then we 
+                thisTimer.stop()
+                thisTimer.timeout.disconnect()
+
+    # Start a QTimer with the given frequency
+    def timerHandler(self, qtimer, freq):
+        freq = 1/freq * 1000
+        qtimer.timeout.connect(self.pushToTransmitQueue)
+        qtimer.start(freq)
+
+    # Send the CAN message to our serial thread
+    def pushToTransmitQueue(self):
+        # get the ID of the timer from the sender.
+        timerId = self.sender().timerId()
+        # extract the message using the ID.
+        CanMessageString = self.dataBack.timers[timerId][1]
+        # Push it to the serial queue for writing to the serial port
+        self.dataBack.CANacondaTxMsg_queue.put(CanMessageString)
+        # delete me:
+        print(CanMessageString)
+        
 
     def pdbset(self):
         pyqtrm()

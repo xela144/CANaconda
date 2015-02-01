@@ -88,7 +88,7 @@ class FilterTable(QtWidgets.QWidget):
             self.tableWidget.itemChanged.disconnect(self.filterByValue)
             self.tableWidget.itemChanged.disconnect(
                                    self.parent.update_messageInfo_to_fields)
-        except:
+        except TypeError:
             pass
         self.tableWidget.clear()
         self.tableWidget.setSortingEnabled(False)

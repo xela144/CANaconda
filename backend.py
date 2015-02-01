@@ -66,6 +66,7 @@ class CanData():
         # A dict used to track the outgoing messages over serial to the CAN bus.
         # Usage: In 'outMessageTableWidget.py' the rows displayed depend on this dict.
         self.messagesToSerial = {}
+        self.timers = {}
 
         #A flag to indicate if loging is enabled
         self.logflag = 0
@@ -122,7 +123,7 @@ class CanData():
         # to print a message once at consoleMode launch.
         self.messageInfoList = []
 
-        # For noGUI mode: Dictionary of filter and values to be displayed
+        # Dictionary of filter and values to be displayed
         self.messageInfo_to_fields = {}
 
         # For display in GUI. Change name
