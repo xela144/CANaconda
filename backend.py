@@ -24,7 +24,7 @@ import queue
 import CANaconda
 
 # displayList
-from outmessage import ID, PGN, BODY, RAW
+from printmessage import ID, PGN, BODY, RAW
 
 # conversionMap is a mapping of valid base units to converted units.
 # For each base units, a map to the new units will be given by the
@@ -66,6 +66,8 @@ class CanData():
         # A dict used to track the outgoing messages over serial to the CAN bus.
         # Usage: In 'outMessageTableWidget.py' the rows displayed depend on this dict.
         self.messagesToSerial = {}
+
+        # Store all the timers for outgoing messags here
         self.timers = {}
 
         #A flag to indicate if loging is enabled

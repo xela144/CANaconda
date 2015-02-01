@@ -37,7 +37,7 @@ import serial
 
 # User libraries
 from CanMessage import *
-from outmessage import *
+from printmessage import *
 from backend import conversionMap
 from Nmea2000 import Iso11783Decode
 

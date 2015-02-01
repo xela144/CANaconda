@@ -41,7 +41,7 @@ from backend import conversionMap
 from Nmea2000 import Iso11783Decode
 from queue import Queue
 from CanMessage import *
-from outmessage import *
+from printmessage import *
 import time
 import sys
 from math import ceil, fmod

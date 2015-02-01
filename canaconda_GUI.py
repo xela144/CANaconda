@@ -42,13 +42,13 @@ from CanDataTranscoder import generateMessage
 import canport
 from canport import BAUDLIST, BAUDMAP
 import outMessageTableWidget
-import outmessage
+import printmessage
 import transmitGrid
 from arbitraryTransmit import ArbitraryTransmitWidget
 from messageInfo import xmlImport, CAN_FORMAT_EXTENDED
 
 # displayList
-from outmessage import ID, PGN, BODY, RAW
+from printmessage import ID, PGN, BODY, RAW
 
 # Message stream enum
 DECODED, RAW_HEX, CSV = range(3)
@@ -185,10 +185,10 @@ class Ui_CANaconda_GUI(QtCore.QObject):
         CANacondaMessage = CANacondaRxMsg_queue.get()
         # Switch statement depending on current UI settings
         if self.dataBack.messageInfoFlag is False or self.dataBack.GUI_rawFlag:
-            return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
+            return printmessage.noGuiParse(self.dataBack, CANacondaMessage)
         elif self.dataBack.GUI_CSVflag:
-            return outmessage.guiParseCSV(self.dataBack, CANacondaMessage)
-        return outmessage.noGuiParse(self.dataBack, CANacondaMessage)
+            return printmessage.guiParseCSV(self.dataBack, CANacondaMessage)
+        return printmessage.noGuiParse(self.dataBack, CANacondaMessage)
 
     # FIXME This code didn't get ported over with .ui switch. Need to add QMenu to .ui file
     def setBaud(self):
@@ -461,7 +461,7 @@ class Ui_CANaconda_GUI(QtCore.QObject):
                     self.dataBack.messageInfo_to_fields[name] = []
                     self.dataBack.messageInfo_to_fields[name].append(field)
 
-    # For creating the outmessage.
+    # For creating the printmessage.
     # recall: DECODED, RAW_HEX, CSV = range(3)
     def setOutput(self):
         if self.dataBack.logflag:

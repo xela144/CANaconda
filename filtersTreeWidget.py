@@ -23,7 +23,7 @@ from PyQt5 import QtCore, QtWidgets
 import pdb
 
 from messageInfo import CAN_FORMAT_EXTENDED
-from outmessage import unitStringMap
+from printmessage import unitStringMap
 
 
 class FiltersTreeWidget(QtWidgets.QDialog):

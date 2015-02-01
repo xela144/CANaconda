@@ -90,9 +90,9 @@ class ArbitraryTransmitWidget(QObject):
         warnFlag = False
         self.payload = None
         # We shouldn't transmit anything if we are not streaming yet.
-        #if not self.dataBack.alreadyStreaming:
-        #    self.notStreamingWarn()
-        #    return
+        if not self.dataBack.alreadyStreaming:
+            self.notStreamingWarn()
+            return
         self.txTypeErrorFlag = False
         # A list to store QLineEdits that have bad data. If this list is non-empty, then an error occured.
         self.errContainer = []
@@ -134,13 +134,7 @@ class ArbitraryTransmitWidget(QObject):
                 self.pushToTransmitQueue(newTxCanMessage.CanMessageString)
             else:
                 newTxCanMessage.freq = freq
-                #self.messageTxInit(newTxCanMessage)
             # Whatever is here gets put to the the outmessage table, and is later accessible to the user
-            if newTxCanMessage.ID in self.dataBack.messagesToSerial:
-                print("Collision")
-                self.pdbset()
-                self.dataBack.messagesToSerial.pop(newTxCanMessage.ID)
-# Shouldn't be a dict, just a single value that gets overwritten each time
             self.dataBack.messagesToSerial[newTxCanMessage.ID] = newTxCanMessage
             self.newOutMessageUp.emit()
 

@@ -34,18 +34,15 @@ class OutMessageTableWidget(QtWidgets.QWidget):
             vbox.addWidget(self.buttonPdb)
 
         self.setLayout(vbox)
-        if singleshot:
-            self.populateTable()
-        #self.tableWidget.viewport().update()
 
     def populateTable(self):
+        self.stopTimers()
         try:
             self.tableWidget.activated.disconnect(self.spaceBarHandler)
             self.tableWidget.itemChanged.disconnect(self.serialHandler)
         except TypeError:
             pass
         displayList = []
-       # displayList = self.getDisplayListtttt()
         # Whatever is here gets put in the table
         displayList += self.getDisplayList()
         headerList = ['', 'Description', 'ID', 'Length', 'Body', 'Frequency']
@@ -65,8 +62,6 @@ class OutMessageTableWidget(QtWidgets.QWidget):
             # The checkBoxItem will control whether the message is being written to serial
             checkBoxItem = QtWidgets.QTableWidgetItem()
             checkBoxItem.setCheckState(QtCore.Qt.Unchecked)
-            #checkBoxItem.setTristate(False)
-            #checkBoxItem.setFlags(QtCore.Qt.ItemFlags(~QtCore.Qt.ItemIsEditable))
             checkBoxItem.setToolTip("<font color=black>Check to send messages</font>")
             checkBoxItem.setData(0, (data0, data1, data2))
             self.tableWidget.setItem(row, CHK, checkBoxItem)
@@ -113,7 +108,6 @@ class OutMessageTableWidget(QtWidgets.QWidget):
         import sys
         print("ERROR: Only row 0 gets written to serial: " +CanMessageString, file=sys.stderr)
 
-
     def getDisplayList(self):
         displayList = []
         for message in self.dataBack.messagesToSerial:
@@ -121,41 +115,16 @@ class OutMessageTableWidget(QtWidgets.QWidget):
         return displayList
 
 
-    def getDisplayListtttt(self):
-        displayList = []
-        import CanMessage
-        new1 = CanMessage.TxCanMessage()
-        new1.freq = .8
-        new1.arbitrary = True
-        new1.body = "BABECAFE"
-        new1.CanMessageString = "T28348BABEFEED"
-        new1.ID = '2834'
-        new1.length = 8
-        new1.name =  'new1'
-
-        new11 = CanMessage.TxCanMessage()
-        new11.freq = .888
-        new11.arbitrary = True
-        new11.CanMessageString = "              T28348DEAFCAFE"
-        new11.ID = 0xCAFE
-        new11.length = 8
-        new11.body = "DEAFECAFE"
-        new11.name =  'new11'
-        displayList = [new1, new11]
-        return displayList
-
     # The user has checked or unchecked a message in the OutMessage table widget. This is where
     # we handle that action. With the helper functions within this code, we either start sending
     # messages to the serial thread, or stop messages from being sent.
     def serialHandler(self):
-        #self.dataBack.messagesToSerial = {}
         for row in range(0, self.tableWidget.rowCount()):
-            #self.pdbset()
-#Watch for ValueError here when fuzz testing
             thisItem = self.tableWidget.item(row, CHK)
             try:
                 thisTimer, thisMsg, thisFreq = thisItem.data(0) # data(0) is tuple: (qtimer, msg, freq)
             except ValueError:
+                # This error generated when a signal is emitted when we didn't need it.
                 return
             # If the timer is not in dataBack.timers, and the checkstate is 2 then add it and start it.
             if thisItem.checkState() == QtCore.Qt.Checked:

@@ -31,8 +31,8 @@ import sys
 from messageInfo import *
 from backend import *
 from setoptions import *
-import outmessage
-from outmessage import ID, PGN, BODY, RAW
+import printmessage
+from printmessage import ID, PGN, BODY, RAW
 
 
 def main():

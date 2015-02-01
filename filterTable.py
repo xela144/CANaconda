@@ -32,7 +32,7 @@ CHECKBOX, MESSAGE, FIELD, VALUE, FILTER, UNITS, RATE = range(7)
 
 from messageInfo import ACTIVE, EQUAL, LT, GT, ZERO
 
-from outmessage import unitStringMap
+from printmessage import unitStringMap
 
 MapStringUnits =  dict(zip(unitStringMap.values(), unitStringMap.keys()))
 

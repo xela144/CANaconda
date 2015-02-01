@@ -61,9 +61,12 @@ class TxCanMessage():
         self.ID = None
         self.pgn = None
         self.length = None
+        self.body = ""
         # CanMessageString will be what gets written to the serial port.
         self.CanMessageString = ""
         self.freq = None
+        self.format = None
 
     def __str__(self):
         return self.name + ": " + self.CanMessageString
+
