@@ -90,13 +90,15 @@ class CANPort():
         # A string that indicates the current baudrate
         self.canBaudRate = ''
 
+    # Opens a serial connect, creates a regex parser, and initializes the CANusb hardware
     def pyserialInit(self, baudrate=57600, canbaud=BAUDMAP['250k']):
         #opens a serial connection called serialCAN on COM? at 57600 Baud
         try:
-            serialCAN = serial.Serial(self.comport, baudrate, timeout=3)
+            serialCAN = serial.Serial(self.comport, baudrate, timeout=3, writeTimeout=0)
             # self.comport is the com port which is opened
         except:
             return CANPort.ERROR_NO_CONNECT
+            
         else:
             # compiles a regular expression to parse both the short
             # and long form messages as defined in the CAN-USB manual
@@ -129,6 +131,7 @@ class CANPort():
             # Finally, if we have made it to here, the serialCAN object was created successfully
             # and the CanUSB device is ready for read/write operations
             self.live = True
+            print("serialCAN good")
             return serialCAN
 
     def changeCanUSBbaud(self, serialCAN, newBaud):
@@ -158,6 +161,7 @@ class CANPort():
         self.live = True
         return CANPort.SUCCESS
 
+    # Initialize the CANusb hardware. 'serialCAN' is a class instance of CANPort
     def CanUSBinit(self, serialCAN, canbaud):
         # Start a timer to see if initialization has taken too long, erroring out in that case.
         start = time.time()
@@ -183,6 +187,7 @@ class CANPort():
                 return CANPort.ERROR_NO_DATA
 
         # Fall through to SUCCESS
+        print("canusb good")
         return CANPort.SUCCESS
 
     # CanUSBopen. CanUSB flags have been set, now send the command for the device 
@@ -203,17 +208,34 @@ class CANPort():
     # FIXME: serialCAN.closed being False may not be a sufficient condition, because when
     # serial is re-established, the CanUSB device does not immediately open...
     def getMessages(self, serialCAN):
+        i = 0
         while True:
+            i += 1
             if not self.live:
                 # This return here should exit the getMessages thread
                 return
             if self.live:
                 # serialParse blocks thread
                 self.serialParse(serialCAN)
-                
-                while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
-                    msg = self.dataBack.CANacondaTxMsg_queue.get()
-                    serialCAN.write(bytes(msg, 'UTF-8'))
+                #print("here",i)
+                #self.dataBack.CANacondaTxMsg_queue.put('T9F50301800000000000FFFFF')
+                if self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
+                    time.sleep(1)
+                    #serialCAN.close()
+                    #serialCAN.open()
+                    while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
+                        #serialCAN.flushInput()
+                        #serialCAN.flushOutput()
+                        #print("qsize(): ",self.dataBack.CANacondaTxMsg_queue.qsize())
+                        msg = self.dataBack.CANacondaTxMsg_queue.get_nowait() # .get() is blocking
+                        #print("______________________________________", msg)
+                        numbytes = 0
+                        #numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
+                        for j in msg:
+                            numbytes += serialCAN.write(bytes(j, 'UTF-8'))
+                        print(numbytes, "bytes written to serial")
+                    else:
+                        time.sleep(1)
 
     # parse the serial string, create the CanMessage object, and print it.
     def serialParse(self, serialCAN):
@@ -240,6 +262,8 @@ class CANPort():
                 return None
             # appends the newly read character to
             # the message being built
+            if character == b'':
+                print("           ", character, "character was receive")
             rawmsg += bytes(character)
         rawmsg = rawmsg.decode('utf-8')
         matchedMsg = self.regex.match(rawmsg)
@@ -302,4 +326,17 @@ def debugMode():
     pyqtRemoveInputHook()
     import pdb
     pdb.set_trace()
-    
+   
+
+if __name__ == "__main__":
+    print("Debug Canport.py")
+    import argparse
+    parser = argparse.ArgumentParser()
+    from backend import CanData
+    args = parser.parse_args()
+    args.nogui = True
+    args.port = ['/dev/ttyUSB0']
+    dataBack = CanData(args)
+    serialThread = CANPort(dataBack)
+    serialCAN = serialThread.pyserialInit()
+    serialThread.getMessages(serialCAN)
