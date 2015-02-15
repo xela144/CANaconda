@@ -217,25 +217,13 @@ class CANPort():
             if self.live:
                 # serialParse blocks thread
                 self.serialParse(serialCAN)
-                #print("here",i)
-                #self.dataBack.CANacondaTxMsg_queue.put('T9F50301800000000000FFFFF')
                 if self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
-                    time.sleep(1)
-                    #serialCAN.close()
-                    #serialCAN.open()
+                    time.sleep(.01)
                     while self.dataBack.CANacondaTxMsg_queue.qsize() > 0:
-                        #serialCAN.flushInput()
-                        #serialCAN.flushOutput()
-                        #print("qsize(): ",self.dataBack.CANacondaTxMsg_queue.qsize())
-                        msg = self.dataBack.CANacondaTxMsg_queue.get_nowait() # .get() is blocking
-                        #print("______________________________________", msg)
-                        numbytes = 0
-                        #numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
-                        for j in msg:
-                            numbytes += serialCAN.write(bytes(j, 'UTF-8'))
-                        print(numbytes, "bytes written to serial")
-                    else:
-                        time.sleep(1)
+                        msg = self.dataBack.CANacondaTxMsg_queue.get_nowait() 
+                        numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
+                        print("______________________________________", msg, numbytes, "bytes written to serial")
+
 
     # parse the serial string, create the CanMessage object, and print it.
     def serialParse(self, serialCAN):
@@ -263,9 +251,10 @@ class CANPort():
             # appends the newly read character to
             # the message being built
             if character == b'':
-                print("           ", character, "character was receive")
+                print("           ", character, "character was received")
             rawmsg += bytes(character)
         rawmsg = rawmsg.decode('utf-8')
+        print(rawmsg)
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
 
@@ -327,16 +316,57 @@ def debugMode():
     import pdb
     pdb.set_trace()
    
+def input_thread(serialCAN):
+    msg = 't0804FFFFFFFF'
+    while(1):
+        time.sleep(.1)
+        chars = input()
+        try: 
+            freq = float(chars)
+            per = 1/freq
+            startTime = time.time()
+            # how many time periods have passed:
+            cycle = 0
+            while (1):
+                # don't waste resources
+                #time.sleep(.9*per)
+                # step function that increments with each time period
+                curCycle = (time.time() - startTime) // per
+                # If the step function has incremented, write to serial
+                if curCycle > cycle:
+                    cycle = curCycle
+                    numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
+                    # Lawicel returns a 'z', and this should be discarded
+                    #throwAway = serialCAN.read()
+                    print("______________________________________", msg, numbytes, "bytes written to serial")
+                    #print(throwAway)
+            
+        except ValueError:
+            pass
+
 
 if __name__ == "__main__":
     print("Debug Canport.py")
+    print("Once streaming starts, you can enter a frequency")
+    print("A message will be written to serial at that frequency")
+    print("Only one frequency can be chosen per run")
+     
     import argparse
     parser = argparse.ArgumentParser()
     from backend import CanData
+    import time
+    parser.add_argument('-p', '--port', nargs=1, metavar='PORT',help="Choose a port")
     args = parser.parse_args()
     args.nogui = True
-    args.port = ['/dev/ttyUSB0']
     dataBack = CanData(args)
-    serialThread = CANPort(dataBack)
+    serialThread = CANPort(dataBack) # Not really a thread
     serialCAN = serialThread.pyserialInit()
-    serialThread.getMessages(serialCAN)
+    import _thread
+    _thread.start_new_thread(input_thread,(serialCAN,))
+    while(1):
+        serialThread.serialParse(serialCAN)
+
+
+
+
+

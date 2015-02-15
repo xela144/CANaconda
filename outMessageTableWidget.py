@@ -158,8 +158,6 @@ class OutMessageTableWidget(QtWidgets.QWidget):
         CanMessageString = self.dataBack.timers[timerId][1]
         # Push it to the serial queue for writing to the serial port
         self.dataBack.CANacondaTxMsg_queue.put(CanMessageString)
-        # delete me:
-        print(CanMessageString)
 
     # Stop the timers. This is done when populateTable is called and reference to a timer is lost, causing
     # it to continue timing out even when we no longer need it.
