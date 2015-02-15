@@ -316,8 +316,7 @@ def debugMode():
     import pdb
     pdb.set_trace()
    
-def input_thread(serialCAN):
-    msg = 't0804FFFFFFFF'
+def input_thread(serialCAN, msg):
     while(1):
         time.sleep(.1)
         chars = input()
@@ -350,7 +349,14 @@ if __name__ == "__main__":
     print("Once streaming starts, you can enter a frequency")
     print("A message will be written to serial at that frequency")
     print("Only one frequency can be chosen per run")
-     
+    s = input('To run synchronous, type "s" (default to asynchronous) ')
+    if s == 's':
+        sync = True
+    else:
+        sync = False
+    
+    msg = 't0804FFFFFFFF'
+
     import argparse
     parser = argparse.ArgumentParser()
     from backend import CanData
@@ -361,11 +367,31 @@ if __name__ == "__main__":
     dataBack = CanData(args)
     serialThread = CANPort(dataBack) # Not really a thread
     serialCAN = serialThread.pyserialInit()
-    import _thread
-    _thread.start_new_thread(input_thread,(serialCAN,))
+    if not sync:
+        import _thread
+        _thread.start_new_thread(input_thread,(serialCAN,msg))
+    else:
+        freq = float(input("Enter a frequency: "))
+        per = 1/freq
+        startTime = time.time()
+        # how many time periods have passed:
+        cycle = 0
+
     while(1):
         serialThread.serialParse(serialCAN)
-
+        if sync:
+            # step function that increments with each time period
+            curCycle = (time.time() - startTime) // per
+            # If the step function has incremented, write to serial
+            if curCycle > cycle:
+                cycle = curCycle
+                print(cycle)
+                numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
+                # Lawicel returns a 'z', and this should be discarded
+                throwAway = serialCAN.read()
+                print("______________________________________", msg, numbytes, "bytes written to serial")
+                print(throwAway)
+                continue
 
 
 
