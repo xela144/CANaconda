@@ -253,8 +253,10 @@ class CANPort():
             if character == b'':
                 print("           ", character, "character was received")
             rawmsg += bytes(character)
+        bytesarray = rawmsg
+        binascii.hexlify(bytesarray)
         rawmsg = rawmsg.decode('utf-8')
-        print(rawmsg)
+        print(bytesarray, rawmsg)
         matchedMsg = self.regex.match(rawmsg)
         return matchedMsg
 
@@ -328,7 +330,7 @@ def input_thread(serialCAN, msg):
             cycle = 0
             while (1):
                 # don't waste resources
-                #time.sleep(.9*per)
+                time.sleep(.01)
                 # step function that increments with each time period
                 curCycle = (time.time() - startTime) // per
                 # If the step function has incremented, write to serial
@@ -358,6 +360,7 @@ if __name__ == "__main__":
     msg = 't0804FFFFFFFF'
 
     import argparse
+    import binascii
     parser = argparse.ArgumentParser()
     from backend import CanData
     import time
@@ -388,10 +391,10 @@ if __name__ == "__main__":
                 print(cycle)
                 numbytes = serialCAN.write(bytes(msg, 'UTF-8'))
                 # Lawicel returns a 'z', and this should be discarded
-                throwAway = serialCAN.read()
+                #throwAway = serialCAN.read()
                 print("______________________________________", msg, numbytes, "bytes written to serial")
-                print(throwAway)
-                continue
+                #print(throwAway)
+                #continue
 
 
 
