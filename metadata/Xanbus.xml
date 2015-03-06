@@ -1,0 +1,91 @@
+<metaData>
+    <messageInfo name = "Charger status" pgn = "126990" size = "8" protocol = "nmea2000" type = "fast-packet">
+        <desc>Status of a single DC battery source.</desc>
+        <field
+        name = "Message count"
+        type = "int"
+        offset = "2"
+        length = "6"
+        signed = "no"
+        />
+        <field
+        name = "DC Source Identifier"
+        type = "enum"
+        offset = "8"
+        length = "8"
+        />
+        <field
+        name = "Control voltage"
+        type = "int"
+        offset = "16"
+        length = "32"
+        signed = "yes"
+        units = "V"
+        scaling = "0.001"
+        />
+        <field
+        name = "Control current"
+        type = "int"
+        offset = "48"
+        length = "32"
+        signed = "yes"
+        units = "A"
+        scaling = "0.001"
+        />
+        <field
+        name = "Control current percent"
+        type = "int"
+        offset = "80"
+        length = "32"
+        signed = "no"
+        units = "%"
+        />
+        <field
+        name = "Charging algorithm"
+        type = "int"
+        offset = "112"
+        length = "8"
+        signed = "no"
+        units = "V"
+        scaling = "0.001"
+        />
+        <field
+        name = "Operating state"
+        type = "enum"
+        offset = "120"
+        length = "16"
+        />
+        <field
+        name = "Charger mode"
+        type = "enum"
+        offset = "136"
+        length = "8"
+        />
+        <field
+        name = "Charger enable/disable"
+        type = "enum"
+        offset = "144"
+        length = "2"
+        />
+        <field
+        name = "Battery temperature sensor present"
+        type = "enum"
+        offset = "146"
+        length = "2"
+        />
+        <field
+        name = "Equalization pending"
+        type = "enum"
+        offset = "148"
+        length = "2"
+        />
+        <field
+        name = "Equalization time remaining"
+        type = "int"
+        offset = "152"
+        length = "8"
+        signed = "no"
+        units = "min"
+        />
+    </messageInfo>
+</metaData>
