@@ -237,7 +237,7 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
     newCanMessage.body['Raw Data'] = newCanMessage.payload
     newCanMessage.noMetadata = True
 
-    # Since this messages was not given in the metadata, we must create the MessageInfo and
+    # Since this messages was not given in the metadata, we must create the metadata (messageInfo) and
     # and then insert them into dataBack.messages dictionary
     if newCanMessage.name not in dataBack.messages:
         newMessageInfo = MessageInfo()

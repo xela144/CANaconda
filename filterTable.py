@@ -243,7 +243,13 @@ class FilterTable(QtWidgets.QWidget):
                 self.tableWidget.item(row, VALUE).setText(value)
                 self.tableWidget.item(row, RATE).setText(newRate)
             except (AttributeError, KeyError):
-                pass
+                # Before erroring out, the new message may not have had metadata (anonymous message)
+                if self.dataBack.messages[message_name].anonymous:
+                    value = str(self.dataBack.latest_CANacondaMessages[message_name][field])
+                    self.tableWidget.item(row, VALUE).setText(value)
+                    self.tableWidget.item(row, RATE).setText(newRate)
+                else:
+                    pass
         # if viewport() is not called, update is slow
         self.tableWidget.viewport().update()
 
