@@ -35,6 +35,7 @@ class CanMessage():
                                    # the code.
         self.body = {}
         self.freq = 0
+        self.noMetadata = False
 
     def __str__(self):
         """Convert the CAN message to a human readable version."""

@@ -235,6 +235,7 @@ def CANacondaMessageParse_raw(newCanMessage, match, dataBack):
         newCanMessage.name = "Standard message 0x{0:X}".format(newCanMessage.id)
     newCanMessage.payloadHex = "0x{0:X}".format(int(newCanMessage.payloadBitstring,2))
     newCanMessage.body['Raw Data'] = newCanMessage.payload
+    newCanMessage.noMetadata = True
 
     # Since this messages was not given in the metadata, we must create the MessageInfo and
     # and then insert them into dataBack.messages dictionary
