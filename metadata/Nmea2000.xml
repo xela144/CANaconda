@@ -81,7 +81,8 @@
         name = "Speed Water Referenced"
         type = "int"
         offset = "8"
-        length = "16" signed = "no"
+        length = "16"
+        signed = "no"
         units = "m/s"
         scaling = "0.01"
         />
