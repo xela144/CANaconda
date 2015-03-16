@@ -123,6 +123,17 @@ Finally, open up a python3 interactive session, and run
 
 to make sure that installation was successful.
 
+# Installation for Mac
+
+Using brew, the installation for PyQt5 is done in a single command:
+
+>brew install pyqt5
+
+To get Pyserial, use pip3:
+
+>pip3 install pyserial
+
+These instructions assume that brew was used to install Python 3.
 
 ```
 
