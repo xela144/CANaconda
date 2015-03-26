@@ -482,6 +482,8 @@ def payloadSwitch(endian, signed, byteArray):
     #big endian unsigned
     elif endian == "big" and signed == "no":
         pay = int.from_bytes(byteArray, byteorder='big', signed=False)
+    else:
+        pay = 0
 
     return pay
 
